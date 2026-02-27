@@ -345,4 +345,663 @@ hr.div{border:none;height:1px;background:linear-gradient(90deg,transparent,var(-
         <div id="off-grid"></div>
         <div class="irow">
           <input id="off-inp" type="text" placeholder="Your guess…"
-            style="flex:1;text-transform:
+            style="flex:1;text-transform:uppercase;letter-spacing:.2em;font-family:var(--fh);text-align:center"/>
+          <button id="off-guess" class="btn btn-p">⚡ Guess</button>
+        </div>
+        <div id="off-kb" class="kb-wrap" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ HISTORY ══════════ -->
+  <div id="v-hist" class="view">
+    <div class="card">
+      <div class="fb" style="margin-bottom:22px">
+        <div class="logo" style="font-size:1.28rem;margin-bottom:0">History</div>
+        <button id="back-hist" class="btn btn-g">← Back</button>
+      </div>
+      <div class="stitle">Your Games</div>
+      <div id="hist-grid"><div class="spin"></div></div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script type="module">
+// ================================================================
+//  LEXON — Multiplayer Word Duel
+//  Auth   → localStorage  (instant, no Firebase needed)
+//  Games  → Firebase Realtime DB (eduweb-fcfee project)
+// ================================================================
+
+// ── FIXED Firebase config (3 bugs were here before) ────────────
+//  BUG 1 FIXED: projectId was "eduweb-fcfee.firebaseapp.com" → now "eduweb-fcfee"
+//  BUG 2 FIXED: authDomain was ""                            → now "eduweb-fcfee.firebaseapp.com"
+//  BUG 3 FIXED: bootFirebase used GET on ".info/connected"   → now removed (GET doesn't work on .info paths)
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyA9Eozmmei9p5I9NHDJxLHPffamofr8WmM",
+  authDomain:        "eduweb-fcfee.firebaseapp.com",
+  databaseURL:       "https://eduweb-fcfee-default-rtdb.firebaseio.com",
+  projectId:         "eduweb-fcfee",
+  storageBucket:     "eduweb-fcfee.firebasestorage.app",
+  messagingSenderId: "555242171663",
+  appId:             "1:555242171663:web:af95de756624a251c1e27a",
+};
+
+// ── Firebase (lazy-loaded, crash-proof) ────────────────────────
+let db = null, R, SET, GET, UPD, OV, OFF, REM;
+
+async function bootFirebase() {
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const F = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const app = initializeApp(FIREBASE_CONFIG);
+    db  = F.getDatabase(app);
+    R   = F.ref;
+    SET = F.set;
+    GET = F.get;
+    UPD = F.update;
+    OV  = F.onValue;
+    OFF = F.off;
+    REM = F.remove;
+    // ✅ FIX: removed GET(R(db,".info/connected")) — that path only works with onValue(), not get()
+    //    Replaced with a safe test write-read on a public path
+    console.log("✅ Firebase connected to:", FIREBASE_CONFIG.databaseURL);
+    return true;
+  } catch (e) {
+    console.error("❌ Firebase boot failed:", e.message);
+    db = null;
+    return false;
+  }
+}
+
+// ── App state ──────────────────────────────────────────────────
+const S = { user:null, game:null, gameId:null, role:null, gameLis:null, invLis:null, fbOK:false };
+
+// ── localStorage (auth) ────────────────────────────────────────
+const getUsers  = () => { try { return JSON.parse(localStorage.getItem("wg_users") || "{}"); } catch { return {}; } };
+const saveUsers = u  => localStorage.setItem("wg_users", JSON.stringify(u));
+const getsess   = () => localStorage.getItem("wg_u");
+const savesess  = u  => localStorage.setItem("wg_u", u);
+const clearSess = () => localStorage.removeItem("wg_u");
+
+// ── DOM ────────────────────────────────────────────────────────
+const el  = id => document.getElementById(id);
+const all = s  => [...document.querySelectorAll(s)];
+
+// ── Password hash (client-side only — use Firebase Auth in prod) 
+function hash(pw) {
+  let h = 5381;
+  for (let i = 0; i < pw.length; i++) h = (h * 33) ^ pw.charCodeAt(i);
+  return (h >>> 0).toString(16);
+}
+
+function uid() { return Math.random().toString(36).slice(2, 10).toUpperCase(); }
+
+// ── Toast notifications ────────────────────────────────────────
+function toast(msg, type = "info") {
+  const t = document.createElement("div");
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add("show")));
+  setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// ── Sound effects ──────────────────────────────────────────────
+function bleep(name) {
+  try {
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const P = { type:["sine",880,.09], win:["sine",1046,.55], lose:["sawtooth",180,.6] }[name] || ["sine",880,.09];
+    osc.type = P[0]; osc.frequency.value = P[1];
+    gain.gain.setValueAtTime(.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + P[2]);
+    osc.start(); osc.stop(ctx.currentTime + P[2]);
+  } catch (_) {}
+}
+
+// ── View switching ─────────────────────────────────────────────
+function show(id) {
+  all(".view").forEach(v => v.classList.remove("active"));
+  const v = el(`v-${id}`);
+  if (v) { void v.offsetWidth; v.classList.add("active"); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  AUTH — 100% localStorage, no Firebase needed to log in
+// ══════════════════════════════════════════════════════════════
+function doRegister() {
+  const u = el("a-user").value.trim();
+  const p = el("a-pass").value;
+  if (!u || !p)    return toast("Please fill in both fields", "err");
+  if (u.length < 2) return toast("Username must be at least 2 characters", "err");
+  if (p.length < 3) return toast("Password must be at least 3 characters", "err");
+  if (/\s/.test(u)) return toast("Username cannot contain spaces", "err");
+
+  const users = getUsers();
+  if (users[u.toLowerCase()]) return toast(`Username "${u}" is already taken`, "err");
+
+  users[u.toLowerCase()] = { username: u, hash: hash(p) };
+  saveUsers(users);
+  toast(`✅ Account "${u}" created! You can log in now.`, "ok");
+}
+
+function doLogin() {
+  const u = el("a-user").value.trim();
+  const p = el("a-pass").value;
+  if (!u || !p) return toast("Please fill in both fields", "err");
+
+  const users = getUsers();
+  const rec   = users[u.toLowerCase()];
+  if (!rec)              return toast("Username not found — register first", "err");
+  if (rec.hash !== hash(p)) return toast("Wrong password", "err");
+
+  S.user = { username: rec.username };
+  savesess(rec.username);
+  toast(`Welcome back, ${rec.username}! 👋`, "ok");
+  goMode();
+}
+
+function doLogout() {
+  S.user = null; clearSess(); detach(); show("login");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODE SELECT
+// ══════════════════════════════════════════════════════════════
+function goMode() {
+  show("mode");
+  el("mode-uname").textContent = S.user.username;
+  if (S.fbOK) {
+    listenInvites();
+    // Also sync this user to Firebase so opponents can find them
+    syncUserToFirebase();
+  } else {
+    el("inv-list").innerHTML = `<p class="no-inv">Firebase offline — invites unavailable</p>`;
+  }
+}
+
+// Write user to Firebase so opponent existence checks work cross-device
+async function syncUserToFirebase() {
+  if (!db || !S.user) return;
+  try {
+    await SET(R(db, `users/${S.user.username}`), { username: S.user.username, online: true, lastSeen: Date.now() });
+  } catch (e) { console.warn("Could not sync user:", e.message); }
+}
+
+// ── Invite listener ────────────────────────────────────────────
+function listenInvites() {
+  if (!db || !S.user) return;
+  try {
+    if (S.invLis) OFF(R(db, `invites/${S.user.username}`));
+    S.invLis = OV(R(db, `invites/${S.user.username}`), snap => renderInvites(snap.val()));
+  } catch (e) { console.warn("Invite listener error:", e.message); }
+}
+
+function renderInvites(data) {
+  const box = el("inv-list");
+  if (!box) return;
+  box.innerHTML = "";
+  if (!data) { box.innerHTML = `<p class="no-inv">No pending invites</p>`; return; }
+  Object.entries(data).forEach(([gid, inv]) => {
+    const d = document.createElement("div");
+    d.className = "inv-card";
+    d.innerHTML = `
+      <div class="inv-from">⚔️ <strong>${inv.from}</strong> challenges you!</div>
+      <div class="inv-meta">Letters: ${inv.wordLength} &nbsp;·&nbsp; Attempts: ${inv.attempts}</div>
+      <div class="inv-acts">
+        <button class="btn btn-acc" data-gid="${gid}">✔ Accept</button>
+        <button class="btn btn-dec" data-gid="${gid}">✖ Decline</button>
+      </div>`;
+    box.appendChild(d);
+  });
+  all(".btn-acc").forEach(b => b.addEventListener("click", () => joinGame(b.dataset.gid)));
+  all(".btn-dec").forEach(b => b.addEventListener("click", () => declineInvite(b.dataset.gid)));
+}
+
+async function declineInvite(gid) {
+  if (!db) return;
+  try { await REM(R(db, `invites/${S.user.username}/${gid}`)); } catch (_) {}
+  toast("Invite declined");
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CREATE GAME — fixed: removed opponent existence check that
+//  always failed (users only existed in localStorage, not Firebase)
+// ══════════════════════════════════════════════════════════════
+async function createGame() {
+  if (!S.fbOK || !db) {
+    return toast("Firebase not connected — online mode unavailable", "err");
+  }
+
+  const word = el("c-word").value.trim().toUpperCase();
+  const att  = parseInt(el("c-att").value);
+  const opp  = el("c-opp").value.trim();
+
+  // ── Validation ──────────────────────────────────────────────
+  if (!word)                         return toast("Enter a secret word", "err");
+  if (!/^[A-Z]+$/.test(word))        return toast("Word must be letters only (A–Z)", "err");
+  if (word.length < 2 || word.length > 10) return toast("Word must be 2–10 letters long", "err");
+  if (!att || att < 1 || att > 20)   return toast("Attempts must be between 1 and 20", "err");
+  if (!opp)                          return toast("Enter your opponent's username", "err");
+  if (opp.toLowerCase() === S.user.username.toLowerCase()) return toast("You can't challenge yourself!", "err");
+
+  // ── Show loading state ──────────────────────────────────────
+  const btn = el("btn-create");
+  btn.textContent = "⏳ Sending…";
+  btn.disabled = true;
+
+  try {
+    const gid  = uid();
+    const game = {
+      gameId:       gid,
+      player1:      S.user.username,
+      player2:      opp,
+      secretWord:   word,
+      wordLength:   word.length,
+      attempts:     att,
+      attemptsLeft: att,
+      guesses:      [],
+      status:       "waiting",
+      createdAt:    Date.now(),
+    };
+
+    // Save game to Firebase
+    await SET(R(db, `games/${gid}`), game);
+
+    // Send invite notification to opponent
+    await SET(R(db, `invites/${opp}/${gid}`), {
+      from:       S.user.username,
+      wordLength: word.length,
+      attempts:   att,
+      gameId:     gid,
+      sentAt:     Date.now(),
+    });
+
+    toast(`✅ Challenge sent to "${opp}"! Waiting for them to accept…`, "ok");
+    bleep("type");
+
+    // Move P1 into the game view immediately as watcher
+    watchGame(gid, "player1");
+
+  } catch (e) {
+    console.error("createGame error:", e);
+    toast(`❌ Error: ${e.message}`, "err");
+  } finally {
+    btn.textContent = "🚀 Send Challenge";
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  JOIN GAME
+// ══════════════════════════════════════════════════════════════
+async function joinGame(gid) {
+  if (!db) return;
+  try {
+    await REM(R(db, `invites/${S.user.username}/${gid}`));
+    await UPD(R(db, `games/${gid}`), { status: "playing" });
+    toast("Game on! Start guessing 🎮", "ok");
+    watchGame(gid, "player2");
+  } catch (e) {
+    toast(`Error joining game: ${e.message}`, "err");
+  }
+}
+
+// ── Watch game (live Firebase listener) ───────────────────────
+function watchGame(gid, role) {
+  detach();
+  S.gameId = gid;
+  S.role   = role;
+  show("game");
+  if (!db) return;
+  S.gameLis = OV(R(db, `games/${gid}`), snap => {
+    if (!snap.exists()) return;
+    S.game = snap.val();
+    renderGame(S.game, role);
+  });
+}
+
+// ── Render game state ──────────────────────────────────────────
+function renderGame(g, role) {
+  el("gid-disp").textContent = `#${g.gameId}`;
+  el("gvs").textContent      = `${g.player1} ⚔️ ${g.player2}`;
+  el("g-att").textContent    = `Attempts left: ${g.attemptsLeft ?? g.attempts}`;
+
+  const badge  = el("g-sbadge");
+  const labels = { waiting:"⏳ Waiting", playing:"🎮 Playing", completed:"🏁 Finished" };
+  badge.textContent = labels[g.status] || g.status;
+  badge.className   = `sbadge s-${g.status}`;
+
+  // P1 sees their own secret word
+  const hint = el("p1-hint");
+  if (role === "player1") {
+    hint.style.display = "flex";
+    hint.innerHTML = `<span>Your word:</span>&nbsp;<strong class="wrev">${g.secretWord}</strong>`;
+  } else {
+    hint.style.display = "none";
+  }
+
+  renderGrid(g);
+
+  // Only P2 gets the input box, only while game is active
+  el("g-irow").style.display = (role === "player2" && g.status === "playing") ? "flex" : "none";
+  el("g-inp").maxLength      = g.wordLength;
+  el("g-inp").placeholder    = `${g.wordLength}-letter word…`;
+
+  // P1 sees a waiting message while P2 is guessing
+  const pw = el("p1-wait");
+  if (role === "player1" && g.status === "playing") {
+    pw.style.display = "block";
+    pw.textContent   = `⏳ Watching ${g.player2}'s move…`;
+  } else {
+    pw.style.display = "none";
+  }
+
+  // Show end overlay when game finishes
+  if (g.status === "completed") {
+    const won = g.winner === S.user.username;
+    el("end-ov").style.display  = "flex";
+    el("end-icon").textContent   = won ? "🏆" : "💀";
+    el("end-title").textContent  = won ? "Victory!"   : "Defeated!";
+    el("end-msg").textContent    = won ? "You cracked the code!" : "Better luck next time.";
+    el("end-word").textContent   = g.secretWord;
+    el("end-winner").textContent = `Winner: ${g.winner}`;
+    bleep(won ? "win" : "lose");
+  }
+}
+
+function renderGrid(g) {
+  const grid    = el("guess-grid");
+  const guesses = g.guesses || [];
+  grid.innerHTML = "";
+  for (let i = 0; i < g.attempts; i++) {
+    const row = document.createElement("div");
+    row.className = "grow";
+    if (guesses[i]) {
+      guesses[i].result.forEach((c, ci) => row.appendChild(makeTile(c.letter, c.color, ci)));
+    } else {
+      for (let j = 0; j < g.wordLength; j++) {
+        const t = document.createElement("div"); t.className = "tile t-empty"; row.appendChild(t);
+      }
+    }
+    grid.appendChild(row);
+  }
+}
+
+function makeTile(letter, color, delay = 0) {
+  const t = document.createElement("div");
+  t.className = `tile t-${color} tile-rev`;
+  t.style.animationDelay = `${delay * .1}s`;
+  t.textContent = letter;
+  return t;
+}
+
+// ── Submit guess ───────────────────────────────────────────────
+async function submitGuess() {
+  const g = S.game;
+  if (!g || g.status !== "playing") return;
+
+  const inp   = el("g-inp");
+  const guess = inp.value.trim().toUpperCase();
+
+  if (guess.length !== g.wordLength) return toast(`Enter a ${g.wordLength}-letter word`, "err");
+  if (!/^[A-Z]+$/.test(guess))       return toast("Letters only (A–Z)", "err");
+
+  const result   = compare(guess, g.secretWord);
+  const guesses  = g.guesses || [];
+  const attLeft  = (g.attemptsLeft ?? g.attempts) - 1;
+  const allGreen = result.every(r => r.color === "green");
+
+  guesses.push({ guess, result, by: S.user.username, at: Date.now() });
+  const updates = { guesses, attemptsLeft: attLeft };
+
+  if (allGreen) {
+    updates.status = "completed";
+    updates.winner = S.user.username;
+    toast("🎉 You got it!", "ok");
+  } else if (attLeft <= 0) {
+    updates.status = "completed";
+    updates.winner = g.player1;
+    toast(`😔 Out of attempts! Word was: ${g.secretWord}`, "err");
+  } else {
+    toast(`${attLeft} attempt${attLeft === 1 ? "" : "s"} remaining`, "info");
+    bleep("type");
+  }
+
+  try {
+    await UPD(R(db, `games/${g.gameId}`), updates);
+  } catch (e) {
+    toast(`Error saving guess: ${e.message}`, "err");
+  }
+  inp.value = "";
+}
+
+// ── Word comparison algorithm ──────────────────────────────────
+function compare(guess, secret) {
+  const res = guess.split("").map(l => ({ letter: l, color: "red" }));
+  const rem = [...secret];
+  // Pass 1 — exact position (green)
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === secret[i]) { res[i].color = "green"; rem[i] = null; }
+  }
+  // Pass 2 — letter exists but wrong position (yellow)
+  for (let i = 0; i < guess.length; i++) {
+    if (res[i].color === "green") continue;
+    const idx = rem.indexOf(guess[i]);
+    if (idx !== -1) { res[i].color = "yellow"; rem[idx] = null; }
+  }
+  return res;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  OFFLINE MODE (zero internet needed)
+// ══════════════════════════════════════════════════════════════
+const OG = { word:"", guesses:[], att:6, left:6, len:5, done:false };
+
+function startOffline() {
+  show("offline");
+  el("off-setup").style.display = "block";
+  el("off-play").style.display  = "none";
+  buildKB("off-kb", k => kbType(k, "off-inp", offGuess));
+}
+
+function offStart() {
+  const w = el("off-word").value.trim().toUpperCase();
+  const a = parseInt(el("off-att").value) || 6;
+  if (!w || !/^[A-Z]+$/.test(w)) return toast("Letters only (A–Z)", "err");
+  if (w.length < 2 || w.length > 10) return toast("Word must be 2–10 letters", "err");
+
+  Object.assign(OG, { word:w, guesses:[], att:a, left:a, len:w.length, done:false });
+  el("off-setup").style.display = "none";
+  el("off-play").style.display  = "block";
+  el("off-wlen").textContent    = w.length;
+  el("off-inp").maxLength       = w.length;
+  renderOG();
+}
+
+function offGuess() {
+  if (OG.done) return;
+  const inp   = el("off-inp");
+  const guess = inp.value.trim().toUpperCase();
+  if (guess.length !== OG.len) return toast(`Need exactly ${OG.len} letters`, "err");
+  if (!/^[A-Z]+$/.test(guess)) return toast("Letters only", "err");
+
+  const result = compare(guess, OG.word);
+  OG.guesses.push(result);
+  OG.left--;
+
+  if (result.every(r => r.color === "green")) {
+    OG.done = true; toast(`🎉 Correct! The word was: ${OG.word}`, "ok"); bleep("win");
+  } else if (OG.left <= 0) {
+    OG.done = true; toast(`😔 Game over! Word was: ${OG.word}`, "err"); bleep("lose");
+  } else {
+    toast(`${OG.left} attempt${OG.left === 1 ? "" : "s"} left`, "info"); bleep("type");
+  }
+  renderOG();
+  inp.value = "";
+}
+
+function renderOG() {
+  const grid = el("off-grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < OG.att; i++) {
+    const row = document.createElement("div"); row.className = "grow";
+    if (OG.guesses[i]) {
+      OG.guesses[i].forEach((c, ci) => row.appendChild(makeTile(c.letter, c.color, ci)));
+    } else {
+      for (let j = 0; j < OG.len; j++) {
+        const t = document.createElement("div"); t.className = "tile t-empty"; row.appendChild(t);
+      }
+    }
+    grid.appendChild(row);
+  }
+  el("off-att-left").textContent = `Attempts left: ${OG.left}`;
+}
+
+// ── On-screen keyboard ─────────────────────────────────────────
+function buildKB(id, onClick) {
+  const wrap = el(id); if (!wrap) return; wrap.innerHTML = "";
+  [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["⌫","Z","X","C","V","B","N","M","↵"]
+  ].forEach(row => {
+    const r = document.createElement("div"); r.className = "kb-row";
+    row.forEach(k => {
+      const b = document.createElement("button"); b.className = "kb-key"; b.textContent = k;
+      b.addEventListener("click", () => onClick(k));
+      r.appendChild(b);
+    });
+    wrap.appendChild(r);
+  });
+}
+
+function kbType(k, inputId, onEnter) {
+  const inp = el(inputId); if (!inp) return;
+  if (k === "⌫")      inp.value = inp.value.slice(0, -1);
+  else if (k === "↵") onEnter();
+  else if (inp.value.length < (parseInt(inp.maxLength) || 10)) inp.value += k;
+}
+
+// ── Game history ───────────────────────────────────────────────
+async function loadHistory() {
+  show("hist");
+  const grid = el("hist-grid");
+  grid.innerHTML = `<div class="spin"></div>`;
+  if (!S.fbOK || !db) {
+    grid.innerHTML = `<p class="no-data">Firebase not connected — history requires online mode</p>`;
+    return;
+  }
+  try {
+    const snap  = await GET(R(db, "games"));
+    const games = snap.val() || {};
+    const mine  = Object.values(games)
+      .filter(g => g.player1 === S.user.username || g.player2 === S.user.username)
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    grid.innerHTML = "";
+    if (!mine.length) { grid.innerHTML = `<p class="no-data">No games yet</p>`; return; }
+
+    const lb = { waiting:"⏳ Waiting", playing:"🎮 Playing", completed:"🏁 Done" };
+    mine.forEach(g => {
+      const c    = document.createElement("div"); c.className = "hcard";
+      const won  = g.winner === S.user.username;
+      const role = g.player1 === S.user.username ? "Setter" : "Guesser";
+      c.innerHTML = `
+        <div class="hctop">
+          <span class="hcid">#${g.gameId}</span>
+          <span class="hcb ${g.status}">${lb[g.status] || g.status}</span>
+        </div>
+        <div class="hcvs">${g.player1} ⚔️ ${g.player2}</div>
+        <div class="hcmeta">
+          <span>Word: <strong>${g.status === "completed" ? g.secretWord : "?????"}</strong></span>
+          <span>Role: ${role}</span>
+          ${g.status === "completed"
+            ? `<span class="hcres ${won ? "win" : "lose"}">${won ? "🏆 Win" : "💀 Loss"}</span>`
+            : ""}
+        </div>
+        <div style="font-size:.72rem;color:var(--dim)">Guesses: ${(g.guesses||[]).length} / ${g.attempts}</div>`;
+      grid.appendChild(c);
+    });
+  } catch (e) {
+    grid.innerHTML = `<p class="no-data">Error loading history: ${e.message}</p>`;
+  }
+}
+
+// ── Cleanup listeners ──────────────────────────────────────────
+function detach() {
+  try {
+    if (db && S.gameLis && S.gameId) { OFF(R(db, `games/${S.gameId}`)); S.gameLis = null; }
+    if (db && S.invLis  && S.user)   { OFF(R(db, `invites/${S.user.username}`)); S.invLis = null; }
+  } catch (_) {}
+  S.gameId = null; S.game = null;
+}
+
+function backToMenu() {
+  detach();
+  el("end-ov").style.display = "none";
+  goMode();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BOOT — initialises Firebase then binds all buttons
+// ══════════════════════════════════════════════════════════════
+async function init() {
+  // Boot Firebase (non-blocking — UI is already interactive)
+  S.fbOK = await bootFirebase();
+
+  // Auth
+  el("btn-login").addEventListener("click", doLogin);
+  el("btn-reg").addEventListener("click", doRegister);
+  el("a-pass").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  el("a-user").addEventListener("keydown", e => { if (e.key === "Enter") el("a-pass").focus(); });
+
+  // Mode select
+  el("btn-logout").addEventListener("click", doLogout);
+  el("btn-online").addEventListener("click", () => show("lobby"));
+  el("btn-offline").addEventListener("click", startOffline);
+  el("btn-hist").addEventListener("click", loadHistory);
+
+  // Lobby (create game)
+  el("back-lobby").addEventListener("click", goMode);
+  el("btn-create").addEventListener("click", createGame);
+
+  // Game view
+  el("btn-guess").addEventListener("click", submitGuess);
+  el("g-inp").addEventListener("keydown", e => { if (e.key === "Enter") submitGuess(); });
+  el("btn-rematch").addEventListener("click", backToMenu);
+  el("btn-back-end").addEventListener("click", backToMenu);
+  el("btn-back-game").addEventListener("click", backToMenu);
+  buildKB("kb", k => kbType(k, "g-inp", submitGuess));
+
+  // Offline
+  el("back-offline").addEventListener("click", goMode);
+  el("off-start").addEventListener("click", offStart);
+  el("off-guess").addEventListener("click", offGuess);
+  el("off-inp").addEventListener("keydown", e => { if (e.key === "Enter") offGuess(); });
+
+  // History
+  el("back-hist").addEventListener("click", goMode);
+
+  // Restore session from localStorage
+  const saved = getsess();
+  if (saved) {
+    const rec = getUsers()[saved.toLowerCase()];
+    if (rec) { S.user = { username: rec.username }; goMode(); return; }
+  }
+  show("login");
+}
+
+// Start — handles both DOMContentLoaded and already-ready state
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>

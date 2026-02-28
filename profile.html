@@ -9,138 +9,145 @@
 <body>
 
 <nav class="navbar">
-  <a href="index.html" class="navbar-logo" style="text-decoration:none;">WORD<span style="color:var(--text)">WAR</span></a>
-  <div class="navbar-links">
-    <a href="index.html">Home</a>
-    <a href="leaderboard.html">Leaderboard</a>
-    <a href="profile.html" class="active">Profile</a>
-    <div class="user-badge">
-      <img id="nav-avatar" src="" alt="av" />
-      <span id="nav-username" class="user-badge-name">…</span>
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html"       class="nav-link">Home</a>
+    <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+    <a href="profile.html"     class="nav-link active">Profile</a>
+    <div class="nav-sep"></div>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt="" />
+      <span class="ub-name" id="nav-username">…</span>
       <div class="online-dot"></div>
-    </div>
+    </a>
   </div>
 </nav>
 
-<div class="container" style="max-width:800px;padding-top:40px;padding-bottom:60px;">
+<div style="max-width:780px;margin:0 auto;padding:36px 24px 60px;">
 
-  <!-- Profile header -->
-  <div class="card mb-24">
+  <!-- Profile card -->
+  <div class="card mb-16">
     <div class="profile-header">
       <div class="profile-avatar-wrap">
         <img id="profile-avatar" class="profile-avatar" src="" alt="avatar" />
         <div class="avatar-edit-btn" onclick="document.getElementById('photo-input').click()" title="Change photo">✏️</div>
         <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="changePhoto(event)" />
       </div>
-      <div>
-        <h2 id="profile-username">…</h2>
-        <div class="flex items-center gap-8 mt-8">
-          <span class="status-dot online"></span>
-          <span class="text-sm text-muted">Online</span>
-          <span class="pill pill-purple" id="profile-level-badge">Level 1</span>
-        </div>
-        <p class="text-muted text-sm mt-8" id="profile-joined">Joined …</p>
-        <!-- Level progress -->
-        <div class="level-bar-wrap mt-12" style="min-width:240px;">
-          <div class="level-label">
-            <span id="lvl-from">Level 1</span>
-            <span id="lvl-to" class="text-muted">0 / 500 XP</span>
+      <div class="profile-info min-w-0">
+        <div class="profile-name truncate" id="profile-username">Loading…</div>
+        <div class="profile-meta">
+          <div class="status-badge">
+            <span class="status-dot online"></span>
+            Online
           </div>
-          <div class="level-bar">
-            <div class="level-bar-fill" id="lvl-fill" style="width:0%"></div>
+          <span class="tag tag-purple" id="level-tag">Level 1</span>
+        </div>
+        <p class="text-sm text-faint" id="profile-joined">Joined —</p>
+        <div class="lv-wrap">
+          <div class="lv-info">
+            <span id="lvl-from">Level 1</span>
+            <span id="lvl-xp" class="text-faint">0 / 500 XP</span>
+          </div>
+          <div class="lv-track">
+            <div class="lv-fill" id="lvl-fill" style="width:0%"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Currency bar -->
     <div class="divider"></div>
-    <div class="flex gap-24" style="flex-wrap:wrap;">
-      <div class="flex items-center gap-8">
-        <span style="font-size:1.6rem;">💰</span>
+
+    <!-- Currency row -->
+    <div class="flex gap-20" style="flex-wrap:wrap;">
+      <div class="flex items-center gap-12">
+        <span style="font-size:1.5rem;">💰</span>
         <div>
-          <div class="text-mono" id="p-money" style="font-size:1.3rem;font-weight:700;">—</div>
-          <div class="text-xs text-muted">Money</div>
+          <div class="text-mono fw-700" id="p-money" style="font-size:1.25rem;">—</div>
+          <div class="text-xs text-faint">Money</div>
         </div>
       </div>
-      <div class="flex items-center gap-8">
-        <span style="font-size:1.6rem;">⭐</span>
+      <div class="flex items-center gap-12">
+        <span style="font-size:1.5rem;">⭐</span>
         <div>
-          <div class="text-mono" id="p-score" style="font-size:1.3rem;font-weight:700;">—</div>
-          <div class="text-xs text-muted">Score</div>
+          <div class="text-mono fw-700" id="p-score" style="font-size:1.25rem;">—</div>
+          <div class="text-xs text-faint">Score</div>
         </div>
       </div>
-      <div class="flex items-center gap-8">
-        <span style="font-size:1.6rem;">🏆</span>
+      <div class="flex items-center gap-12">
+        <span style="font-size:1.5rem;">🏅</span>
         <div>
-          <div class="text-mono" id="p-rank" style="font-size:1.3rem;font-weight:700;">—</div>
-          <div class="text-xs text-muted">Global Rank</div>
+          <div class="text-mono fw-700" id="p-rank" style="font-size:1.25rem;">—</div>
+          <div class="text-xs text-faint">Global Rank</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Stats grid -->
-  <div class="stat-grid mb-24">
+  <!-- Stat grid -->
+  <div class="stat-grid mb-16">
     <div class="stat-card">
-      <span class="val text-green" id="s-wins">—</span>
-      <span class="lbl">Wins</span>
+      <span class="stat-val text-green" id="s-wins">—</span>
+      <span class="stat-lbl">Wins</span>
     </div>
     <div class="stat-card">
-      <span class="val text-red" id="s-losses">—</span>
-      <span class="lbl">Losses</span>
+      <span class="stat-val text-red" id="s-losses">—</span>
+      <span class="stat-lbl">Losses</span>
     </div>
     <div class="stat-card">
-      <span class="val" id="s-total">—</span>
-      <span class="lbl">Total Games</span>
+      <span class="stat-val" id="s-total">—</span>
+      <span class="stat-lbl">Total Games</span>
     </div>
     <div class="stat-card">
-      <span class="val text-yellow" id="s-wr">—%</span>
-      <span class="lbl">Win Rate</span>
+      <span class="stat-val text-yellow" id="s-wr">—%</span>
+      <span class="stat-lbl">Win Rate</span>
     </div>
     <div class="stat-card">
-      <span class="val text-accent" id="s-score">—</span>
-      <span class="lbl">Score</span>
+      <span class="stat-val text-accent" id="s-score">—</span>
+      <span class="stat-lbl">Score</span>
     </div>
     <div class="stat-card">
-      <span class="val text-gold" id="s-money">—</span>
-      <span class="lbl">Money</span>
+      <span class="stat-val text-gold" id="s-money">—</span>
+      <span class="stat-lbl">Money</span>
     </div>
   </div>
 
   <!-- Achievements -->
-  <div class="card mb-24">
+  <div class="card mb-16">
     <h3 class="mb-16">🎖 Achievements</h3>
-    <div class="badges-wrap" id="achievements-list"></div>
+    <div class="badges-wrap" id="achievements-list">
+      <span class="text-faint text-sm">Loading…</span>
+    </div>
   </div>
 
   <!-- Account actions -->
   <div class="card">
     <h3 class="mb-16">Account Settings</h3>
-    <div class="flex gap-12" style="flex-wrap:wrap;">
-      <button class="btn btn-secondary" onclick="window.location.href='index.html'">← Back Home</button>
-      <button class="btn btn-danger" onclick="confirmDelete()">Delete Account</button>
-      <button class="btn btn-secondary" onclick="doLogout()">Logout</button>
+    <div class="flex gap-8" style="flex-wrap:wrap;">
+      <a href="index.html" class="btn btn-ghost btn-sm">← Home</a>
+      <button class="btn btn-danger btn-sm" onclick="openModal('modal-delete')">Delete Account</button>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()">Logout</button>
     </div>
   </div>
 
 </div>
 
-<!-- Delete confirm modal -->
+<!-- Delete modal -->
 <div class="modal-overlay" id="modal-delete">
   <div class="modal">
-    <div class="modal-header">
+    <div class="modal-head">
       <h3>⚠️ Delete Account</h3>
       <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
     </div>
-    <p class="text-muted mb-16">This action is permanent and cannot be undone. All your progress will be lost.</p>
+    <p class="text-muted text-sm mb-16">
+      This is permanent. All progress, score, and data will be deleted.
+    </p>
     <div class="form-group">
-      <label>Type your username to confirm</label>
+      <label class="form-label">Type your username to confirm</label>
       <input class="form-control" id="del-confirm" type="text" placeholder="your_username" />
     </div>
-    <div class="flex gap-12 mt-16">
-      <button class="btn btn-danger btn-full" onclick="doDelete()">Delete Forever</button>
-      <button class="btn btn-secondary btn-full" onclick="closeModal('modal-delete')">Cancel</button>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-danger flex-1" onclick="doDelete()">Delete Forever</button>
+      <button class="btn btn-ghost flex-1" onclick="closeModal('modal-delete')">Cancel</button>
     </div>
   </div>
 </div>
@@ -148,7 +155,7 @@
 <script type="module">
 import {
   requireAuth, logoutUser, deleteAccount, saveSession,
-  db, ref, onValue, get
+  db, ref, onValue, get, update
 } from './firebase-config.js';
 import { showToast, getLevel, getLevelProgress, ACHIEVEMENTS, avatarUrl, fmtNum, openModal, closeModal } from './main.js';
 
@@ -156,22 +163,20 @@ const user = requireAuth('login.html');
 document.getElementById('nav-username').textContent = user.username;
 document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
 
-window.closeModal = closeModal;
 window.openModal  = openModal;
+window.closeModal = closeModal;
 
-// Live profile data
 const userRef = ref(db, 'users/' + user.uid);
-let cachedData = null;
 
 onValue(userRef, snap => {
   if (!snap.exists()) return;
   const d = snap.val();
-  cachedData = d;
   saveSession({ uid: user.uid, ...d });
 
   document.getElementById('profile-username').textContent = d.username;
-  document.getElementById('profile-avatar').src = avatarUrl(d.photoURL, d.username);
-  document.getElementById('nav-avatar').src = avatarUrl(d.photoURL, d.username);
+  const av = avatarUrl(d.photoURL, d.username);
+  document.getElementById('profile-avatar').src = av;
+  document.getElementById('nav-avatar').src     = av;
   document.getElementById('profile-joined').textContent = 'Joined ' + new Date(d.createdAt).toLocaleDateString();
 
   document.getElementById('p-money').textContent = fmtNum(d.money);
@@ -189,49 +194,43 @@ onValue(userRef, snap => {
   const lvl  = getLevel(d.score);
   const pct  = getLevelProgress(d.score);
   const base = (lvl - 1) * 500;
-  document.getElementById('profile-level-badge').textContent = 'Level ' + lvl;
-  document.getElementById('lvl-from').textContent = 'Level ' + lvl;
-  document.getElementById('lvl-to').textContent   = `${(d.score - base)} / 500 XP`;
-  document.getElementById('lvl-fill').style.width = pct + '%';
+  document.getElementById('level-tag').textContent = 'Level ' + lvl;
+  document.getElementById('lvl-from').textContent  = 'Level ' + lvl;
+  document.getElementById('lvl-xp').textContent    = `${(d.score||0) - base} / 500 XP`;
+  document.getElementById('lvl-fill').style.width  = pct + '%';
 
   // Achievements
-  const ach = document.getElementById('achievements-list');
-  ach.innerHTML = ACHIEVEMENTS.map(a => {
+  document.getElementById('achievements-list').innerHTML = ACHIEVEMENTS.map(a => {
     const earned = a.condition(d);
-    return `<div class="badge-item ${earned ? 'earned' : 'locked'}">
+    return `<div class="badge ${earned ? 'earned' : 'locked'}">
       <span>${a.icon}</span>
       <span>${a.label}</span>
-      ${earned ? '' : '<span style="font-size:0.65rem;opacity:0.5;margin-left:4px;">🔒</span>'}
+      ${earned ? '' : '<span style="font-size:0.6rem;opacity:0.5;">🔒</span>'}
     </div>`;
   }).join('');
 });
 
-// Compute global rank
-async function computeRank() {
+// Global rank
+(async () => {
   const snap = await get(ref(db, 'users'));
   if (!snap.exists()) return;
   const all  = Object.values(snap.val()).filter(u => u.username).sort((a,b) => (b.score||0)-(a.score||0));
-  const myIdx = all.findIndex(u => u.username === user.username);
-  document.getElementById('p-rank').textContent = myIdx >= 0 ? '#' + (myIdx + 1) : '—';
-}
-computeRank();
+  const idx  = all.findIndex(u => u.username === user.username);
+  document.getElementById('p-rank').textContent = idx >= 0 ? '#' + (idx + 1) : '—';
+})();
 
-// Photo change (convert to base64 dataURL)
+// Change photo
 window.changePhoto = function(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 500_000) { showToast('Photo must be under 500KB.', 'warn'); return; }
+  if (file.size > 600_000) { showToast('Photo must be under 600KB.', 'warn'); return; }
   const reader = new FileReader();
   reader.onload = async ev => {
-    const dataURL = ev.target.result;
-    const { update, ref: dbRef } = await import('./firebase-config.js');
-    await update(dbRef(db, 'users/' + user.uid), { photoURL: dataURL });
+    await update(userRef, { photoURL: ev.target.result });
     showToast('Profile photo updated!', 'success');
   };
   reader.readAsDataURL(file);
 };
-
-window.confirmDelete = function() { openModal('modal-delete'); };
 
 window.doDelete = async function() {
   const val = document.getElementById('del-confirm').value.trim();

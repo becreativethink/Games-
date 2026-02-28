@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordWar — Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <a href="index.html" class="navbar-logo" style="text-decoration:none;">
+    WORD<span style="color:var(--text)">WAR</span>
+  </a>
+  <div class="navbar-links">
+    <a href="index.html">← Home</a>
+    <div class="user-badge" onclick="window.location.href='profile.html'">
+      <img id="nav-avatar" src="" alt="av" />
+      <span id="nav-username" class="user-badge-name">…</span>
+      <div class="online-dot"></div>
+    </div>
+  </div>
+</nav>
+
+<!-- MODE SETUP SCREENS ─────────────────────────────────── -->
+
+<!-- 1. OFFLINE SETUP -->
+<div id="screen-offline-setup" class="hidden" style="max-width:460px;margin:40px auto;padding:0 24px;">
+  <div class="card">
+    <h2 class="mb-16">🤝 Offline Mode</h2>
+    <p class="text-muted mb-16">Player 1: Set a secret word for Player 2 to guess.</p>
+    <div class="form-group">
+      <label>Secret Word</label>
+      <input class="form-control" id="off-secret" type="password" placeholder="Type the secret word…" maxlength="10" />
+    </div>
+    <div class="form-group">
+      <label>Word Length (auto-detected)</label>
+      <input class="form-control" id="off-len" type="number" value="5" min="3" max="10" readonly />
+    </div>
+    <div class="form-group">
+      <label>Max Attempts</label>
+      <input class="form-control" id="off-attempts" type="number" value="6" min="3" max="10" />
+    </div>
+    <button class="btn btn-primary btn-full mt-8" onclick="startOfflineGame()">Start Game →</button>
+    <button class="btn btn-secondary btn-full mt-8" onclick="window.location.href='index.html'">Cancel</button>
+  </div>
+</div>
+
+<!-- 2. ONLINE SETUP -->
+<div id="screen-online-setup" class="hidden" style="max-width:520px;margin:40px auto;padding:0 24px;">
+  <div class="card mb-16">
+    <h2 class="mb-16">🌐 Online Multiplayer</h2>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-host"  onclick="switchOnlineTab('host')">Host a Room</button>
+      <button class="auth-tab"        id="tab-guest" onclick="switchOnlineTab('guest')">Join a Room</button>
+    </div>
+
+    <!-- Host -->
+    <div id="host-panel">
+      <div class="form-group">
+        <label>Secret Word</label>
+        <input class="form-control" id="host-secret" type="password" placeholder="The word your opponent must guess" maxlength="10" />
+      </div>
+      <div class="form-group">
+        <label>Max Attempts</label>
+        <input class="form-control" id="host-attempts" type="number" value="6" min="3" max="10" />
+      </div>
+      <div class="form-group">
+        <label>Bet Score (your current: <span id="host-current-score">—</span>)</label>
+        <input class="form-control" id="host-bet" type="number" value="50" min="0" />
+      </div>
+      <button class="btn btn-primary btn-full mt-8" onclick="createRoom()">Create Room →</button>
+    </div>
+
+    <!-- Guest -->
+    <div id="guest-panel" class="hidden">
+      <p class="text-muted mb-16">Enter the Room ID provided by the host.</p>
+      <div class="form-group">
+        <label>Room ID</label>
+        <input class="form-control" id="guest-room-id" type="text" placeholder="e.g. AB12CD" maxlength="6"
+               style="font-family:var(--mono);letter-spacing:0.2em;text-transform:uppercase;text-align:center;font-size:1.5rem;" />
+      </div>
+      <button class="btn btn-primary btn-full mt-8" onclick="joinRoom()">Join Room →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting room -->
+<div id="screen-waiting" class="hidden" style="max-width:420px;margin:60px auto;padding:0 24px;text-align:center;">
+  <div class="card">
+    <div style="font-size:3rem;margin-bottom:16px;">⏳</div>
+    <h2 class="mb-8">Waiting for Opponent</h2>
+    <p class="text-muted mb-16">Share this Room ID with your opponent:</p>
+    <div class="room-id-display" id="room-id-show" onclick="copyRoomId()" title="Click to copy">—</div>
+    <p class="text-muted text-xs">Click to copy</p>
+    <button class="btn btn-danger btn-sm mt-16" onclick="cancelRoom()">Cancel Room</button>
+  </div>
+</div>
+
+<!-- 3. DAILY SETUP - shows info before game -->
+<div id="screen-daily-setup" class="hidden" style="max-width:420px;margin:40px auto;padding:0 24px;">
+  <div class="card text-center">
+    <div style="font-size:3rem;margin-bottom:16px;">📅</div>
+    <h2 class="mb-8">Daily Challenge</h2>
+    <p class="text-muted mb-16">Guess today's word in 60 seconds!</p>
+    <div class="card" style="margin:16px 0;background:rgba(245,197,66,0.06);border-color:rgba(245,197,66,0.2);">
+      <div class="flex justify-between mb-8">
+        <span class="text-muted">Reward Money</span>
+        <span class="text-gold text-mono" id="daily-reward-money">—</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-muted">Reward Score</span>
+        <span class="text-accent text-mono" id="daily-reward-score">—</span>
+      </div>
+    </div>
+    <div id="daily-already-played" class="hidden">
+      <div class="pill pill-green mt-8" style="font-size:0.9rem;padding:8px 20px;">✓ Already completed today!</div>
+      <p class="text-muted mt-8 text-sm">Come back tomorrow for a new word.</p>
+      <button class="btn btn-secondary btn-full mt-16" onclick="window.location.href='index.html'">← Back Home</button>
+    </div>
+    <div id="daily-start-wrap">
+      <button class="btn btn-gold btn-full btn-lg mt-8" onclick="startDailyGame()">Start Challenge →</button>
+      <button class="btn btn-secondary btn-sm mt-8" onclick="window.location.href='index.html'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────── GAME SCREEN ──────────────────────────── -->
+<div id="screen-game" class="hidden">
+  <div class="game-layout">
+
+    <!-- MAIN board -->
+    <div class="game-main">
+      <!-- Status header -->
+      <div class="game-status">
+        <h2 id="game-title">Word War</h2>
+        <p class="text-muted text-sm" id="game-subtitle">Guess the hidden word</p>
+      </div>
+
+      <!-- Timer (daily/online) -->
+      <div id="timer-area" class="hidden">
+        <div id="timer-el"></div>
+      </div>
+
+      <!-- Board -->
+      <div class="game-board" id="game-board"></div>
+
+      <!-- Input row -->
+      <div class="guess-input-wrap" id="guess-input-area">
+        <input class="guess-input" id="guess-input" type="text" placeholder="GUESS"
+               maxlength="10" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+        <button class="btn btn-primary" id="submit-btn" onclick="submitGuess()">GO</button>
+      </div>
+
+      <!-- Keyboard -->
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="game-sidebar">
+
+      <!-- Game info card -->
+      <div class="card">
+        <h3 class="mb-8" id="sidebar-mode-label">Mode</h3>
+        <div class="flex justify-between mb-8">
+          <span class="text-muted text-sm">Attempts</span>
+          <span class="text-mono" id="sb-attempts">— / —</span>
+        </div>
+        <div class="flex justify-between mb-8">
+          <span class="text-muted text-sm">Word Length</span>
+          <span class="text-mono" id="sb-len">—</span>
+        </div>
+        <div id="sb-bet-row" class="flex justify-between hidden">
+          <span class="text-muted text-sm">Bet</span>
+          <span class="text-mono text-gold" id="sb-bet">—</span>
+        </div>
+      </div>
+
+      <!-- Online: opponent info -->
+      <div class="card hidden" id="opponent-card">
+        <h3 class="mb-8">Opponent</h3>
+        <div class="flex items-center gap-12">
+          <img id="opp-avatar" src="" alt="" style="width:40px;height:40px;border-radius:50%;border:2px solid var(--border2);" />
+          <div>
+            <div id="opp-name" class="text-mono" style="font-weight:700;">—</div>
+            <div class="text-xs text-muted" id="opp-status">Waiting…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guesses log for online (opponent's moves) -->
+      <div class="card hidden" id="online-log-card">
+        <h3 class="mb-8">Match Log</h3>
+        <div id="online-log" style="font-size:0.8rem;color:var(--text2);max-height:200px;overflow-y:auto;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── RESULT OVERLAY ──────────────────────── -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <span class="result-emoji" id="res-emoji">🏆</span>
+    <h2 class="result-title" id="res-title">You Win!</h2>
+    <div class="result-word" id="res-word">WORD</div>
+    <p class="text-muted" id="res-msg" style="margin-bottom:24px;"></p>
+    <div class="flex gap-12 justify-center flex-wrap">
+      <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+      <button class="btn btn-secondary" onclick="window.location.href='index.html'">Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── SCRIPTS ──────────────────────────────── -->
+<script type="module">
+import {
+  requireAuth, loadSession, saveSession,
+  db, ref, set, get, update, onValue, off, push, serverTimestamp,
+  sha256, generateRoomId, todayStr
+} from './firebase-config.js';
+import {
+  showToast, evaluateGuess, buildTileRow, buildEmptyRow,
+  updateKeyboard, buildKeyboard, CountdownTimer,
+  playSound, avatarUrl, openModal, fmtNum
+} from './main.js';
+
+// ── Auth ───────────────────────────────────────────────────
+let currentUser = requireAuth('login.html');
+if (!currentUser) throw new Error('Not logged in');
+
+document.getElementById('nav-username').textContent = currentUser.username;
+document.getElementById('nav-avatar').src = avatarUrl(currentUser.photoURL, currentUser.username);
+
+// ── Game state ─────────────────────────────────────────────
+let mode         = sessionStorage.getItem('ww_mode') || 'offline';
+let secretWord   = '';
+let maxAttempts  = 6;
+let wordLength   = 5;
+let guessCount   = 0;
+let gameOver     = false;
+let currentGuess = '';
+let timer        = null;
+let roomId       = null;
+let isHost       = false;
+let roomListener = null;
+let betScore     = 0;
+
+// ── Screen management ──────────────────────────────────────
+function showScreen(id) {
+  ['offline-setup','online-setup','daily-setup','waiting','game'].forEach(s => {
+    const el = document.getElementById(`screen-${s}`);
+    if (el) el.classList.toggle('hidden', `screen-${s}` !== id);
+  });
+}
+
+// ── Init by mode ───────────────────────────────────────────
+async function init() {
+  if (mode === 'offline') {
+    showScreen('screen-offline-setup');
+    document.getElementById('off-secret').addEventListener('input', e => {
+      document.getElementById('off-len').value = e.target.value.length || 5;
+    });
+
+  } else if (mode === 'online') {
+    // Refresh live score
+    const snap = await get(ref(db, 'users/' + currentUser.uid));
+    if (snap.exists()) {
+      const d = snap.val();
+      currentUser = { ...currentUser, ...d };
+      saveSession(currentUser);
+      document.getElementById('host-current-score').textContent = fmtNum(d.score);
+    }
+    showScreen('screen-online-setup');
+
+  } else if (mode === 'daily') {
+    await loadDailySetup();
+    showScreen('screen-daily-setup');
+  }
+}
+
+// ── OFFLINE ────────────────────────────────────────────────
+window.startOfflineGame = function() {
+  const word = document.getElementById('off-secret').value.trim().toUpperCase();
+  if (word.length < 3) { showToast('Secret word must be at least 3 letters.', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(word)) { showToast('Only letters allowed.', 'warn'); return; }
+  secretWord  = word;
+  maxAttempts = parseInt(document.getElementById('off-attempts').value, 10);
+  wordLength  = word.length;
+  initGameBoard('🤝 Offline Mode', 'Player 2: Guess the word!', false);
+};
+
+// ── ONLINE ─────────────────────────────────────────────────
+window.switchOnlineTab = function(tab) {
+  document.getElementById('tab-host').classList.toggle('active', tab === 'host');
+  document.getElementById('tab-guest').classList.toggle('active', tab === 'guest');
+  document.getElementById('host-panel').classList.toggle('hidden', tab !== 'host');
+  document.getElementById('guest-panel').classList.toggle('hidden', tab !== 'guest');
+};
+
+window.createRoom = async function() {
+  const secret = document.getElementById('host-secret').value.trim().toUpperCase();
+  if (secret.length < 3) { showToast('Enter a valid secret word.', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(secret)) { showToast('Only letters allowed.', 'warn'); return; }
+
+  const attempt = parseInt(document.getElementById('host-attempts').value, 10);
+  const bet = parseInt(document.getElementById('host-bet').value, 10) || 0;
+
+  // Validate bet vs balance
+  const snap = await get(ref(db, 'users/' + currentUser.uid));
+  const hostData = snap.val();
+  if (bet > hostData.score) { showToast('Insufficient score for this bet.', 'error'); return; }
+
+  const hash = await sha256(secret.toLowerCase());
+  roomId   = generateRoomId();
+  isHost   = true;
+  secretWord  = secret;
+  maxAttempts = attempt;
+  wordLength  = secret.length;
+  betScore    = bet;
+
+  const roomData = {
+    host: currentUser.username,
+    hostUid: currentUser.uid,
+    guest: null,
+    guestUid: null,
+    secretWordHash: hash,
+    secretWordLength: secret.length,
+    attempts: attempt,
+    betScore: bet,
+    guesses: {},
+    status: 'waiting',
+    winner: null,
+    createdAt: Date.now()
+  };
+
+  await set(ref(db, 'rooms/' + roomId), roomData);
+
+  // Hold bet temporarily
+  if (bet > 0) {
+    await update(ref(db, 'users/' + currentUser.uid), { score: hostData.score - bet });
+  }
+
+  document.getElementById('room-id-show').textContent = roomId;
+  showScreen('screen-waiting');
+  listenForGuest();
+};
+
+window.copyRoomId = function() {
+  navigator.clipboard.writeText(roomId).then(() => showToast('Room ID copied!', 'success'));
+};
+
+window.cancelRoom = async function() {
+  if (!roomId) { window.location.href = 'index.html'; return; }
+  // Refund bet
+  const snap = await get(ref(db, 'users/' + currentUser.uid));
+  const d    = snap.val();
+  if (betScore > 0) await update(ref(db, 'users/' + currentUser.uid), { score: d.score + betScore });
+  await set(ref(db, 'rooms/' + roomId + '/status'), 'cancelled');
+  if (roomListener) off(ref(db, 'rooms/' + roomId));
+  window.location.href = 'index.html';
+};
+
+function listenForGuest() {
+  const rRef = ref(db, 'rooms/' + roomId);
+  roomListener = onValue(rRef, snap => {
+    if (!snap.exists()) return;
+    const room = snap.val();
+    if (room.guest && room.status === 'active') {
+      off(rRef);
+      // Host plays the guesser role — actually host KNOWS the word.
+      // Host watches the guest's guesses in real-time.
+      initOnlineGameHost(room);
+    }
+    if (room.status === 'cancelled') {
+      showToast('Room cancelled.', 'warn');
+      window.location.href = 'index.html';
+    }
+  });
+}
+
+window.joinRoom = async function() {
+  const id = document.getElementById('guest-room-id').value.trim().toUpperCase();
+  if (id.length !== 6) { showToast('Room ID must be 6 characters.', 'warn'); return; }
+
+  const rRef = ref(db, 'rooms/' + id);
+  const snap = await get(rRef);
+
+  if (!snap.exists()) { showToast('Room not found.', 'error'); return; }
+  const room = snap.val();
+  if (room.status !== 'waiting') { showToast('Room is not available.', 'error'); return; }
+  if (room.host === currentUser.username) { showToast("You can't join your own room.", 'warn'); return; }
+
+  // Check guest score for bet
+  const mySnap = await get(ref(db, 'users/' + currentUser.uid));
+  const myData = mySnap.val();
+  if (room.betScore > myData.score) {
+    showToast(`Need at least ${room.betScore} score to join this room.`, 'error');
+    return;
+  }
+
+  // Hold bet
+  if (room.betScore > 0) {
+    await update(ref(db, 'users/' + currentUser.uid), { score: myData.score - room.betScore });
+  }
+
+  roomId      = id;
+  isHost      = false;
+  betScore    = room.betScore;
+  maxAttempts = room.attempts;
+  wordLength  = room.secretWordLength;
+
+  await update(rRef, {
+    guest: currentUser.username,
+    guestUid: currentUser.uid,
+    status: 'active'
+  });
+
+  initOnlineGameGuest(room, id);
+};
+
+function initOnlineGameHost(room) {
+  // Host sees the board with opponent's guesses live
+  document.getElementById('opponent-card').classList.remove('hidden');
+  document.getElementById('online-log-card').classList.remove('hidden');
+  document.getElementById('opp-name').textContent = room.guest;
+
+  initGameBoard('🌐 Hosting Room', `Opponent: ${room.guest} is guessing`, false, true);
+  document.getElementById('sidebar-mode-label').textContent = '🌐 Online — Host';
+  document.getElementById('sb-bet-row').classList.remove('hidden');
+  document.getElementById('sb-bet').textContent = room.betScore;
+
+  // Host doesn't guess — watch opponent guesses
+  document.getElementById('guess-input-area').classList.add('hidden');
+  document.getElementById('keyboard').classList.add('hidden');
+
+  listenForGuestGuesses(room);
+}
+
+function initOnlineGameGuest(room, id) {
+  document.getElementById('opponent-card').classList.remove('hidden');
+  document.getElementById('opp-name').textContent = room.host;
+
+  maxAttempts = room.attempts;
+  wordLength  = room.secretWordLength;
+  roomId      = id;
+
+  initGameBoard('🌐 Online Multiplayer', `Host: ${room.host} | Bet: ${room.betScore} ⭐`, false);
+  document.getElementById('sidebar-mode-label').textContent = '🌐 Online — Guest';
+  document.getElementById('sb-bet-row').classList.remove('hidden');
+  document.getElementById('sb-bet').textContent = room.betScore;
+
+  // Guest uses online submit
+  window._onlineGuest = true;
+
+  // Listen for room status changes (win/cancel)
+  roomListener = onValue(ref(db, 'rooms/' + roomId + '/status'), snap => {
+    const status = snap.val();
+    if (status === 'finished' || status === 'cancelled') {
+      if (roomListener) off(ref(db, 'rooms/' + roomId + '/status'));
+    }
+  });
+}
+
+function listenForGuestGuesses(room) {
+  const guessRef = ref(db, 'rooms/' + roomId + '/guesses');
+  onValue(guessRef, snap => {
+    if (!snap.exists()) return;
+    const guesses = Object.values(snap.val()).sort((a,b) => a.ts - b.ts);
+    const log = document.getElementById('online-log');
+    log.innerHTML = guesses.map(g =>
+      `<div style="margin-bottom:4px;padding:4px 8px;background:var(--glass);border-radius:4px;">
+        <span class="text-mono" style="letter-spacing:0.1em;">${g.guess.toUpperCase()}</span>
+      </div>`
+    ).join('');
+
+    // Render on board too
+    const board = document.getElementById('game-board');
+    const rows = board.querySelectorAll('.guess-row');
+    guesses.forEach((g, i) => {
+      if (rows[i]) {
+        const result = evaluateGuess(secretWord, g.guess);
+        buildTileRow(rows[i], g.guess, result);
+        // Check win
+        if (result.every(r => r === 'correct')) {
+          handleGameEnd(false, g.guess); // host loses (guest wins)
+        }
+        if (i === maxAttempts - 1 && !result.every(r => r === 'correct')) {
+          handleGameEnd(true, secretWord); // host wins (guest lost)
+        }
+      }
+    });
+    document.getElementById('opp-status').textContent = `${guesses.length} guess${guesses.length !== 1 ? 'es' : ''} made`;
+  });
+}
+
+// ── DAILY ──────────────────────────────────────────────────
+async function loadDailySetup() {
+  const today = todayStr();
+  const dailySnap = await get(ref(db, 'dailyWord'));
+  if (!dailySnap.exists()) {
+    showToast('No daily challenge set yet. Check back later!', 'warn');
+    return;
+  }
+  const daily = dailySnap.val();
+
+  document.getElementById('daily-reward-money').textContent = '💰 ' + daily.rewardMoney;
+  document.getElementById('daily-reward-score').textContent = '⭐ ' + daily.rewardScore;
+
+  // Check if already played
+  const resultSnap = await get(ref(db, `dailyResults/${today}/${currentUser.username}`));
+  if (resultSnap.exists()) {
+    docu

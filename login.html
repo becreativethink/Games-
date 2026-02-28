@@ -9,73 +9,67 @@
 <body>
 
 <div class="auth-page">
-  <div class="auth-card card">
-    <div class="auth-logo">
-      <h1>WORD<span style="color:var(--accent2)">WAR</span></h1>
-      <p class="text-muted">The ultimate competitive word battle platform</p>
+  <div class="auth-wrap card card-elevated">
+
+    <div class="auth-hero">
+      <div class="auth-logo-text"><span class="g">WORD</span><span>WAR</span></div>
+      <p class="auth-sub">The ultimate competitive word battle platform</p>
     </div>
 
-    <!-- Tabs -->
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Login</button>
-      <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">Register</button>
+    <div class="tab-strip">
+      <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Login</button>
+      <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
     </div>
 
-    <!-- Login Form -->
+    <!-- Login -->
     <div id="form-login">
       <div class="form-group">
-        <label>Username</label>
+        <label class="form-label">Username</label>
         <input class="form-control" id="login-username" type="text" placeholder="your_username" autocomplete="username" />
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label class="form-label">Password</label>
         <input class="form-control" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
       </div>
-      <button class="btn btn-primary btn-full btn-lg mt-16" id="login-btn" onclick="doLogin()">
-        Enter the Arena
-      </button>
-      <p class="text-center text-sm text-muted mt-16">
-        Don't have an account? <a href="#" onclick="switchTab('register')">Register</a>
+      <button class="btn btn-primary btn-full btn-lg mt-16" id="login-btn" onclick="doLogin()">Enter the Arena</button>
+      <p class="text-center text-sm text-muted mt-12">
+        No account? <a href="#" onclick="switchTab('register')">Register free</a>
       </p>
     </div>
 
-    <!-- Register Form -->
+    <!-- Register -->
     <div id="form-register" class="hidden">
       <div class="form-group">
-        <label>Username</label>
+        <label class="form-label">Username</label>
         <input class="form-control" id="reg-username" type="text" placeholder="choose_username" maxlength="20" />
       </div>
       <div class="form-group">
-        <label>Password <span class="text-muted">(min 6 chars)</span></label>
+        <label class="form-label">Password <span class="text-faint">(min 6 chars)</span></label>
         <input class="form-control" id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password" />
       </div>
       <div class="form-group">
-        <label>Confirm Password</label>
+        <label class="form-label">Confirm Password</label>
         <input class="form-control" id="reg-password2" type="password" placeholder="••••••••" autocomplete="new-password" />
       </div>
       <div class="form-group">
-        <label>Profile Photo URL <span class="text-muted">(optional)</span></label>
+        <label class="form-label">Profile Photo URL <span class="text-faint">(optional)</span></label>
         <input class="form-control" id="reg-photo" type="url" placeholder="https://..." />
       </div>
-      <button class="btn btn-primary btn-full btn-lg mt-16" id="reg-btn" onclick="doRegister()">
-        Create Account
-      </button>
-      <p class="text-center text-sm text-muted mt-16">
-        Already have an account? <a href="#" onclick="switchTab('login')">Login</a>
+      <button class="btn btn-primary btn-full btn-lg mt-16" id="reg-btn" onclick="doRegister()">Create Account</button>
+      <p class="text-center text-sm text-muted mt-12">
+        Already registered? <a href="#" onclick="switchTab('login')">Login</a>
       </p>
     </div>
+
   </div>
 </div>
 
-<!-- ── Scripts ── -->
 <script type="module">
 import { registerUser, loginUser, saveSession, loadSession } from './firebase-config.js';
 import { showToast } from './main.js';
 
-// Redirect if already logged in
 if (loadSession()) window.location.href = 'index.html';
 
-// Make functions global for inline onclick
 window.switchTab = function(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
@@ -88,9 +82,7 @@ window.doLogin = async function() {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   if (!username || !password) { showToast('Fill in all fields.', 'warn'); return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Logging in…';
+  btn.disabled = true; btn.textContent = 'Logging in…';
   try {
     const user = await loginUser({ username, password });
     saveSession(user);
@@ -98,10 +90,7 @@ window.doLogin = async function() {
     setTimeout(() => window.location.href = 'index.html', 600);
   } catch(e) {
     showToast(e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Enter the Arena';
-  }
+  } finally { btn.disabled = false; btn.textContent = 'Enter the Arena'; }
 };
 
 window.doRegister = async function() {
@@ -111,14 +100,13 @@ window.doRegister = async function() {
   const password2 = document.getElementById('reg-password2').value;
   const photoURL  = document.getElementById('reg-photo').value.trim();
 
-  if (!username || !password) { showToast('Fill in all required fields.', 'warn'); return; }
-  if (username.length < 3)    { showToast('Username must be at least 3 characters.', 'warn'); return; }
-  if (password.length < 6)    { showToast('Password must be at least 6 characters.', 'warn'); return; }
+  if (!username || !password) { showToast('Fill in required fields.', 'warn'); return; }
+  if (username.length < 3)    { showToast('Username: at least 3 characters.', 'warn'); return; }
+  if (password.length < 6)    { showToast('Password: at least 6 characters.', 'warn'); return; }
   if (password !== password2) { showToast('Passwords do not match.', 'error'); return; }
   if (!/^[a-zA-Z0-9_]+$/.test(username)) { showToast('Username: letters, numbers and _ only.', 'warn'); return; }
 
-  btn.disabled = true;
-  btn.textContent = 'Creating account…';
+  btn.disabled = true; btn.textContent = 'Creating account…';
   try {
     const user = await registerUser({ username, password, photoURL });
     saveSession(user);
@@ -126,18 +114,13 @@ window.doRegister = async function() {
     setTimeout(() => window.location.href = 'index.html', 600);
   } catch(e) {
     showToast(e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Create Account';
-  }
+  } finally { btn.disabled = false; btn.textContent = 'Create Account'; }
 };
 
-// Enter key support
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const loginVisible = !document.getElementById('form-login').classList.contains('hidden');
-    if (loginVisible) window.doLogin(); else window.doRegister();
-  }
+  if (e.key !== 'Enter') return;
+  const loginVis = !document.getElementById('form-login').classList.contains('hidden');
+  if (loginVis) window.doLogin(); else window.doRegister();
 });
 </script>
 </body>

@@ -9,39 +9,40 @@
 <body>
 
 <nav class="navbar">
-  <a href="index.html" class="navbar-logo" style="text-decoration:none;">WORD<span style="color:var(--text)">WAR</span></a>
-  <div class="navbar-links">
-    <a href="index.html">Home</a>
-    <a href="leaderboard.html" class="active">Leaderboard</a>
-    <a href="profile.html">Profile</a>
-    <div class="user-badge" onclick="window.location.href='profile.html'">
-      <img id="nav-avatar" src="" alt="av" />
-      <span id="nav-username" class="user-badge-name">…</span>
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html"       class="nav-link">Home</a>
+    <a href="leaderboard.html" class="nav-link active">Leaderboard</a>
+    <a href="profile.html"     class="nav-link">Profile</a>
+    <div class="nav-sep"></div>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt="" />
+      <span class="ub-name" id="nav-username">…</span>
       <div class="online-dot"></div>
-    </div>
+    </a>
   </div>
 </nav>
 
-<div class="container" style="padding-top:40px;padding-bottom:40px;max-width:800px;">
+<div style="max-width:780px;margin:0 auto;padding:36px 24px 60px;">
 
   <!-- Header -->
-  <div class="flex items-center justify-between mb-24">
+  <div class="flex items-center justify-between mb-24" style="flex-wrap:wrap;gap:12px;">
     <div>
       <h1>🏆 Leaderboard</h1>
-      <p class="text-muted text-sm mt-8">Live rankings · Updated in real-time</p>
+      <p class="text-sm text-muted mt-4">Live rankings · Updated in real-time</p>
     </div>
     <div class="flex gap-8">
-      <button class="btn btn-sm" id="sort-score" onclick="setSort('score')">By Score</button>
-      <button class="btn btn-sm btn-secondary" id="sort-wins"  onclick="setSort('wins')">By Wins</button>
+      <button class="btn btn-primary btn-sm" id="sort-score" onclick="setSort('score')">By Score</button>
+      <button class="btn btn-ghost btn-sm"   id="sort-wins"  onclick="setSort('wins')">By Wins</button>
     </div>
   </div>
 
-  <!-- Top 3 podium -->
-  <div id="podium" class="flex gap-16 mb-24 items-end" style="justify-content:center;min-height:160px;"></div>
+  <!-- Podium -->
+  <div class="podium" id="podium"></div>
 
   <!-- Full list -->
-  <div class="leaderboard-list" id="lb-list">
-    <div class="text-center text-muted" style="padding:40px;">Loading…</div>
+  <div class="lb-list" id="lb-list">
+    <div class="text-center text-muted" style="padding:48px;">Loading rankings…</div>
   </div>
 
 </div>
@@ -55,9 +56,8 @@ document.getElementById('nav-username').textContent = user.username;
 document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
 
 let allUsers = [];
-let sortBy = 'score';
+let sortBy   = 'score';
 
-// Live leaderboard
 onValue(ref(db, 'users'), snap => {
   if (!snap.exists()) return;
   allUsers = Object.entries(snap.val())
@@ -68,76 +68,68 @@ onValue(ref(db, 'users'), snap => {
 
 window.setSort = function(by) {
   sortBy = by;
-  document.getElementById('sort-score').className = by === 'score' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
-  document.getElementById('sort-wins').className  = by === 'wins'  ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('sort-score').className = by === 'score' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('sort-wins').className  = by === 'wins'  ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
   render();
 };
 
 function render() {
-  const sorted = [...allUsers].sort((a,b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+  const sorted = [...allUsers].sort((a,b) => (b[sortBy]||0) - (a[sortBy]||0));
 
-  // Podium (top 3)
-  const podium = document.getElementById('podium');
-  const ranks = [
-    { place: 2, medalClass: 'silver', medal: '🥈', height: 100, offsetY: 30 },
-    { place: 1, medalClass: 'gold',   medal: '🥇', height: 130, offsetY: 0 },
-    { place: 3, medalClass: 'bronze', medal: '🥉', height: 80,  offsetY: 50 },
+  // Podium (order: 2nd, 1st, 3rd for visual balance)
+  const podiumOrder = [
+    { idx: 1, cls: 'p2', medal: '🥈', medalCls: 'silver' },
+    { idx: 0, cls: 'p1', medal: '🥇', medalCls: 'gold'   },
+    { idx: 2, cls: 'p3', medal: '🥉', medalCls: 'bronze'  },
   ];
 
-  podium.innerHTML = ranks.map(r => {
-    const u = sorted[r.place - 1];
-    if (!u) return `<div style="flex:1"></div>`;
+  document.getElementById('podium').innerHTML = podiumOrder.map(({ idx, cls, medal, medalCls }) => {
+    const u = sorted[idx];
+    if (!u) return `<div class="podium-slot ${cls}" style="opacity:0;flex:1;max-width:170px;"></div>`;
     const isMe = u.uid === user.uid;
     return `
-      <div style="flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-        <div style="font-size:1.5rem;margin-bottom:4px;">${r.medal}</div>
-        <img src="${avatarUrl(u.photoURL, u.username)}" alt=""
-             style="width:56px;height:56px;border-radius:50%;border:3px solid var(--${r.medalClass});margin-bottom:8px;object-fit:cover;" />
-        <div style="font-weight:700;font-size:0.9rem;${isMe ? 'color:var(--accent)' : ''}">${u.username}</div>
-        <div class="text-mono text-sm" style="color:var(--${r.medalClass});margin-top:2px;">${fmtNum(u[sortBy] || 0)}</div>
-        <div style="margin-top:8px;background:var(--glass);border:1px solid var(--border);border-radius:8px 8px 0 0;
-                    width:100%;height:${r.height}px;
-                    background:linear-gradient(to top,rgba(${r.medalClass==='gold'?'245,197,66':r.medalClass==='silver'?'176,184,200':'205,127,50'},0.15),transparent);">
-        </div>
+      <div class="podium-slot ${cls}">
+        <span class="podium-medal">${medal}</span>
+        <img class="podium-avatar" src="${avatarUrl(u.photoURL, u.username)}" alt="${u.username}"
+             style="${isMe ? `border-color:var(--accent);box-shadow:0 0 16px var(--ag);` : ''}" />
+        <div class="podium-name" ${isMe ? 'style="color:var(--accent)"' : ''}>${u.username}</div>
+        <div class="podium-score">${fmtNum(u[sortBy]||0)}</div>
+        <div class="podium-base"></div>
       </div>`;
   }).join('');
 
   // Full list
-  const list = document.getElementById('lb-list');
-  list.innerHTML = sorted.map((u, i) => {
+  document.getElementById('lb-list').innerHTML = sorted.map((u, i) => {
     const rank = i + 1;
-    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-    const rankLabel = rank === 1 ? '<span class="lb-rank gold">🥇</span>'
-                    : rank === 2 ? '<span class="lb-rank silver">🥈</span>'
-                    : rank === 3 ? '<span class="lb-rank bronze">🥉</span>'
-                    : `<span class="lb-rank text-muted">#${rank}</span>`;
+    const rankClass = rank <= 3 ? `r${rank}` : '';
+    const rankHtml  = rank === 1 ? `<span class="lb-rank gold">🥇</span>`
+                    : rank === 2 ? `<span class="lb-rank silver">🥈</span>`
+                    : rank === 3 ? `<span class="lb-rank bronze">🥉</span>`
+                    : `<span class="lb-rank">#${rank}</span>`;
     const isMe = u.uid === user.uid;
-    const dot  = u.isOnline ? '<span class="status-dot online"></span>' : '';
+    const dot  = u.isOnline ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-right:5px;vertical-align:middle;"></span>` : '';
 
     return `
-      <div class="lb-item ${rankClass} ${isMe ? 'card glow' : ''}" style="${isMe ? 'border-color:rgba(123,92,250,0.4);' : ''}">
-        ${rankLabel}
+      <div class="lb-item ${rankClass}" ${isMe ? 'style="border-color:rgba(109,81,245,0.35);"' : ''}>
+        ${rankHtml}
         <img class="lb-avatar" src="${avatarUrl(u.photoURL, u.username)}" alt="${u.username}" />
         <div class="lb-info">
-          <div class="lb-name">${dot}${u.username} ${isMe ? '<span class="pill pill-purple" style="font-size:0.6rem;">You</span>' : ''}</div>
-          <div class="lb-sub">Level ${Math.floor((u.score||0)/500)+1} · ${u.totalGames||0} games</div>
+          <div class="lb-name">${dot}${u.username}${isMe ? ' <span class="tag tag-purple" style="font-size:0.6rem;padding:2px 7px;">You</span>' : ''}</div>
+          <div class="lb-sub">Lv.${Math.floor((u.score||0)/500)+1} · ${u.totalGames||0} games played</div>
         </div>
         <div class="lb-stats">
-          <div>
-            <div class="lb-stat-val text-accent">${fmtNum(u.score||0)}</div>
-            <div class="lb-stat-lbl">Score</div>
+          <div class="lb-stat">
+            <span class="lb-stat-val text-accent">${fmtNum(u.score||0)}</span>
+            <span class="lb-stat-lbl">Score</span>
           </div>
-          <div>
-            <div class="lb-stat-val text-green">${fmtNum(u.wins||0)}</div>
-            <div class="lb-stat-lbl">Wins</div>
+          <div class="lb-stat">
+            <span class="lb-stat-val text-green">${fmtNum(u.wins||0)}</span>
+            <span class="lb-stat-lbl">Wins</span>
           </div>
         </div>
       </div>`;
-  }).join('') || '<div class="text-center text-muted" style="padding:40px;">No players yet.</div>';
+  }).join('') || '<div class="text-center text-muted" style="padding:48px;">No players yet.</div>';
 }
-
-// Default sort
-document.getElementById('sort-score').className = 'btn btn-primary btn-sm';
 </script>
 </body>
 </html>

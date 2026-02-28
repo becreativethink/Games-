@@ -10,107 +10,120 @@
 
 <!-- Navbar -->
 <nav class="navbar">
-  <span class="navbar-logo">WORD<span style="color:var(--text)">WAR</span></span>
-  <div class="navbar-links">
-    <a href="index.html" class="active">Home</a>
-    <a href="leaderboard.html">Leaderboard</a>
-    <a href="profile.html">Profile</a>
-    <div class="user-badge" id="user-badge" onclick="window.location.href='profile.html'">
-      <img id="nav-avatar" src="" alt="avatar" />
-      <span class="user-badge-name" id="nav-username">…</span>
+  <a href="index.html" class="nav-logo">
+    <span class="w1">WORD</span><span class="w2">WAR</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html"       class="nav-link active">Home</a>
+    <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+    <a href="profile.html"     class="nav-link">Profile</a>
+    <div class="nav-sep"></div>
+    <a href="profile.html" class="user-badge" id="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt="" />
+      <span class="ub-name"  id="nav-username">…</span>
       <div class="online-dot"></div>
-    </div>
-    <button onclick="doLogout()" class="btn btn-secondary btn-sm">Logout</button>
+    </a>
+    <button onclick="doLogout()" class="nav-link btn-ghost" style="cursor:pointer;color:var(--text2);border:none;">Logout</button>
   </div>
 </nav>
 
 <!-- Hero -->
-<div style="text-align:center;padding:48px 24px 16px;">
-  <h1 style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-    Choose Your Battle
-  </h1>
-  <p class="text-muted mt-8" style="max-width:480px;margin:8px auto 0;">
-    Guess secret words, crush opponents, climb the ranks.<br/>
-    Your next word war starts here.
-  </p>
+<div class="hero">
+  <h1><span class="accent">Choose</span> Your Battle</h1>
+  <p class="mt-8">Guess secret words, crush opponents, climb the ranks. Your next word war starts now.</p>
 </div>
 
-<!-- Currency bar -->
-<div class="flex items-center justify-center gap-24 mt-16 mb-8" id="currency-bar" style="flex-wrap:wrap;">
-  <div class="flex items-center gap-8">
-    <span style="font-size:1.4rem;">💰</span>
+<!-- Currency strip -->
+<div class="currency-strip">
+  <div class="cur-item">
+    <span class="cur-icon">💰</span>
     <div>
-      <div class="text-mono" id="bar-money" style="font-weight:700;font-size:1.1rem;">—</div>
-      <div class="text-xs text-muted">Money</div>
+      <div class="cur-val" id="bar-money">—</div>
+      <div class="cur-lbl">Money</div>
     </div>
   </div>
-  <div class="flex items-center gap-8">
-    <span style="font-size:1.4rem;">⭐</span>
+  <div class="cur-item">
+    <span class="cur-icon">⭐</span>
     <div>
-      <div class="text-mono" id="bar-score" style="font-weight:700;font-size:1.1rem;">—</div>
-      <div class="text-xs text-muted">Score</div>
+      <div class="cur-val" id="bar-score">—</div>
+      <div class="cur-lbl">Score</div>
     </div>
   </div>
-  <div class="flex items-center gap-8">
-    <span style="font-size:1.4rem;">🏆</span>
+  <div class="cur-item">
+    <span class="cur-icon">🏆</span>
     <div>
-      <div class="text-mono" id="bar-wins" style="font-weight:700;font-size:1.1rem;">—</div>
-      <div class="text-xs text-muted">Wins</div>
+      <div class="cur-val" id="bar-wins">—</div>
+      <div class="cur-lbl">Wins</div>
     </div>
   </div>
 </div>
 
 <!-- Mode selector -->
 <div class="mode-grid">
-
   <div class="mode-card offline" onclick="selectMode('offline')">
     <span class="mode-icon">🤝</span>
     <h3>Offline Mode</h3>
-    <p class="text-muted">Pass-and-play on one device. One player sets the word, the other guesses.</p>
-    <div class="badge-item earned mt-16" style="display:inline-flex;">
-      <span>✓</span> Free to play
-    </div>
+    <p>Pass-and-play on one device. One player sets the word, the other guesses.</p>
+    <span class="mode-pill pill-green">Free to play</span>
   </div>
 
   <div class="mode-card online" onclick="selectMode('online')">
     <span class="mode-icon">🌐</span>
     <h3>Online Multiplayer</h3>
-    <p class="text-muted">Create or join a room, set a bet, and battle a real opponent in real-time.</p>
-    <span class="mode-badge badge-purple">Score Betting</span>
+    <p>Create or join a room, set a bet, and battle a real opponent in real-time.</p>
+    <span class="mode-pill pill-purple">Score Betting</span>
   </div>
 
   <div class="mode-card daily" onclick="selectMode('daily')">
     <span class="mode-icon">📅</span>
     <h3>Daily Challenge</h3>
-    <p class="text-muted">One word per day. 60 seconds. Win rewards. Compete globally.</p>
-    <span class="mode-badge badge-gold">Daily Rewards</span>
+    <p>One mystery word per day. 60 seconds. Win exclusive money & score rewards.</p>
+    <span class="mode-pill pill-gold">Daily Rewards</span>
   </div>
-
 </div>
 
 <!-- Quick stats -->
-<div style="max-width:900px;margin:8px auto 40px;padding:0 24px;">
+<div class="stats-section">
   <div class="card">
     <div class="flex items-center justify-between mb-16">
-      <h3>Your Quick Stats</h3>
-      <a href="profile.html" class="btn btn-secondary btn-sm">Full Profile →</a>
+      <h3>Your Stats</h3>
+      <a href="profile.html" class="btn btn-ghost btn-sm">Full Profile →</a>
     </div>
-    <div class="stat-grid" id="quick-stats">
-      <div class="stat-card"><span class="val" id="qs-wins">—</span><span class="lbl">Wins</span></div>
-      <div class="stat-card"><span class="val" id="qs-losses">—</span><span class="lbl">Losses</span></div>
-      <div class="stat-card"><span class="val" id="qs-total">—</span><span class="lbl">Games</span></div>
-      <div class="stat-card"><span class="val" id="qs-score">—</span><span class="lbl">Score</span></div>
-      <div class="stat-card"><span class="val" id="qs-money">—</span><span class="lbl">Money</span></div>
-      <div class="stat-card"><span class="val" id="qs-level">—</span><span class="lbl">Level</span></div>
-    </div>
-    <!-- Level progress -->
-    <div class="level-bar-wrap mt-16">
-      <div class="level-label">
-        <span id="lbl-level">Level 1</span>
-        <span id="lbl-progress">0% to next</span>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-val text-green"  id="qs-wins">—</span>
+        <span class="stat-lbl">Wins</span>
       </div>
-      <div class="level-bar">
-        <div class="level-bar-fill" id="level-fill" style="width:0%"></div>
+      <div class="stat-card">
+        <span class="stat-val text-red"    id="qs-losses">—</span>
+        <span class="stat-lbl">Losses</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val"             id="qs-total">—</span>
+        <span class="stat-lbl">Games</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-accent" id="qs-score">—</span>
+        <span class="stat-lbl">Score</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-gold"   id="qs-money">—</span>
+        <span class="stat-lbl">Money</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-accent2" id="qs-level">—</span>
+        <span class="stat-lbl">Level</span>
+      </div>
+    </div>
+
+    <div class="lv-wrap">
+      <div class="lv-info">
+        <span id="lbl-level">Level 1</span>
+        <span id="lbl-progress" class="text-faint">0% to next level</span>
+      </div>
+      <div class="lv-track">
+        <div class="lv-fill" id="level-fill" style="width:0%"></div>
       </div>
     </div>
   </div>
@@ -121,15 +134,12 @@ import { requireAuth, logoutUser, db, ref, onValue } from './firebase-config.js'
 import { showToast, getLevel, getLevelProgress, avatarUrl, fmtNum } from './main.js';
 
 const user = requireAuth('login.html');
-if (!user) throw new Error('Not logged in');
+if (!user) throw new Error('Not authenticated');
 
-// Populate nav
 document.getElementById('nav-username').textContent = user.username;
 document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
 
-// Live user data
-const userRef = ref(db, 'users/' + user.uid);
-onValue(userRef, snap => {
+onValue(ref(db, 'users/' + user.uid), snap => {
   if (!snap.exists()) return;
   const d = snap.val();
 
@@ -143,15 +153,14 @@ onValue(userRef, snap => {
   document.getElementById('qs-score').textContent  = fmtNum(d.score);
   document.getElementById('qs-money').textContent  = fmtNum(d.money);
 
-  const lvl  = getLevel(d.score);
-  const pct  = getLevelProgress(d.score);
-  document.getElementById('qs-level').textContent    = lvl;
-  document.getElementById('lbl-level').textContent   = `Level ${lvl}`;
-  document.getElementById('lbl-progress').textContent= `${Math.round(pct)}% to next`;
-  document.getElementById('level-fill').style.width  = pct + '%';
+  const lvl = getLevel(d.score);
+  const pct = getLevelProgress(d.score);
+  document.getElementById('qs-level').textContent     = lvl;
+  document.getElementById('lbl-level').textContent    = `Level ${lvl}`;
+  document.getElementById('lbl-progress').textContent = `${Math.round(pct)}% to next level`;
+  document.getElementById('level-fill').style.width   = pct + '%';
 });
 
-// Mode selection
 window.selectMode = function(mode) {
   sessionStorage.setItem('ww_mode', mode);
   window.location.href = 'game.html';

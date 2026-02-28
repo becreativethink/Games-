@@ -3,133 +3,173 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WordWar — Leaderboard</title>
+  <title>WordWar — Home</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<!-- Navbar -->
 <nav class="navbar">
-  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <a href="index.html" class="nav-logo">
+    <span class="w1">WORD</span><span class="w2">WAR</span>
+  </a>
   <div class="nav-links">
-    <a href="index.html"       class="nav-link">Home</a>
-    <a href="leaderboard.html" class="nav-link active">Leaderboard</a>
+    <a href="index.html"       class="nav-link active">Home</a>
+    <a href="leaderboard.html" class="nav-link">Leaderboard</a>
     <a href="profile.html"     class="nav-link">Profile</a>
     <div class="nav-sep"></div>
-    <a href="profile.html" class="user-badge">
+    <a href="profile.html" class="user-badge" id="user-badge">
       <img class="ub-avatar" id="nav-avatar" src="" alt="" />
-      <span class="ub-name" id="nav-username">…</span>
+      <span class="ub-name"  id="nav-username">…</span>
       <div class="online-dot"></div>
     </a>
+    <button onclick="doLogout()" class="nav-link btn-ghost" style="cursor:pointer;color:var(--text2);border:none;">Logout</button>
   </div>
 </nav>
 
-<div style="max-width:780px;margin:0 auto;padding:36px 24px 60px;">
+<!-- Hero -->
+<div class="hero">
+  <h1><span class="accent">Choose</span> Your Battle</h1>
+  <p class="mt-8">Guess secret words, crush opponents, climb the ranks. Your next word war starts now.</p>
+</div>
 
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-24" style="flex-wrap:wrap;gap:12px;">
+<!-- Currency strip -->
+<div class="currency-strip">
+  <div class="cur-item">
+    <span class="cur-icon">💰</span>
     <div>
-      <h1>🏆 Leaderboard</h1>
-      <p class="text-sm text-muted mt-4">Live rankings · Updated in real-time</p>
-    </div>
-    <div class="flex gap-8">
-      <button class="btn btn-primary btn-sm" id="sort-score" onclick="setSort('score')">By Score</button>
-      <button class="btn btn-ghost btn-sm"   id="sort-wins"  onclick="setSort('wins')">By Wins</button>
+      <div class="cur-val" id="bar-money">—</div>
+      <div class="cur-lbl">Money</div>
     </div>
   </div>
+  <div class="cur-item">
+    <span class="cur-icon">⭐</span>
+    <div>
+      <div class="cur-val" id="bar-score">—</div>
+      <div class="cur-lbl">Score</div>
+    </div>
+  </div>
+  <div class="cur-item">
+    <span class="cur-icon">🏆</span>
+    <div>
+      <div class="cur-val" id="bar-wins">—</div>
+      <div class="cur-lbl">Wins</div>
+    </div>
+  </div>
+</div>
 
-  <!-- Podium -->
-  <div class="podium" id="podium"></div>
-
-  <!-- Full list -->
-  <div class="lb-list" id="lb-list">
-    <div class="text-center text-muted" style="padding:48px;">Loading rankings…</div>
+<!-- Mode selector -->
+<div class="mode-grid">
+  <div class="mode-card offline" onclick="selectMode('offline')">
+    <span class="mode-icon">🤝</span>
+    <h3>Offline Mode</h3>
+    <p>Pass-and-play on one device. One player sets the word, the other guesses.</p>
+    <span class="mode-pill pill-green">Free to play</span>
   </div>
 
+  <div class="mode-card online" onclick="selectMode('online')">
+    <span class="mode-icon">🌐</span>
+    <h3>Online Multiplayer</h3>
+    <p>Create or join a room, set a bet, and battle a real opponent in real-time.</p>
+    <span class="mode-pill pill-purple">Score Betting</span>
+  </div>
+
+  <div class="mode-card daily" onclick="selectMode('daily')">
+    <span class="mode-icon">📅</span>
+    <h3>Daily Challenge</h3>
+    <p>One mystery word per day. 60 seconds. Win exclusive money & score rewards.</p>
+    <span class="mode-pill pill-gold">Daily Rewards</span>
+  </div>
+</div>
+
+<!-- Quick stats -->
+<div class="stats-section">
+  <div class="card">
+    <div class="flex items-center justify-between mb-16">
+      <h3>Your Stats</h3>
+      <a href="profile.html" class="btn btn-ghost btn-sm">Full Profile →</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-val text-green"  id="qs-wins">—</span>
+        <span class="stat-lbl">Wins</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-red"    id="qs-losses">—</span>
+        <span class="stat-lbl">Losses</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val"             id="qs-total">—</span>
+        <span class="stat-lbl">Games</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-accent" id="qs-score">—</span>
+        <span class="stat-lbl">Score</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-gold"   id="qs-money">—</span>
+        <span class="stat-lbl">Money</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val text-accent2" id="qs-level">—</span>
+        <span class="stat-lbl">Level</span>
+      </div>
+    </div>
+
+    <div class="lv-wrap">
+      <div class="lv-info">
+        <span id="lbl-level">Level 1</span>
+        <span id="lbl-progress" class="text-faint">0% to next level</span>
+      </div>
+      <div class="lv-track">
+        <div class="lv-fill" id="level-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
-import { requireAuth, db, ref, onValue } from './firebase-config.js';
-import { avatarUrl, fmtNum } from './main.js';
+import { requireAuth, logoutUser, db, ref, onValue } from './firebase-config.js';
+import { showToast, getLevel, getLevelProgress, avatarUrl, fmtNum } from './main.js';
 
 const user = requireAuth('login.html');
+if (!user) throw new Error('Not authenticated');
+
 document.getElementById('nav-username').textContent = user.username;
 document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
 
-let allUsers = [];
-let sortBy   = 'score';
-
-onValue(ref(db, 'users'), snap => {
+onValue(ref(db, 'users/' + user.uid), snap => {
   if (!snap.exists()) return;
-  allUsers = Object.entries(snap.val())
-    .map(([uid, d]) => ({ uid, ...d }))
-    .filter(u => u.username);
-  render();
+  const d = snap.val();
+
+  document.getElementById('bar-money').textContent = fmtNum(d.money);
+  document.getElementById('bar-score').textContent = fmtNum(d.score);
+  document.getElementById('bar-wins').textContent  = fmtNum(d.wins);
+
+  document.getElementById('qs-wins').textContent   = fmtNum(d.wins);
+  document.getElementById('qs-losses').textContent = fmtNum(d.losses);
+  document.getElementById('qs-total').textContent  = fmtNum(d.totalGames);
+  document.getElementById('qs-score').textContent  = fmtNum(d.score);
+  document.getElementById('qs-money').textContent  = fmtNum(d.money);
+
+  const lvl = getLevel(d.score);
+  const pct = getLevelProgress(d.score);
+  document.getElementById('qs-level').textContent     = lvl;
+  document.getElementById('lbl-level').textContent    = `Level ${lvl}`;
+  document.getElementById('lbl-progress').textContent = `${Math.round(pct)}% to next level`;
+  document.getElementById('level-fill').style.width   = pct + '%';
 });
 
-window.setSort = function(by) {
-  sortBy = by;
-  document.getElementById('sort-score').className = by === 'score' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
-  document.getElementById('sort-wins').className  = by === 'wins'  ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
-  render();
+window.selectMode = function(mode) {
+  sessionStorage.setItem('ww_mode', mode);
+  window.location.href = 'game.html';
 };
 
-function render() {
-  const sorted = [...allUsers].sort((a,b) => (b[sortBy]||0) - (a[sortBy]||0));
-
-  // Podium (order: 2nd, 1st, 3rd for visual balance)
-  const podiumOrder = [
-    { idx: 1, cls: 'p2', medal: '🥈', medalCls: 'silver' },
-    { idx: 0, cls: 'p1', medal: '🥇', medalCls: 'gold'   },
-    { idx: 2, cls: 'p3', medal: '🥉', medalCls: 'bronze'  },
-  ];
-
-  document.getElementById('podium').innerHTML = podiumOrder.map(({ idx, cls, medal, medalCls }) => {
-    const u = sorted[idx];
-    if (!u) return `<div class="podium-slot ${cls}" style="opacity:0;flex:1;max-width:170px;"></div>`;
-    const isMe = u.uid === user.uid;
-    return `
-      <div class="podium-slot ${cls}">
-        <span class="podium-medal">${medal}</span>
-        <img class="podium-avatar" src="${avatarUrl(u.photoURL, u.username)}" alt="${u.username}"
-             style="${isMe ? `border-color:var(--accent);box-shadow:0 0 16px var(--ag);` : ''}" />
-        <div class="podium-name" ${isMe ? 'style="color:var(--accent)"' : ''}>${u.username}</div>
-        <div class="podium-score">${fmtNum(u[sortBy]||0)}</div>
-        <div class="podium-base"></div>
-      </div>`;
-  }).join('');
-
-  // Full list
-  document.getElementById('lb-list').innerHTML = sorted.map((u, i) => {
-    const rank = i + 1;
-    const rankClass = rank <= 3 ? `r${rank}` : '';
-    const rankHtml  = rank === 1 ? `<span class="lb-rank gold">🥇</span>`
-                    : rank === 2 ? `<span class="lb-rank silver">🥈</span>`
-                    : rank === 3 ? `<span class="lb-rank bronze">🥉</span>`
-                    : `<span class="lb-rank">#${rank}</span>`;
-    const isMe = u.uid === user.uid;
-    const dot  = u.isOnline ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-right:5px;vertical-align:middle;"></span>` : '';
-
-    return `
-      <div class="lb-item ${rankClass}" ${isMe ? 'style="border-color:rgba(109,81,245,0.35);"' : ''}>
-        ${rankHtml}
-        <img class="lb-avatar" src="${avatarUrl(u.photoURL, u.username)}" alt="${u.username}" />
-        <div class="lb-info">
-          <div class="lb-name">${dot}${u.username}${isMe ? ' <span class="tag tag-purple" style="font-size:0.6rem;padding:2px 7px;">You</span>' : ''}</div>
-          <div class="lb-sub">Lv.${Math.floor((u.score||0)/500)+1} · ${u.totalGames||0} games played</div>
-        </div>
-        <div class="lb-stats">
-          <div class="lb-stat">
-            <span class="lb-stat-val text-accent">${fmtNum(u.score||0)}</span>
-            <span class="lb-stat-lbl">Score</span>
-          </div>
-          <div class="lb-stat">
-            <span class="lb-stat-val text-green">${fmtNum(u.wins||0)}</span>
-            <span class="lb-stat-lbl">Wins</span>
-          </div>
-        </div>
-      </div>`;
-  }).join('') || '<div class="text-center text-muted" style="padding:48px;">No players yet.</div>';
-}
+window.doLogout = async function() {
+  await logoutUser(user.uid);
+  window.location.href = 'login.html';
+};
 </script>
 </body>
 </html>

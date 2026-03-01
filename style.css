@@ -927,21 +927,26 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 .page-enter { animation:pageFade 0.35s ease both; }
 @keyframes pageFade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
-/* ── Ad banner (fixed bottom) ───────────────────────────────── */
-/* Prevent game content from hiding behind the ad */
-body { padding-bottom: 60px; }
+/* ── Global body padding — ensures content never hides behind fixed ad ── */
+body { padding-bottom: 70px; }
 
+/* ── Ad banner ─────────────────────────────────────────────── */
 .ad-banner {
   position: fixed;
-  bottom: 0;
-  left: 0;
+  bottom: 0; left: 0;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #111;
-  padding: 5px 0;
-  z-index: 999;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  background: #0e0e1e;
+  border-top: 1px solid rgba(255,255,255,0.07);
   min-height: 60px;
+  z-index: 150;   /* below navbar z-index:200 */
+}
+.ad-banner iframe {
+  border: none;
+  width: 320px;
+  height: 50px;
+  display: block;
+  background: transparent;
 }

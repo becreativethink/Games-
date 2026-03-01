@@ -5,8 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WordWar — Game</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Loading indicator shown before JS runs ─────────────── */
+    #loading-cover {
+      position: fixed; inset: 0; background: var(--bg, #05050d);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      z-index: 500; transition: opacity 0.3s;
+    }
+    #loading-cover .spin {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid rgba(109,81,245,0.15);
+      border-top-color: #6d51f5;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-cover p { color: #7878a0; font-family: 'Outfit',sans-serif; font-size: 0.82rem; }
+
+    /* ── Ad banner: iframe approach avoids document.write wipe ── */
+    .ad-banner {
+      position: fixed;
+      bottom: 0; left: 0; width: 100%;
+      display: flex; justify-content: center; align-items: center;
+      background: #0e0e1e;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      min-height: 60px;
+      z-index: 400;            /* below navbar (200) … wait, navbar is 200 */
+    }
+    /* iframe wrapper so document.write is sandboxed */
+    .ad-banner iframe {
+      border: none; width: 320px; height: 50px;
+      display: block; overflow: hidden;
+    }
+    /* Push all page content above the ad */
+    body { padding-bottom: 70px; }
+  </style>
 </head>
 <body>
+
+<!-- Loading cover — shown until JS initialises correctly -->
+<div id="loading-cover">
+  <div class="spin"></div>
+  <p>Loading game…</p>
+</div>
 
 <!-- Navbar -->
 <nav class="navbar">
@@ -16,13 +57,14 @@
     <div class="nav-sep"></div>
     <a href="profile.html" class="user-badge">
       <img class="ub-avatar" id="nav-avatar" src="" alt="" />
-      <span class="ub-name"  id="nav-username">…</span>
+      <span class="ub-name" id="nav-username">…</span>
       <div class="online-dot"></div>
     </a>
   </div>
 </nav>
 
-<!-- ═══════════════════ SETUP SCREENS ════════════════════ -->
+<!-- ═══════════════════ SETUP SCREENS ════════════════════════ -->
+<!-- All screens start hidden; JS reveals the correct one -->
 
 <!-- OFFLINE SETUP -->
 <div id="screen-offline" class="hidden setup-wrap">
@@ -31,17 +73,18 @@
       <div class="setup-ic">🤝</div>
       <div>
         <h2>Offline Mode</h2>
-        <p class="text-sm text-muted">Player 1 sets the secret word, Player 2 guesses.</p>
+        <p class="text-sm text-muted">Player 1 sets the secret word — Player 2 guesses.</p>
       </div>
     </div>
     <div class="divider"></div>
     <div class="form-group">
-      <label class="form-label">Secret Word (hidden) — letters A–Z only</label>
-      <input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12" />
+      <label class="form-label">Secret Word — letters A–Z only</label>
+      <input class="form-control" id="off-secret" type="password"
+        placeholder="Type secretly…" maxlength="12" />
     </div>
     <div class="form-group">
       <label class="form-label">Word Length (auto-detected)</label>
-      <input class="form-control" id="off-len" type="number" value="5" min="2" max="12" readonly />
+      <input class="form-control" id="off-len" type="number" value="?" min="2" max="12" readonly />
     </div>
     <div class="form-group">
       <label class="form-label">Max Attempts</label>
@@ -74,8 +117,9 @@
     <!-- Host panel -->
     <div id="host-panel">
       <div class="form-group">
-        <label class="form-label">Secret Word (opponent guesses this) — letters A–Z only</label>
-        <input class="form-control" id="h-secret" type="password" placeholder="Type your secret word…" maxlength="12" />
+        <label class="form-label">Secret Word — letters A–Z only</label>
+        <input class="form-control" id="h-secret" type="password"
+          placeholder="Type your secret word…" maxlength="12" />
       </div>
       <div class="flex gap-12">
         <div class="form-group flex-1">
@@ -83,7 +127,10 @@
           <input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10" />
         </div>
         <div class="form-group flex-1">
-          <label class="form-label">Bet Score (you have: <span id="h-score-cur" class="text-accent">—</span>)</label>
+          <label class="form-label">
+            Bet Score
+            <span class="text-faint">(have: <span id="h-score-cur" class="text-accent">—</span>)</span>
+          </label>
           <input class="form-control" id="h-bet" type="number" value="50" min="0" />
         </div>
       </div>
@@ -99,7 +146,8 @@
       <div class="form-group">
         <label class="form-label">Room ID</label>
         <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6"
-          style="font-family:var(--mono);letter-spacing:0.25em;text-transform:uppercase;text-align:center;font-size:1.7rem;padding:14px;" />
+          style="font-family:var(--mono);letter-spacing:0.25em;text-transform:uppercase;
+                 text-align:center;font-size:1.7rem;padding:14px;" />
       </div>
       <div class="flex gap-8 mt-8">
         <button class="btn btn-primary flex-1" onclick="joinRoom()">Join Room →</button>
@@ -114,9 +162,9 @@
   <div class="setup-card card card-elevated text-center page-enter">
     <div style="font-size:3rem;margin-bottom:12px;animation:pdot 1.5s infinite;">⏳</div>
     <h2 class="mb-8">Waiting for Opponent</h2>
-    <p class="text-muted text-sm mb-20">Share this Room ID:</p>
-    <div class="room-id-display mb-8" id="room-id-show" onclick="copyRoomId()">—</div>
-    <p class="text-faint text-xs mb-20">Click to copy</p>
+    <p class="text-muted text-sm mb-20">Share this Room ID with your opponent:</p>
+    <div class="room-id-display mb-8" id="room-id-show" onclick="copyRoomId()">——</div>
+    <p class="text-faint text-xs mb-20">Tap to copy</p>
     <button class="btn btn-danger btn-sm" onclick="cancelRoom()">Cancel Room</button>
   </div>
 </div>
@@ -144,7 +192,8 @@
     </div>
 
     <div id="d-already-played" class="hidden">
-      <div class="tag tag-green" style="display:inline-flex;padding:8px 18px;font-size:0.82rem;border-radius:var(--rS);">
+      <div class="tag tag-green"
+        style="display:inline-flex;padding:8px 18px;font-size:0.82rem;border-radius:var(--rS);">
         ✓ Already completed today!
       </div>
       <p class="text-muted text-sm mt-12">Come back tomorrow for a new word.</p>
@@ -158,15 +207,15 @@
   </div>
 </div>
 
-<!-- ═══════════════════ GAME SCREEN ═══════════════════════ -->
+<!-- ═══════════════════ GAME SCREEN ════════════════════════ -->
 <div id="screen-game" class="hidden">
   <div class="game-layout">
 
-    <!-- Board -->
+    <!-- Board column -->
     <div class="game-main">
       <div class="game-status">
-        <h2 id="game-title" class="text-display">WORD WAR</h2>
-        <p class="text-muted" id="game-subtitle">Guess the hidden word</p>
+        <h2 id="game-title"    class="text-display">WORD WAR</h2>
+        <p  id="game-subtitle" class="text-muted">Guess the hidden word</p>
       </div>
 
       <!-- Timer (daily only) -->
@@ -174,30 +223,39 @@
         <div id="timer-el"></div>
       </div>
 
-      <!-- Board grid -->
+      <!-- Tile board -->
       <div class="game-board" id="game-board"></div>
 
-      <!-- Guess input -->
+      <!-- Text input row -->
       <div class="guess-input-wrap" id="guess-input-area">
-        <input class="guess-input" id="guess-input" type="text" placeholder="GUESS"
-          maxlength="12" autocomplete="off" autocorrect="off"
+        <input class="guess-input" id="guess-input"
+          type="text" placeholder="GUESS"
+          autocomplete="off" autocorrect="off"
           autocapitalize="characters" spellcheck="false" />
         <button class="btn btn-primary" id="submit-btn" onclick="submitGuess()">GO</button>
       </div>
 
-      <!-- Keyboard -->
+      <!-- On-screen keyboard -->
       <div class="keyboard" id="keyboard"></div>
     </div>
 
     <!-- Sidebar -->
     <div class="game-sidebar">
 
-      <!-- Game info -->
       <div class="sb-card">
         <div class="sb-title" id="sb-mode-lbl">Game Info</div>
-        <div class="sb-row"><span class="lbl">Attempts Left</span><span class="val" id="sb-attempts">—</span></div>
-        <div class="sb-row"><span class="lbl">Word Length</span><span class="val" id="sb-len">—</span></div>
-        <div class="sb-row hidden" id="sb-bet-row"><span class="lbl">Bet</span><span class="val text-gold" id="sb-bet">—</span></div>
+        <div class="sb-row">
+          <span class="lbl">Attempts Left</span>
+          <span class="val fw-700" id="sb-attempts">—</span>
+        </div>
+        <div class="sb-row">
+          <span class="lbl">Word Length</span>
+          <span class="val" id="sb-len">—</span>
+        </div>
+        <div class="sb-row hidden" id="sb-bet-row">
+          <span class="lbl">Bet</span>
+          <span class="val text-gold" id="sb-bet">—</span>
+        </div>
       </div>
 
       <!-- Opponent card (online only) -->
@@ -205,7 +263,7 @@
         <div class="sb-title">Opponent</div>
         <div class="flex items-center gap-12">
           <img id="opp-avatar" src="" alt=""
-               style="width:36px;height:36px;border-radius:50%;border:2px solid var(--b2);flex-shrink:0;" />
+            style="width:36px;height:36px;border-radius:50%;border:2px solid var(--b2);flex-shrink:0;" />
           <div class="min-w-0">
             <div class="fw-700 truncate" id="opp-name">—</div>
             <div class="text-xs text-faint" id="opp-status">Connecting…</div>
@@ -213,22 +271,23 @@
         </div>
       </div>
 
-      <!-- Match log (host view) -->
+      <!-- Match log (host spectator view) -->
       <div class="sb-card hidden" id="log-card">
         <div class="sb-title">Match Log</div>
-        <div id="online-log" style="font-size:0.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
+        <div id="online-log"
+          style="font-size:0.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
       </div>
 
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════ RESULT OVERLAY ═══════════════════ -->
+<!-- ═══════════════════ RESULT OVERLAY ══════════════════════ -->
 <div class="result-overlay" id="result-overlay">
   <div class="result-card">
     <span class="res-emoji" id="res-emoji">🏆</span>
-    <h2 class="res-title" id="res-title">Victory!</h2>
-    <div class="res-word" id="res-word">WORD</div>
+    <h2 class="res-title"   id="res-title">Victory!</h2>
+    <div class="res-word"   id="res-word">WORD</div>
     <p class="res-msg text-muted" id="res-msg"></p>
     <div class="res-btns">
       <button class="btn btn-primary" onclick="playAgain()">⚡ Play Again</button>
@@ -237,21 +296,21 @@
   </div>
 </div>
 
-<!-- ═══════════════════ BANNER AD ════════════════════════ -->
-<div class="ad-banner">
-  <!-- BEGIN EZMOB TAG -->
-  <SCRIPT TYPE="text/javascript">
-  var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};
-  document.write('<S' + 'CRIPT TYPE="text/javascript" SRC="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=' + __jscp() + '"></S' + 'CRIPT>');
-  </SCRIPT>
-  <!-- END EZMOB TAG -->
+<!-- ═══════════════════ BANNER AD ═══════════════════════════ -->
+<!--
+  FIX: The ad uses document.write() which DESTROYS the page DOM if called
+  after page load. We sandbox it inside an iframe so it can't touch the
+  parent document. The iframe writes to its own empty document safely.
+-->
+<div class="ad-banner" id="ad-banner">
+  <iframe id="ad-frame" scrolling="no" title="Advertisement"></iframe>
 </div>
 
 <script type="module">
 import {
-  requireAuth, loadSession, saveSession, avatarUrl, fmtNum,
+  requireAuth, saveSession, avatarUrl, fmtNum,
   sha256, generateRoomId, todayStr,
-  db, ref, set, get, update, onValue, off, push, remove
+  db, ref, set, get, update, onValue, off, push
 } from './firebase-config.js';
 import {
   showToast, evaluateGuess, buildTileRow, buildEmptyRow, shakeRow,
@@ -259,105 +318,130 @@ import {
   playSound, confettiBurst, ACHIEVEMENTS, checkAchievements
 } from './main.js';
 
-// ── Auth ─────────────────────────────────────────────────────
-let currentUser = requireAuth('login.html');
-if (!currentUser) throw 0;
+// ── Helpers ───────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const el = (tag, attrs={}, text='') => {
+  const e = document.createElement(tag);
+  Object.assign(e, attrs);
+  if (text) e.textContent = text;
+  return e;
+};
 
-document.getElementById('nav-username').textContent = currentUser.username;
-document.getElementById('nav-avatar').src = avatarUrl(currentUser.photoURL, currentUser.username);
+// ── Hide loading cover ────────────────────────────────────────
+function hideCover() {
+  const c = $('loading-cover');
+  if (c) { c.style.opacity = '0'; setTimeout(() => c.remove(), 320); }
+}
+
+// ── Auth check ────────────────────────────────────────────────
+let currentUser = requireAuth('login.html');
+if (!currentUser) { hideCover(); throw new Error('Not authenticated'); }
+
+$('nav-username').textContent = currentUser.username;
+$('nav-avatar').src = avatarUrl(currentUser.photoURL, currentUser.username);
 
 // ══════════════════════════════════════════════════════════════
-// GAME STATE — single source of truth
+// GAME STATE
 // ══════════════════════════════════════════════════════════════
 let mode         = sessionStorage.getItem('ww_mode') || 'offline';
-let secretWord   = '';        // plaintext secret; needed by whichever side evaluates guesses
+let secretWord   = '';
 let maxAttempts  = 6;
 let wordLength   = 5;
-let guessCount   = 0;         // attempts used so far
-let gameOver     = false;     // HARD LOCK — set to true the moment game ends; prevents any re-entry
+let guessCount   = 0;
+let gameOver     = false;
 let currentGuess = '';
 let timer        = null;
 let roomId       = null;
 let isHost       = false;
 let betScore     = 0;
-let _guessUnsub  = null;      // Firebase onValue unsubscribe handle for guess listener
+let _guessUnsub  = null;
 
-// ── Screen switcher ───────────────────────────────────────────
+// ── Show one screen, hide all others ─────────────────────────
 function showScreen(id) {
-  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game']
-    .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+  ['screen-offline','screen-online','screen-daily',
+   'screen-waiting','screen-game'].forEach(s => {
+    $(s).classList.toggle('hidden', s !== id);
+  });
+  hideCover();   // always hide loading cover when a screen is shown
 }
 
-// ── Bootstrap ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// BOOTSTRAP
+// ══════════════════════════════════════════════════════════════
 async function init() {
-  // Refresh user data from Firebase
-  const snap = await get(ref(db, 'users/' + currentUser.uid));
-  if (snap.exists()) {
-    currentUser = { ...currentUser, ...snap.val() };
-    saveSession(currentUser);
+  try {
+    const snap = await get(ref(db, 'users/' + currentUser.uid));
+    if (snap.exists()) {
+      currentUser = { ...currentUser, ...snap.val() };
+      saveSession(currentUser);
+    }
+  } catch(e) {
+    // Network issue — continue with cached session data
+    console.warn('Could not refresh user data:', e.message);
   }
 
   if      (mode === 'offline') { initOfflineScreen(); }
   else if (mode === 'online')  { initOnlineScreen();  }
   else if (mode === 'daily')   { await initDailyScreen(); }
+  else {
+    // Unknown mode — fall back to offline
+    mode = 'offline';
+    initOfflineScreen();
+  }
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // OFFLINE MODE
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 function initOfflineScreen() {
   showScreen('screen-offline');
-  document.getElementById('off-secret').addEventListener('input', e => {
-    // Reflect length so player sees it updating
-    document.getElementById('off-len').value = e.target.value.length || '';
+  $('off-secret').addEventListener('input', e => {
+    $('off-len').value = e.target.value.length || '';
   });
 }
 
 window.startOfflineGame = function() {
-  const raw = document.getElementById('off-secret').value.trim().toUpperCase();
+  const raw = $('off-secret').value.trim().toUpperCase();
 
-  if (raw.length < 2)          { showToast('Word must be at least 2 letters.', 'warn'); return; }
-  if (!/^[A-Z]+$/.test(raw))  { showToast('Secret word must contain letters only (A–Z). No numbers or symbols.', 'warn'); return; }
+  if (raw.length < 2)         { showToast('Word must be at least 2 letters.', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(raw)) { showToast('Letters A–Z only. No numbers or symbols.', 'warn'); return; }
 
   secretWord  = raw;
-  maxAttempts = parseInt(document.getElementById('off-attempts').value, 10) || 6;
+  maxAttempts = parseInt($('off-attempts').value, 10) || 6;
   wordLength  = raw.length;
 
-  startBoard('🤝 OFFLINE MODE', 'Player 2: Guess the secret word!');
+  startBoard('🤝 OFFLINE', 'Player 2: Guess the secret word!');
 };
 
-// ════════════════════════════════════════════════════════════
-// ONLINE MODE — HOST
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// ONLINE — HOST SIDE
+// ══════════════════════════════════════════════════════════════
 function initOnlineScreen() {
-  document.getElementById('h-score-cur').textContent = fmtNum(currentUser.score);
+  $('h-score-cur').textContent = fmtNum(currentUser.score || 0);
   showScreen('screen-online');
 }
 
 window.switchOnlineTab = function(tab) {
-  document.getElementById('tab-host').classList.toggle('active',   tab === 'host');
-  document.getElementById('tab-guest').classList.toggle('active',  tab === 'guest');
-  document.getElementById('host-panel').classList.toggle('hidden', tab !== 'host');
-  document.getElementById('guest-panel').classList.toggle('hidden',tab !== 'guest');
+  $('tab-host').classList.toggle('active',    tab === 'host');
+  $('tab-guest').classList.toggle('active',   tab === 'guest');
+  $('host-panel').classList.toggle('hidden',  tab !== 'host');
+  $('guest-panel').classList.toggle('hidden', tab !== 'guest');
 };
 
 window.createRoom = async function() {
-  const secret   = document.getElementById('h-secret').value.trim().toUpperCase();
-  const attempts = parseInt(document.getElementById('h-attempts').value, 10) || 6;
-  const bet      = Math.max(0, parseInt(document.getElementById('h-bet').value, 10) || 0);
+  const secret   = $('h-secret').value.trim().toUpperCase();
+  const attempts = parseInt($('h-attempts').value, 10) || 6;
+  const bet      = Math.max(0, parseInt($('h-bet').value, 10) || 0);
 
-  // Validate word: letters only
-  if (secret.length < 2)         { showToast('Enter a valid secret word (min 2 letters).', 'warn'); return; }
-  if (!/^[A-Z]+$/.test(secret))  { showToast('Secret word must contain letters only (A–Z).', 'warn'); return; }
+  if (secret.length < 2)         { showToast('Enter a secret word (min 2 letters).', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(secret))  { showToast('Secret word: letters A–Z only.', 'warn'); return; }
 
-  // Check host has enough score for the bet
+  // Re-fetch score in case it changed
   const fresh = await get(ref(db, 'users/' + currentUser.uid));
   const hData = fresh.val();
-  if (bet > (hData.score || 0)) { showToast('Insufficient score for this bet.', 'error'); return; }
+  if (bet > (hData.score || 0)) { showToast('Not enough score for this bet.', 'error'); return; }
 
-  // Hash for storage integrity (not for client-side security)
   const hash = await sha256(secret.toLowerCase());
-
   roomId      = generateRoomId();
   isHost      = true;
   secretWord  = secret;
@@ -365,16 +449,13 @@ window.createRoom = async function() {
   wordLength  = secret.length;
   betScore    = bet;
 
-  // Write room to Firebase.
-  // secretWord is stored so the guest can load it after joining.
-  // In a production environment this would live behind server-side logic.
   await set(ref(db, 'rooms/' + roomId), {
     host:             currentUser.username,
     hostUid:          currentUser.uid,
     guest:            null,
     guestUid:         null,
     secretWordHash:   hash,
-    secretWord:       secret,           // loaded by guest AFTER joining (status: active)
+    secretWord:       secret,           // guest reads this after join
     secretWordLength: secret.length,
     attempts,
     betScore:         bet,
@@ -383,29 +464,28 @@ window.createRoom = async function() {
     createdAt:        Date.now()
   });
 
-  // Deduct host's bet up front
+  // Deduct host bet immediately
   if (bet > 0) {
     await update(ref(db, 'users/' + currentUser.uid), {
       score: (hData.score || 0) - bet
     });
   }
 
-  document.getElementById('room-id-show').textContent = roomId;
+  $('room-id-show').textContent = roomId;
   showScreen('screen-waiting');
   waitForGuest();
 };
 
 window.copyRoomId = function() {
+  if (!roomId) return;
   navigator.clipboard?.writeText(roomId)
     .then(() => showToast('Room ID copied! 📋', 'success'))
-    .catch(() => showToast(`Copy manually: ${roomId}`, 'warn'));
+    .catch(() => showToast('Copy manually: ' + roomId, 'warn'));
 };
 
 window.cancelRoom = async function() {
   if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
-
   if (roomId) {
-    // Refund bet
     if (betScore > 0) {
       const snap = await get(ref(db, 'users/' + currentUser.uid));
       if (snap.exists()) {
@@ -419,131 +499,103 @@ window.cancelRoom = async function() {
   window.location.href = 'index.html';
 };
 
-/**
- * Host waits in the waiting room until a guest joins.
- * Uses onValue with a self-detaching handler.
- */
 function waitForGuest() {
-  const rRef = ref(db, 'rooms/' + roomId);
-
+  const rRef  = ref(db, 'rooms/' + roomId);
   const unsub = onValue(rRef, snap => {
     if (!snap.exists()) return;
     const room = snap.val();
-
     if (room.status === 'active' && room.guest) {
-      unsub();    // detach — we don't need this listener anymore
+      unsub();
       startHostView(room);
     }
-
     if (room.status === 'cancelled') {
       unsub();
-      showToast('Room was cancelled.', 'warn');
+      showToast('Room cancelled.', 'warn');
       window.location.href = 'index.html';
     }
   });
 }
 
-/** Host enters spectator view — watches guest guesses in real-time */
 function startHostView(room) {
-  document.getElementById('opp-card').classList.remove('hidden');
-  document.getElementById('log-card').classList.remove('hidden');
-  document.getElementById('opp-name').textContent   = room.guest;
-  document.getElementById('opp-avatar').src         = avatarUrl('', room.guest);
-  document.getElementById('opp-status').textContent = 'Guessing…';
+  $('opp-card').classList.remove('hidden');
+  $('log-card').classList.remove('hidden');
+  $('opp-name').textContent   = room.guest;
+  $('opp-avatar').src         = avatarUrl('', room.guest);
+  $('opp-status').textContent = 'Guessing…';
 
-  // Host knows the word, show it in the title for reference
-  startBoard(`🌐 HOST · Your word: ${secretWord}`, `${room.guest} is guessing`, false, true);
-  document.getElementById('sb-mode-lbl').textContent = '🌐 Online · Host';
-  document.getElementById('sb-bet-row').classList.remove('hidden');
-  document.getElementById('sb-bet').textContent      = room.betScore;
+  startBoard(`🌐 HOST — Word: "${secretWord}"`, `${room.guest} is guessing`, false, true);
+  $('sb-mode-lbl').textContent = '🌐 Online · Host';
+  $('sb-bet-row').classList.remove('hidden');
+  $('sb-bet').textContent = betScore;
 
-  // Host doesn't type — hide input controls
-  document.getElementById('guess-input-area').classList.add('hidden');
-  document.getElementById('keyboard').style.display = 'none';
+  // Host only watches — hide input
+  $('guess-input-area').classList.add('hidden');
+  $('keyboard').style.display = 'none';
 
   listenToGuestGuesses();
 }
 
-/**
- * Host listens to the /guesses node and renders each guess onto the board.
- *
- * BUG FIXES applied here:
- * 1. Track `lastCount` to avoid re-processing the full array on every update
- * 2. gameOver guard prevents handleGameEnd from firing more than once
- * 3. Host does NOT write DB outcome — that's the guest's job
- */
 function listenToGuestGuesses() {
-  const gRef = ref(db, 'rooms/' + roomId + '/guesses');
-  let lastCount = 0;  // how many guesses we've already rendered
+  const gRef    = ref(db, 'rooms/' + roomId + '/guesses');
+  let lastCount = 0;
 
   _guessUnsub = onValue(gRef, snap => {
     if (!snap.exists() || gameOver) return;
 
     const guesses = Object.values(snap.val()).sort((a, b) => a.ts - b.ts);
-    const board   = document.getElementById('game-board');
-    const rows    = board.querySelectorAll('.guess-row');
-    const log     = document.getElementById('online-log');
+    const rows    = $('game-board').querySelectorAll('.guess-row');
+    const log     = $('online-log');
 
-    // Only process NEW guesses (those beyond lastCount)
+    // Process only new guesses
     for (let i = lastCount; i < guesses.length; i++) {
       const g      = guesses[i];
       const result = evaluateGuess(secretWord, g.guess);
 
-      // Render tile row
       if (rows[i]) buildTileRow(rows[i], g.guess, result);
 
-      // Append to log
-      const entry = document.createElement('div');
+      const entry = el('div', {}, g.guess.toUpperCase());
       entry.style.cssText = 'margin-bottom:3px;padding:2px 8px;background:var(--s1);border-radius:5px;font-family:var(--mono);letter-spacing:0.1em;';
-      entry.textContent   = g.guess.toUpperCase();
       log.appendChild(entry);
       log.scrollTop = log.scrollHeight;
     }
-
     lastCount = guesses.length;
 
-    // Update sidebar
-    const used = guesses.length;
-    document.getElementById('sb-attempts').textContent = maxAttempts - used;
-    document.getElementById('opp-status').textContent  = `${used} / ${maxAttempts} guesses used`;
+    $('sb-attempts').textContent = maxAttempts - guesses.length;
+    $('opp-status').textContent  = `${guesses.length} / ${maxAttempts} guesses`;
 
-    // Check if the room has been marked finished (by the guest side)
+    // Check if guest has resolved the game
     get(ref(db, 'rooms/' + roomId)).then(rSnap => {
       if (!rSnap.exists() || gameOver) return;
-      const rData = rSnap.val();
-      if (rData.status === 'finished') {
+      const rd = rSnap.val();
+      if (rd.status === 'finished') {
         if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
-        const hostWon = rData.winner === currentUser.username;
-        showHostResult(hostWon, secretWord, rData.winner);
+        showHostResult(rd.winner === currentUser.username, secretWord, rd.winner);
       }
     });
   });
 }
 
-/** Show result to host without touching the database (guest already wrote it) */
 function showHostResult(hostWon, word, winner) {
   if (gameOver) return;
   gameOver = true;
-
   if (hostWon) { confettiBurst(); playSound('win');  }
   else         {                  playSound('lose'); }
-
   setTimeout(() => {
-    document.getElementById('res-emoji').textContent = hostWon ? '🏆' : '💀';
-    document.getElementById('res-title').textContent = hostWon ? 'YOU WIN!' : 'YOU LOSE!';
-    document.getElementById('res-word').textContent  = word;
-    document.getElementById('res-msg').textContent   = hostWon
-      ? `${winner} couldn't crack your word! +${betScore * 2} ⭐ awarded.`
-      : `${winner} guessed your word! They take the pot.`;
-    document.getElementById('result-overlay').classList.add('open');
+    $('res-emoji').textContent = hostWon ? '🏆' : '💀';
+    $('res-title').textContent = hostWon ? 'YOU WIN!' : 'YOU LOSE!';
+    $('res-word').textContent  = word;
+    $('res-msg').textContent   = hostWon
+      ? `${winner} couldn't crack your word! +${betScore * 2} ⭐ earned.`
+      : `${winner} guessed your word correctly!`;
+    $('result-overlay').classList.add('open');
   }, 700);
 }
 
-// ════════════════════════════════════════════════════════════
-// ONLINE MODE — GUEST
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// ONLINE — GUEST SIDE
+// ══════════════════════════════════════════════════════════════
 window.joinRoom = async function() {
-  const id = document.getElementById('g-room-id').value.trim().toUpperCase();
+  const id = $('g-room-id').value.trim().toUpperCase();
   if (id.length !== 6) { showToast('Room ID must be 6 characters.', 'warn'); return; }
 
   const rRef = ref(db, 'rooms/' + id);
@@ -551,37 +603,30 @@ window.joinRoom = async function() {
 
   if (!snap.exists())            { showToast('Room not found.', 'error'); return; }
   const room = snap.val();
-
-  // Safety checks
-  if (room.status !== 'waiting') { showToast('Room is not available.', 'error'); return; }
+  if (room.status !== 'waiting') { showToast('Room is no longer available.', 'error'); return; }
   if (room.host === currentUser.username) { showToast("You can't join your own room.", 'warn'); return; }
-  if (room.guest)                { showToast('Room already has a guest.', 'error'); return; }
+  if (room.guest)                { showToast('Room is already full.', 'error'); return; }
 
-  // Check guest has enough score
   const mySnap = await get(ref(db, 'users/' + currentUser.uid));
   const myData = mySnap.val();
   if ((room.betScore || 0) > (myData.score || 0)) {
-    showToast(`Need at least ${room.betScore} ⭐ score to join.`, 'error'); return;
+    showToast(`Need ${room.betScore} ⭐ score to join this room.`, 'error'); return;
   }
 
-  // Deduct guest's bet
   if (room.betScore > 0) {
     await update(ref(db, 'users/' + currentUser.uid), {
       score: (myData.score || 0) - room.betScore
     });
   }
 
-  // ── CRITICAL FIX: Load secretWord from the room NOW ───────
-  // Previously secretWord was never set for the guest, causing evaluateGuess('')
-  // to always return [] which .every() vacuously evaluates as true → instant "win".
+  // ── KEY FIX: populate secretWord for the guest ────────────
   roomId      = id;
   isHost      = false;
-  betScore    = room.betScore     || 0;
+  betScore    = room.betScore        || 0;
   maxAttempts = room.attempts;
   wordLength  = room.secretWordLength;
-  secretWord  = room.secretWord.toUpperCase();   // ← THE FIX
+  secretWord  = room.secretWord.toUpperCase();   // ← without this, evaluateGuess('','X') always "wins"
 
-  // Mark room active — host's waitForGuest listener will detect this
   await update(rRef, {
     guest:    currentUser.username,
     guestUid: currentUser.uid,
@@ -591,46 +636,49 @@ window.joinRoom = async function() {
   startGuestView(room);
 };
 
-/** Guest enters interactive guessing view */
 function startGuestView(room) {
-  document.getElementById('opp-card').classList.remove('hidden');
-  document.getElementById('opp-name').textContent   = room.host;
-  document.getElementById('opp-avatar').src         = avatarUrl('', room.host);
-  document.getElementById('opp-status').textContent = 'Hosting';
+  $('opp-card').classList.remove('hidden');
+  $('opp-name').textContent   = room.host;
+  $('opp-avatar').src         = avatarUrl('', room.host);
+  $('opp-status').textContent = 'Hosting';
 
   startBoard('🌐 MULTIPLAYER', `Vs ${room.host} · Bet: ${room.betScore || 0} ⭐`);
-  document.getElementById('sb-mode-lbl').textContent = '🌐 Online · Guest';
-  document.getElementById('sb-bet-row').classList.remove('hidden');
-  document.getElementById('sb-bet').textContent      = room.betScore;
+  $('sb-mode-lbl').textContent = '🌐 Online · Guest';
+  $('sb-bet-row').classList.remove('hidden');
+  $('sb-bet').textContent = room.betScore;
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // DAILY MODE
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 async function initDailyScreen() {
-  const today     = todayStr();
-  const dailySnap = await get(ref(db, 'dailyWord'));
+  try {
+    const today     = todayStr();
+    const dailySnap = await get(ref(db, 'dailyWord'));
 
-  if (!dailySnap.exists()) {
-    showToast('No daily challenge set yet. Check back soon!', 'warn');
-    document.getElementById('d-start-wrap').classList.add('hidden');
-    showScreen('screen-daily');
-    return;
+    if (!dailySnap.exists()) {
+      showToast('No daily challenge set yet. Check back soon!', 'warn');
+      $('d-start-wrap').classList.add('hidden');
+      showScreen('screen-daily');
+      return;
+    }
+
+    const daily = dailySnap.val();
+    $('d-reward-money').textContent = '💰 ' + (daily.rewardMoney || 50);
+    $('d-reward-score').textContent = '⭐ ' + (daily.rewardScore || 100);
+    $('d-attempts').textContent     = daily.attempts || 6;
+
+    const resSnap = await get(ref(db, `dailyResults/${today}/${currentUser.username}`));
+    if (resSnap.exists()) {
+      $('d-already-played').classList.remove('hidden');
+      $('d-start-wrap').classList.add('hidden');
+    }
+
+    window._dailyData = daily;
+  } catch(e) {
+    showToast('Failed to load daily challenge.', 'error');
+    console.error(e);
   }
-
-  const daily = dailySnap.val();
-  document.getElementById('d-reward-money').textContent = '💰 ' + (daily.rewardMoney || 50);
-  document.getElementById('d-reward-score').textContent = '⭐ ' + (daily.rewardScore || 100);
-  document.getElementById('d-attempts').textContent     = daily.attempts || 6;
-
-  // Check if already played today
-  const resSnap = await get(ref(db, `dailyResults/${today}/${currentUser.username}`));
-  if (resSnap.exists()) {
-    document.getElementById('d-already-played').classList.remove('hidden');
-    document.getElementById('d-start-wrap').classList.add('hidden');
-  }
-
-  window._dailyData = daily;
   showScreen('screen-daily');
 }
 
@@ -646,63 +694,57 @@ window.startDailyGame = function() {
 
   timer = new CountdownTimer({
     totalSeconds: 60,
-    containerEl:  document.getElementById('timer-el'),
-    onEnd: () => {
-      if (!gameOver) handleGameEnd(false, secretWord);
-    }
+    containerEl:  $('timer-el'),
+    onEnd: () => { if (!gameOver) handleGameEnd(false, secretWord); }
   });
   timer.start();
 };
 
-// ════════════════════════════════════════════════════════════
-// BOARD SETUP
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// BOARD INITIALISATION
+// ══════════════════════════════════════════════════════════════
 function startBoard(title, subtitle, showTimer = false, hostView = false) {
   showScreen('screen-game');
-  document.getElementById('game-title').textContent    = title;
-  document.getElementById('game-subtitle').textContent = subtitle;
+  $('game-title').textContent    = title;
+  $('game-subtitle').textContent = subtitle;
 
-  // Build empty grid rows
-  const board = document.getElementById('game-board');
+  // Build empty tile grid
+  const board = $('game-board');
   board.innerHTML = '';
   for (let i = 0; i < maxAttempts; i++) {
-    const row     = document.createElement('div');
+    const row     = el('div');
     row.className = 'guess-row';
     row.id        = `row-${i}`;
     buildEmptyRow(row, wordLength);
     board.appendChild(row);
   }
 
-  document.getElementById('sb-len').textContent      = wordLength;
-  document.getElementById('sb-attempts').textContent = maxAttempts;  // start with full attempts
+  $('sb-len').textContent      = wordLength;
+  $('sb-attempts').textContent = maxAttempts;
 
-  if (showTimer) document.getElementById('timer-area').classList.remove('hidden');
+  if (showTimer) $('timer-area').classList.remove('hidden');
 
   if (!hostView) {
-    buildKeyboard(document.getElementById('keyboard'), handleKey);
-    attachInputListeners();
-    setTimeout(() => document.getElementById('guess-input').focus(), 150);
+    buildKeyboard($('keyboard'), handleKey);
+    attachInput();
+    setTimeout(() => $('guess-input').focus(), 200);
   }
 }
 
-/** Wire up the text input field with validation */
-function attachInputListeners() {
-  const inp = document.getElementById('guess-input');
+function attachInput() {
+  const inp     = $('guess-input');
   inp.maxLength = wordLength;
+  inp.value     = '';
 
-  // ── keydown: block non-letter keys before they enter the field ──
+  // Block non-letter keys before they register
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') { submitGuess(); return; }
-    // Pass through control keys (Backspace, Delete, Arrow keys, Tab, etc.)
-    if (e.key.length > 1) return;
-    // Block anything that isn't a letter A-Z
-    if (!/^[a-zA-Z]$/.test(e.key)) {
+    if (e.key.length === 1 && !/^[a-zA-Z]$/.test(e.key)) {
       e.preventDefault();
-      showToast('Only letters A–Z allowed.', 'warn');
     }
   });
 
-  // ── input: clean and uppercase in case anything slipped through ──
+  // Clean + uppercase whatever arrives (handles paste, autocomplete, etc.)
   inp.addEventListener('input', e => {
     const clean = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
     if (e.target.value !== clean) e.target.value = clean;
@@ -710,16 +752,13 @@ function attachInputListeners() {
   });
 }
 
-// ── On-screen keyboard handler ────────────────────────────────
 function handleKey(k) {
   if (gameOver) return;
-  const inp = document.getElementById('guess-input');
-
+  const inp = $('guess-input');
   if (k === '⌫') {
     inp.value = inp.value.slice(0, -1);
   } else if (k === 'ENTER') {
-    submitGuess();
-    return;
+    submitGuess(); return;
   } else if (/^[A-Z]$/.test(k) && inp.value.length < wordLength) {
     inp.value += k;
     playSound('type');
@@ -727,126 +766,88 @@ function handleKey(k) {
   updateCurrentRow(inp.value);
 }
 
-/** Mirror typed letters onto the current board row */
 function updateCurrentRow(val) {
-  currentGuess  = val.toUpperCase();
-  const row     = document.getElementById(`row-${guessCount}`);
+  currentGuess = val.toUpperCase();
+  const row    = $(`row-${guessCount}`);
   if (!row) return;
-
   row.querySelectorAll('.tile').forEach((t, i) => {
     t.textContent = currentGuess[i] || '';
     t.className   = 'tile' + (currentGuess[i] ? ' filled' : ' empty');
   });
 }
 
-// ════════════════════════════════════════════════════════════
-// SUBMIT GUESS — the fixed core loop
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// SUBMIT GUESS — core loop, fixed
+// ══════════════════════════════════════════════════════════════
 window.submitGuess = async function() {
-  // ── Guard: stop if game is already over ──────────────────
   if (gameOver) return;
 
-  const inp   = document.getElementById('guess-input');
+  const inp   = $('guess-input');
   const guess = inp.value.toUpperCase().trim();
 
-  // ── Validate length ───────────────────────────────────────
+  // Length check
   if (guess.length !== wordLength) {
-    showToast(`Word must be exactly ${wordLength} letters.`, 'warn');
-    shakeRow(document.getElementById(`row-${guessCount}`));
+    showToast(`Enter a ${wordLength}-letter word.`, 'warn');
+    shakeRow($(`row-${guessCount}`));
     return;
   }
 
-  // ── Validate characters: A-Z only ────────────────────────
+  // Letters-only check
   if (!/^[A-Z]+$/.test(guess)) {
-    showToast('Only letters A–Z are allowed. No numbers or symbols.', 'warn');
-    shakeRow(document.getElementById(`row-${guessCount}`));
-    inp.value = '';
-    updateCurrentRow('');
+    showToast('Only letters A–Z allowed.', 'warn');
+    shakeRow($(`row-${guessCount}`));
+    inp.value = ''; updateCurrentRow('');
     return;
   }
 
-  // ── Disable controls to prevent double-submit ─────────────
+  // Prevent double-submit
   inp.disabled = true;
-  document.getElementById('submit-btn').disabled = true;
+  $('submit-btn').disabled = true;
 
-  // ── Evaluate guess against the secret word ────────────────
-  // evaluateGuess(secret, guess) → array of 'correct' | 'present' | 'absent'
-  // A WIN requires ALL positions to return 'correct' — exact character match
+  // Evaluate — requires secretWord to be populated (fixed for online guest)
   const result = evaluateGuess(secretWord, guess);
   const isWin  = result.length === wordLength && result.every(r => r === 'correct');
 
-  // ── For online guest: push guess to Firebase ──────────────
-  // Host's listener will pick this up for the spectator view
+  // Push to Firebase for online guest (host spectator will see it)
   if (mode === 'online' && !isHost) {
-    await push(ref(db, 'rooms/' + roomId + '/guesses'), {
-      guess,
-      ts: Date.now()
-    });
+    await push(ref(db, 'rooms/' + roomId + '/guesses'), { guess, ts: Date.now() });
   }
 
-  // ── Render tiles and keyboard ──────────────────────────────
-  buildTileRow(document.getElementById(`row-${guessCount}`), guess, result);
-  updateKeyboard(document.getElementById('keyboard'), guess, result);
+  // Render tiles + keyboard
+  buildTileRow($(`row-${guessCount}`), guess, result);
+  updateKeyboard($('keyboard'), guess, result);
+  playSound(isWin ? 'correct' : (result.includes('correct') || result.includes('present')) ? 'present' : 'absent');
 
-  // Sound feedback
-  if (isWin) {
-    playSound('correct');
-  } else if (result.includes('correct') || result.includes('present')) {
-    playSound('present');
-  } else {
-    playSound('absent');
-  }
-
-  // ── Advance attempt counter ───────────────────────────────
   guessCount++;
-  const attemptsLeft = maxAttempts - guessCount;
-  document.getElementById('sb-attempts').textContent = attemptsLeft;
-
-  // ── Clear input field ─────────────────────────────────────
+  $('sb-attempts').textContent = maxAttempts - guessCount;
   inp.value    = '';
   currentGuess = '';
 
-  // ── WIN: all letters correct ──────────────────────────────
-  if (isWin) {
-    handleGameEnd(true, guess);
-    return;   // controls stay disabled — game over
-  }
+  if (isWin)                       { handleGameEnd(true,  guess); return; }
+  if (guessCount >= maxAttempts)   { handleGameEnd(false, guess); return; }
 
-  // ── LOSS: exhausted all attempts ──────────────────────────
-  if (guessCount >= maxAttempts) {
-    handleGameEnd(false, guess);
-    return;   // controls stay disabled — game over
-  }
-
-  // ── Game continues — re-enable input for next attempt ──────
+  // Game continues — re-enable
   inp.disabled = false;
-  document.getElementById('submit-btn').disabled = false;
+  $('submit-btn').disabled = false;
   inp.focus();
 };
 
-// ════════════════════════════════════════════════════════════
-// GAME END — runs at most ONCE, protected by gameOver flag
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// GAME END — fires at most once
+// ══════════════════════════════════════════════════════════════
 async function handleGameEnd(won, finalGuess) {
-  // ── Critical guard: prevent double invocation ─────────────
   if (gameOver) return;
-  gameOver = true;  // lock IMMEDIATELY before any async work
+  gameOver = true;
 
-  // Stop timer
   if (timer) timer.stop();
-
-  // Detach Firebase listener
   if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
 
-  // Hide input UI
-  document.getElementById('guess-input-area').classList.add('hidden');
-  document.getElementById('keyboard').innerHTML = '';
+  $('guess-input-area').classList.add('hidden');
+  $('keyboard').innerHTML = '';
 
-  // Victory / defeat effects
   if (won) { confettiBurst(); playSound('win');  }
   else     {                  playSound('lose'); }
 
-  // ── DB updates ────────────────────────────────────────────
   const today   = todayStr();
   const userRef = ref(db, 'users/' + currentUser.uid);
   const uSnap   = await get(userRef);
@@ -860,78 +861,56 @@ async function handleGameEnd(won, finalGuess) {
     else     { updates.losses = (ud.losses || 0) + 1; }
   }
 
-  // ── ONLINE — GUEST (owns outcome write) ───────────────────
+  // ── ONLINE GUEST (writes outcome) ─────────────────────────
   else if (mode === 'online' && !isHost) {
     if (won) {
-      // Guest wins: receives 2× the pot (both bets)
       updates.wins  = (ud.wins  || 0) + 1;
       updates.score = (ud.score || 0) + betScore * 2;
-      rewardMsg     = `+${betScore * 2} ⭐ score!`;
+      rewardMsg     = `+${betScore * 2} ⭐`;
 
-      // Host loses: get a loss on record (they already lost their bet)
       const rSnap = await get(ref(db, 'rooms/' + roomId));
-      if (rSnap.exists()) {
-        const rData = rSnap.val();
-        if (rData.hostUid) {
-          const hSnap = await get(ref(db, 'users/' + rData.hostUid));
-          if (hSnap.exists()) {
-            const hd = hSnap.val();
-            await update(ref(db, 'users/' + rData.hostUid), {
-              losses:     (hd.losses     || 0) + 1,
-              totalGames: (hd.totalGames || 0) + 1
-            });
-          }
+      if (rSnap.exists() && rSnap.val().hostUid) {
+        const hSnap = await get(ref(db, 'users/' + rSnap.val().hostUid));
+        if (hSnap.exists()) {
+          await update(ref(db, 'users/' + rSnap.val().hostUid), {
+            losses: (hSnap.val().losses || 0) + 1,
+            totalGames: (hSnap.val().totalGames || 0) + 1
+          });
         }
       }
-
-      // Write room outcome — host's watcher will detect 'finished' status
-      await update(ref(db, 'rooms/' + roomId), {
-        status: 'finished',
-        winner: currentUser.username
-      });
+      await update(ref(db, 'rooms/' + roomId), { status: 'finished', winner: currentUser.username });
 
     } else {
-      // Guest loses: host wins the pot
       updates.losses = (ud.losses || 0) + 1;
 
       const rSnap = await get(ref(db, 'rooms/' + roomId));
       if (rSnap.exists()) {
-        const rData = rSnap.val();
-        if (rData.hostUid) {
-          const hSnap = await get(ref(db, 'users/' + rData.hostUid));
+        const rd = rSnap.val();
+        if (rd.hostUid) {
+          const hSnap = await get(ref(db, 'users/' + rd.hostUid));
           if (hSnap.exists()) {
-            const hd = hSnap.val();
-            await update(ref(db, 'users/' + rData.hostUid), {
-              wins:       (hd.wins       || 0) + 1,
-              score:      (hd.score      || 0) + betScore * 2,  // host gets both bets
-              totalGames: (hd.totalGames || 0) + 1
+            await update(ref(db, 'users/' + rd.hostUid), {
+              wins:       (hSnap.val().wins       || 0) + 1,
+              score:      (hSnap.val().score      || 0) + betScore * 2,
+              totalGames: (hSnap.val().totalGames || 0) + 1
             });
           }
         }
-        // Write room outcome
-        await update(ref(db, 'rooms/' + roomId), {
-          status: 'finished',
-          winner: rData.host
-        });
+        await update(ref(db, 'rooms/' + roomId), { status: 'finished', winner: rd.host });
       }
     }
   }
 
-  // ── ONLINE — HOST (outcome written by guest; host shown via showHostResult) ──
+  // ── ONLINE HOST — outcome managed by guest; host sees via watcher ──
   else if (mode === 'online' && isHost) {
-    // The guest side writes the room status; listenToGuestGuesses() → showHostResult().
-    // Don't do anything here — it would cause a race condition / double DB write.
-    // The host's result UI is triggered from listenToGuestGuesses via get(room).
-    return;
+    return;   // don't show overlay here — showHostResult() does it
   }
 
   // ── DAILY ─────────────────────────────────────────────────
   else if (mode === 'daily') {
     const daily = window._dailyData;
     await set(ref(db, `dailyResults/${today}/${currentUser.username}`), {
-      result:    won ? 'win' : 'lose',
-      timeTaken: Date.now(),
-      timestamp: Date.now()
+      result: won ? 'win' : 'lose', timestamp: Date.now()
     });
     if (won) {
       updates.wins   = (ud.wins   || 0) + 1;
@@ -943,39 +922,70 @@ async function handleGameEnd(won, finalGuess) {
     }
   }
 
-  // ── Write player stats ────────────────────────────────────
   await update(userRef, updates);
 
-  // ── Refresh session & award achievements ──────────────────
-  const fresh     = await get(userRef);
-  const freshData = fresh.val();
-  saveSession({ uid: currentUser.uid, ...freshData });
-
-  const newAch = await checkAchievements(freshData, currentUser.uid, db, ref, update);
-  if (newAch.length > 0) {
+  // Check achievements
+  const fresh = await get(userRef);
+  saveSession({ uid: currentUser.uid, ...fresh.val() });
+  const newAch = await checkAchievements(fresh.val(), currentUser.uid, db, ref, update);
+  if (newAch.length) {
     const a = ACHIEVEMENTS.find(x => x.id === newAch[0]);
-    if (a) setTimeout(() => showToast(`🎖 Achievement: ${a.label}!`, 'success', 4500), 1800);
+    if (a) setTimeout(() => showToast(`🎖 ${a.label} unlocked!`, 'success', 4500), 1800);
   }
 
-  // ── Show result overlay ───────────────────────────────────
+  // Show result overlay
   setTimeout(() => {
-    document.getElementById('res-emoji').textContent = won ? '🏆' : '💀';
-    document.getElementById('res-title').textContent = won ? 'VICTORY!' : 'DEFEATED!';
-    document.getElementById('res-word').textContent  = secretWord;
-    document.getElementById('res-msg').textContent   = won
-      ? `Cracked in ${guessCount} attempt${guessCount !== 1 ? 's' : ''}! ${rewardMsg}`
-      : `The word was: ${secretWord}. Better luck next time!`;
-    document.getElementById('result-overlay').classList.add('open');
+    $('res-emoji').textContent = won ? '🏆' : '💀';
+    $('res-title').textContent = won ? 'VICTORY!' : 'DEFEATED!';
+    $('res-word').textContent  = secretWord;
+    $('res-msg').textContent   = won
+      ? `Solved in ${guessCount} attempt${guessCount !== 1 ? 's' : ''}! ${rewardMsg}`
+      : `The word was: ${secretWord}`;
+    $('result-overlay').classList.add('open');
   }, 700);
 }
 
 window.playAgain = function() {
-  document.getElementById('result-overlay').classList.remove('open');
+  $('result-overlay').classList.remove('open');
   window.location.href = 'game.html';
 };
 
-// ── Kick off init ─────────────────────────────────────────────
-init();
+// ══════════════════════════════════════════════════════════════
+// AD BANNER — injected into iframe to prevent document.write
+// destroying the parent page DOM
+// ══════════════════════════════════════════════════════════════
+function injectAd() {
+  const frame = $('ad-frame');
+  if (!frame) return;
+
+  // Write a minimal HTML doc into the iframe; the ad script's
+  // document.write() targets the iframe document, not the parent.
+  const adCode = `<!DOCTYPE html><html><head>
+    <style>body{margin:0;padding:0;background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style>
+    </head><body>
+    <script type="text/javascript">
+    var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};
+    document.write('<scr'+'ipt type="text/javascript" src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j='+__jscp()+'"></scr'+'ipt>');
+    <\/script>
+    </body></html>`;
+
+  // Use srcdoc if supported, otherwise blob URL
+  if ('srcdoc' in frame) {
+    frame.srcdoc = adCode;
+  } else {
+    const blob = new Blob([adCode], { type: 'text/html' });
+    frame.src  = URL.createObjectURL(blob);
+  }
+}
+
+// ── Start everything ──────────────────────────────────────────
+init().catch(e => {
+  console.error('Game init failed:', e);
+  showToast('Something went wrong. Please refresh.', 'error');
+  hideCover();
+});
+
+injectAd();
 </script>
 </body>
 </html>

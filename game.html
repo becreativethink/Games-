@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- Navbar -->
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
   <div class="nav-links">
@@ -21,26 +22,26 @@
   </div>
 </nav>
 
-<!-- ─── SETUP SCREENS ──────────────────────────────────────── -->
+<!-- ═══════════════════ SETUP SCREENS ════════════════════ -->
 
-<!-- Offline setup -->
-<div id="screen-offline-setup" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated">
+<!-- OFFLINE SETUP -->
+<div id="screen-offline" class="hidden setup-wrap">
+  <div class="setup-card card card-elevated page-enter">
     <div class="setup-head">
       <div class="setup-ic">🤝</div>
       <div>
         <h2>Offline Mode</h2>
-        <p class="text-sm text-muted">Player 1 sets the word, Player 2 guesses.</p>
+        <p class="text-sm text-muted">Player 1 sets the secret word, Player 2 guesses.</p>
       </div>
     </div>
     <div class="divider"></div>
     <div class="form-group">
-      <label class="form-label">Secret Word (hidden)</label>
-      <input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="10" />
+      <label class="form-label">Secret Word (hidden) — letters A–Z only</label>
+      <input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12" />
     </div>
     <div class="form-group">
-      <label class="form-label">Word Length (auto)</label>
-      <input class="form-control" id="off-len" type="number" value="5" min="3" max="10" readonly />
+      <label class="form-label">Word Length (auto-detected)</label>
+      <input class="form-control" id="off-len" type="number" value="5" min="2" max="12" readonly />
     </div>
     <div class="form-group">
       <label class="form-label">Max Attempts</label>
@@ -53,9 +54,9 @@
   </div>
 </div>
 
-<!-- Online setup -->
-<div id="screen-online-setup" class="hidden setup-wrap">
-  <div class="setup-card wide card card-elevated">
+<!-- ONLINE SETUP -->
+<div id="screen-online" class="hidden setup-wrap">
+  <div class="setup-card wide card card-elevated page-enter">
     <div class="setup-head">
       <div class="setup-ic">🌐</div>
       <div>
@@ -70,20 +71,20 @@
       <button class="tab-btn"        id="tab-guest" onclick="switchOnlineTab('guest')">Join a Room</button>
     </div>
 
-    <!-- Host -->
+    <!-- Host panel -->
     <div id="host-panel">
       <div class="form-group">
-        <label class="form-label">Secret Word (opponent must guess this)</label>
-        <input class="form-control" id="host-secret" type="password" placeholder="Type your secret word…" maxlength="10" />
+        <label class="form-label">Secret Word (opponent guesses this) — letters A–Z only</label>
+        <input class="form-control" id="h-secret" type="password" placeholder="Type your secret word…" maxlength="12" />
       </div>
       <div class="flex gap-12">
         <div class="form-group flex-1">
           <label class="form-label">Max Attempts</label>
-          <input class="form-control" id="host-attempts" type="number" value="6" min="3" max="10" />
+          <input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10" />
         </div>
         <div class="form-group flex-1">
-          <label class="form-label">Bet Score (you have: <span id="host-current-score" class="text-accent">—</span>)</label>
-          <input class="form-control" id="host-bet" type="number" value="50" min="0" />
+          <label class="form-label">Bet Score (you have: <span id="h-score-cur" class="text-accent">—</span>)</label>
+          <input class="form-control" id="h-bet" type="number" value="50" min="0" />
         </div>
       </div>
       <div class="flex gap-8 mt-8">
@@ -92,13 +93,13 @@
       </div>
     </div>
 
-    <!-- Guest -->
+    <!-- Guest panel -->
     <div id="guest-panel" class="hidden">
       <p class="text-muted text-sm mb-16">Ask the host for their 6-character Room ID.</p>
       <div class="form-group">
         <label class="form-label">Room ID</label>
-        <input class="form-control" id="guest-room-id" type="text" placeholder="AB12CD" maxlength="6"
-          style="font-family:var(--mono);letter-spacing:0.25em;text-transform:uppercase;text-align:center;font-size:1.6rem;padding:14px;" />
+        <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6"
+          style="font-family:var(--mono);letter-spacing:0.25em;text-transform:uppercase;text-align:center;font-size:1.7rem;padding:14px;" />
       </div>
       <div class="flex gap-8 mt-8">
         <button class="btn btn-primary flex-1" onclick="joinRoom()">Join Room →</button>
@@ -108,77 +109,79 @@
   </div>
 </div>
 
-<!-- Waiting room -->
+<!-- WAITING ROOM -->
 <div id="screen-waiting" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated text-center">
-    <div style="font-size:3rem;margin-bottom:12px;">⏳</div>
+  <div class="setup-card card card-elevated text-center page-enter">
+    <div style="font-size:3rem;margin-bottom:12px;animation:pdot 1.5s infinite;">⏳</div>
     <h2 class="mb-8">Waiting for Opponent</h2>
-    <p class="text-muted text-sm mb-16">Share this Room ID:</p>
-
-    <div class="room-id-display mb-4" id="room-id-show" onclick="copyRoomId()" title="Click to copy">—</div>
-    <p class="text-faint text-xs mb-20">Click to copy to clipboard</p>
-
+    <p class="text-muted text-sm mb-20">Share this Room ID:</p>
+    <div class="room-id-display mb-8" id="room-id-show" onclick="copyRoomId()">—</div>
+    <p class="text-faint text-xs mb-20">Click to copy</p>
     <button class="btn btn-danger btn-sm" onclick="cancelRoom()">Cancel Room</button>
   </div>
 </div>
 
-<!-- Daily setup -->
-<div id="screen-daily-setup" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated text-center">
+<!-- DAILY SETUP -->
+<div id="screen-daily" class="hidden setup-wrap">
+  <div class="setup-card card card-elevated text-center page-enter">
     <div style="font-size:3rem;margin-bottom:12px;">📅</div>
     <h2 class="mb-8">Daily Challenge</h2>
     <p class="text-muted text-sm mb-16">60 seconds. One word. Beat the clock.</p>
 
-    <div class="card" style="background:rgba(240,180,41,0.05);border-color:rgba(240,180,41,0.18);margin-bottom:16px;">
+    <div class="card mb-16" style="background:rgba(240,180,41,0.05);border-color:rgba(240,180,41,0.18);">
       <div class="flex justify-between mb-8">
         <span class="text-muted text-sm">Reward Money</span>
-        <span class="text-gold text-mono fw-700" id="daily-reward-money">—</span>
+        <span class="text-gold text-mono fw-700" id="d-reward-money">—</span>
+      </div>
+      <div class="flex justify-between mb-8">
+        <span class="text-muted text-sm">Reward Score</span>
+        <span class="text-accent text-mono fw-700" id="d-reward-score">—</span>
       </div>
       <div class="flex justify-between">
-        <span class="text-muted text-sm">Reward Score</span>
-        <span class="text-accent text-mono fw-700" id="daily-reward-score">—</span>
+        <span class="text-muted text-sm">Max Attempts</span>
+        <span class="text-mono fw-700" id="d-attempts">—</span>
       </div>
     </div>
 
-    <div id="daily-already-played" class="hidden">
-      <div class="tag tag-green" style="display:inline-flex;padding:8px 16px;font-size:0.82rem;border-radius:var(--rS);">
+    <div id="d-already-played" class="hidden">
+      <div class="tag tag-green" style="display:inline-flex;padding:8px 18px;font-size:0.82rem;border-radius:var(--rS);">
         ✓ Already completed today!
       </div>
       <p class="text-muted text-sm mt-12">Come back tomorrow for a new word.</p>
       <a href="index.html" class="btn btn-ghost btn-full mt-16">← Back Home</a>
     </div>
 
-    <div id="daily-start-wrap">
-      <button class="btn btn-gold btn-full btn-lg" onclick="startDailyGame()">Start Challenge →</button>
+    <div id="d-start-wrap">
+      <button class="btn btn-gold btn-full btn-xl" onclick="startDailyGame()">⚡ Start Challenge</button>
       <a href="index.html" class="btn btn-ghost btn-sm mt-8">Cancel</a>
     </div>
   </div>
 </div>
 
-<!-- ─── GAME SCREEN ─────────────────────────────────────────── -->
+<!-- ═══════════════════ GAME SCREEN ═══════════════════════ -->
 <div id="screen-game" class="hidden">
   <div class="game-layout">
 
-    <!-- Main board column -->
+    <!-- Board -->
     <div class="game-main">
       <div class="game-status">
-        <h2 id="game-title">WordWar</h2>
+        <h2 id="game-title" class="text-display">WORD WAR</h2>
         <p class="text-muted" id="game-subtitle">Guess the hidden word</p>
       </div>
 
-      <!-- Timer -->
+      <!-- Timer (daily only) -->
       <div id="timer-area" class="hidden">
         <div id="timer-el"></div>
       </div>
 
-      <!-- Board -->
+      <!-- Board grid -->
       <div class="game-board" id="game-board"></div>
 
-      <!-- Input -->
+      <!-- Guess input -->
       <div class="guess-input-wrap" id="guess-input-area">
-        <input class="guess-input" id="guess-input" type="text"
-          placeholder="TYPE GUESS" maxlength="10"
-          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+        <input class="guess-input" id="guess-input" type="text" placeholder="GUESS"
+          maxlength="12" autocomplete="off" autocorrect="off"
+          autocapitalize="characters" spellcheck="false" />
         <button class="btn btn-primary" id="submit-btn" onclick="submitGuess()">GO</button>
       </div>
 
@@ -189,44 +192,38 @@
     <!-- Sidebar -->
     <div class="game-sidebar">
 
+      <!-- Game info -->
       <div class="sb-card">
-        <div class="sb-card-title" id="sidebar-mode-label">Game Info</div>
-        <div class="sb-row">
-          <span class="lbl">Attempts used</span>
-          <span class="val" id="sb-attempts">0 / —</span>
-        </div>
-        <div class="sb-row">
-          <span class="lbl">Word length</span>
-          <span class="val" id="sb-len">—</span>
-        </div>
-        <div class="sb-row hidden" id="sb-bet-row">
-          <span class="lbl">Bet</span>
-          <span class="val text-gold" id="sb-bet">—</span>
-        </div>
+        <div class="sb-title" id="sb-mode-lbl">Game Info</div>
+        <div class="sb-row"><span class="lbl">Attempts Left</span><span class="val" id="sb-attempts">—</span></div>
+        <div class="sb-row"><span class="lbl">Word Length</span><span class="val" id="sb-len">—</span></div>
+        <div class="sb-row hidden" id="sb-bet-row"><span class="lbl">Bet</span><span class="val text-gold" id="sb-bet">—</span></div>
       </div>
 
-      <div class="sb-card hidden" id="opponent-card">
-        <div class="sb-card-title">Opponent</div>
+      <!-- Opponent card (online only) -->
+      <div class="sb-card hidden" id="opp-card">
+        <div class="sb-title">Opponent</div>
         <div class="flex items-center gap-12">
           <img id="opp-avatar" src="" alt=""
-               style="width:36px;height:36px;border-radius:50%;border:2px solid var(--b1);flex-shrink:0;" />
+               style="width:36px;height:36px;border-radius:50%;border:2px solid var(--b2);flex-shrink:0;" />
           <div class="min-w-0">
-            <div id="opp-name" class="fw-700 truncate">—</div>
-            <div class="text-xs text-faint" id="opp-status">Waiting…</div>
+            <div class="fw-700 truncate" id="opp-name">—</div>
+            <div class="text-xs text-faint" id="opp-status">Connecting…</div>
           </div>
         </div>
       </div>
 
-      <div class="sb-card hidden" id="online-log-card">
-        <div class="sb-card-title">Match Log</div>
-        <div id="online-log" style="font-size:0.78rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
+      <!-- Match log (host view) -->
+      <div class="sb-card hidden" id="log-card">
+        <div class="sb-title">Match Log</div>
+        <div id="online-log" style="font-size:0.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
       </div>
 
     </div>
   </div>
 </div>
 
-<!-- ─── RESULT OVERLAY ──────────────────────────────────────── -->
+<!-- ═══════════════════ RESULT OVERLAY ═══════════════════ -->
 <div class="result-overlay" id="result-overlay">
   <div class="result-card">
     <span class="res-emoji" id="res-emoji">🏆</span>
@@ -234,454 +231,742 @@
     <div class="res-word" id="res-word">WORD</div>
     <p class="res-msg text-muted" id="res-msg"></p>
     <div class="res-btns">
-      <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
-      <a href="index.html" class="btn btn-ghost">Home</a>
+      <button class="btn btn-primary" onclick="playAgain()">⚡ Play Again</button>
+      <a href="index.html" class="btn btn-ghost">← Home</a>
     </div>
   </div>
 </div>
 
-<!-- ─── SCRIPTS ─────────────────────────────────────────────── -->
+<!-- ═══════════════════ BANNER AD ════════════════════════ -->
+<div class="ad-banner">
+  <!-- BEGIN EZMOB TAG -->
+  <SCRIPT TYPE="text/javascript">
+  var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};
+  document.write('<S' + 'CRIPT TYPE="text/javascript" SRC="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=' + __jscp() + '"></S' + 'CRIPT>');
+  </SCRIPT>
+  <!-- END EZMOB TAG -->
+</div>
+
 <script type="module">
 import {
-  requireAuth, loadSession, saveSession,
-  db, ref, set, get, update, onValue, off, push,
-  sha256, generateRoomId, todayStr
+  requireAuth, loadSession, saveSession, avatarUrl, fmtNum,
+  sha256, generateRoomId, todayStr,
+  db, ref, set, get, update, onValue, off, push, remove
 } from './firebase-config.js';
 import {
   showToast, evaluateGuess, buildTileRow, buildEmptyRow, shakeRow,
   updateKeyboard, buildKeyboard, CountdownTimer,
-  playSound, avatarUrl, fmtNum
+  playSound, confettiBurst, ACHIEVEMENTS, checkAchievements
 } from './main.js';
 
-// ── Auth ────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────
 let currentUser = requireAuth('login.html');
-if (!currentUser) throw new Error('Not authenticated');
+if (!currentUser) throw 0;
 
 document.getElementById('nav-username').textContent = currentUser.username;
 document.getElementById('nav-avatar').src = avatarUrl(currentUser.photoURL, currentUser.username);
 
-// ── State ───────────────────────────────────────────────────
-let mode        = sessionStorage.getItem('ww_mode') || 'offline';
-let secretWord  = '';
-let maxAttempts = 6;
-let wordLength  = 5;
-let guessCount  = 0;
-let gameOver    = false;
-let currentGuess= '';
-let timer       = null;
-let roomId      = null;
-let isHost      = false;
-let roomListener= null;
-let betScore    = 0;
+// ══════════════════════════════════════════════════════════════
+// GAME STATE — single source of truth
+// ══════════════════════════════════════════════════════════════
+let mode         = sessionStorage.getItem('ww_mode') || 'offline';
+let secretWord   = '';        // plaintext secret; needed by whichever side evaluates guesses
+let maxAttempts  = 6;
+let wordLength   = 5;
+let guessCount   = 0;         // attempts used so far
+let gameOver     = false;     // HARD LOCK — set to true the moment game ends; prevents any re-entry
+let currentGuess = '';
+let timer        = null;
+let roomId       = null;
+let isHost       = false;
+let betScore     = 0;
+let _guessUnsub  = null;      // Firebase onValue unsubscribe handle for guess listener
 
-// ── Screen switcher ────────────────────────────────────────
+// ── Screen switcher ───────────────────────────────────────────
 function showScreen(id) {
-  ['screen-offline-setup','screen-online-setup','screen-daily-setup','screen-waiting','screen-game']
+  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game']
     .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
 }
 
-// ── Init by mode ────────────────────────────────────────────
+// ── Bootstrap ─────────────────────────────────────────────────
 async function init() {
-  if (mode === 'offline') {
-    showScreen('screen-offline-setup');
-    document.getElementById('off-secret').addEventListener('input', e => {
-      document.getElementById('off-len').value = e.target.value.length || 5;
-    });
-
-  } else if (mode === 'online') {
-    const snap = await get(ref(db, 'users/' + currentUser.uid));
-    if (snap.exists()) {
-      currentUser = { ...currentUser, ...snap.val() };
-      saveSession(currentUser);
-      document.getElementById('host-current-score').textContent = fmtNum(currentUser.score);
-    }
-    showScreen('screen-online-setup');
-
-  } else if (mode === 'daily') {
-    await loadDailySetup();
-    showScreen('screen-daily-setup');
+  // Refresh user data from Firebase
+  const snap = await get(ref(db, 'users/' + currentUser.uid));
+  if (snap.exists()) {
+    currentUser = { ...currentUser, ...snap.val() };
+    saveSession(currentUser);
   }
+
+  if      (mode === 'offline') { initOfflineScreen(); }
+  else if (mode === 'online')  { initOnlineScreen();  }
+  else if (mode === 'daily')   { await initDailyScreen(); }
 }
 
-// ── Offline ─────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// OFFLINE MODE
+// ════════════════════════════════════════════════════════════
+function initOfflineScreen() {
+  showScreen('screen-offline');
+  document.getElementById('off-secret').addEventListener('input', e => {
+    // Reflect length so player sees it updating
+    document.getElementById('off-len').value = e.target.value.length || '';
+  });
+}
+
 window.startOfflineGame = function() {
-  const word = document.getElementById('off-secret').value.trim().toUpperCase();
-  if (word.length < 3) { showToast('Word must be at least 3 letters.', 'warn'); return; }
-  if (!/^[A-Z]+$/.test(word)) { showToast('Letters only please.', 'warn'); return; }
-  secretWord  = word;
-  maxAttempts = parseInt(document.getElementById('off-attempts').value, 10);
-  wordLength  = word.length;
-  initBoard('🤝 Offline Mode', 'Player 2: Guess the secret word!', false);
+  const raw = document.getElementById('off-secret').value.trim().toUpperCase();
+
+  if (raw.length < 2)          { showToast('Word must be at least 2 letters.', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(raw))  { showToast('Secret word must contain letters only (A–Z). No numbers or symbols.', 'warn'); return; }
+
+  secretWord  = raw;
+  maxAttempts = parseInt(document.getElementById('off-attempts').value, 10) || 6;
+  wordLength  = raw.length;
+
+  startBoard('🤝 OFFLINE MODE', 'Player 2: Guess the secret word!');
 };
 
-// ── Online ──────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// ONLINE MODE — HOST
+// ════════════════════════════════════════════════════════════
+function initOnlineScreen() {
+  document.getElementById('h-score-cur').textContent = fmtNum(currentUser.score);
+  showScreen('screen-online');
+}
+
 window.switchOnlineTab = function(tab) {
-  document.getElementById('tab-host').classList.toggle('active', tab === 'host');
-  document.getElementById('tab-guest').classList.toggle('active', tab === 'guest');
+  document.getElementById('tab-host').classList.toggle('active',   tab === 'host');
+  document.getElementById('tab-guest').classList.toggle('active',  tab === 'guest');
   document.getElementById('host-panel').classList.toggle('hidden', tab !== 'host');
-  document.getElementById('guest-panel').classList.toggle('hidden', tab !== 'guest');
+  document.getElementById('guest-panel').classList.toggle('hidden',tab !== 'guest');
 };
 
 window.createRoom = async function() {
-  const secret = document.getElementById('host-secret').value.trim().toUpperCase();
-  if (secret.length < 3) { showToast('Enter a valid secret word.', 'warn'); return; }
-  if (!/^[A-Z]+$/.test(secret)) { showToast('Letters only please.', 'warn'); return; }
+  const secret   = document.getElementById('h-secret').value.trim().toUpperCase();
+  const attempts = parseInt(document.getElementById('h-attempts').value, 10) || 6;
+  const bet      = Math.max(0, parseInt(document.getElementById('h-bet').value, 10) || 0);
 
-  const attempts = parseInt(document.getElementById('host-attempts').value, 10);
-  const bet = parseInt(document.getElementById('host-bet').value, 10) || 0;
+  // Validate word: letters only
+  if (secret.length < 2)         { showToast('Enter a valid secret word (min 2 letters).', 'warn'); return; }
+  if (!/^[A-Z]+$/.test(secret))  { showToast('Secret word must contain letters only (A–Z).', 'warn'); return; }
 
-  const snap = await get(ref(db, 'users/' + currentUser.uid));
-  const hostData = snap.val();
-  if (bet > (hostData.score || 0)) { showToast('Insufficient score for this bet.', 'error'); return; }
+  // Check host has enough score for the bet
+  const fresh = await get(ref(db, 'users/' + currentUser.uid));
+  const hData = fresh.val();
+  if (bet > (hData.score || 0)) { showToast('Insufficient score for this bet.', 'error'); return; }
 
+  // Hash for storage integrity (not for client-side security)
   const hash = await sha256(secret.toLowerCase());
-  roomId   = generateRoomId();
-  isHost   = true;
+
+  roomId      = generateRoomId();
+  isHost      = true;
   secretWord  = secret;
   maxAttempts = attempts;
   wordLength  = secret.length;
   betScore    = bet;
 
+  // Write room to Firebase.
+  // secretWord is stored so the guest can load it after joining.
+  // In a production environment this would live behind server-side logic.
   await set(ref(db, 'rooms/' + roomId), {
-    host: currentUser.username, hostUid: currentUser.uid,
-    guest: null, guestUid: null,
-    secretWordHash: hash, secretWordLength: secret.length,
-    attempts, betScore: bet,
-    guesses: {}, status: 'waiting',
-    winner: null, createdAt: Date.now()
+    host:             currentUser.username,
+    hostUid:          currentUser.uid,
+    guest:            null,
+    guestUid:         null,
+    secretWordHash:   hash,
+    secretWord:       secret,           // loaded by guest AFTER joining (status: active)
+    secretWordLength: secret.length,
+    attempts,
+    betScore:         bet,
+    status:           'waiting',
+    winner:           null,
+    createdAt:        Date.now()
   });
 
-  if (bet > 0) await update(ref(db, 'users/' + currentUser.uid), { score: hostData.score - bet });
+  // Deduct host's bet up front
+  if (bet > 0) {
+    await update(ref(db, 'users/' + currentUser.uid), {
+      score: (hData.score || 0) - bet
+    });
+  }
 
   document.getElementById('room-id-show').textContent = roomId;
   showScreen('screen-waiting');
-  listenForGuest();
+  waitForGuest();
 };
 
 window.copyRoomId = function() {
-  navigator.clipboard.writeText(roomId).then(() => showToast('Room ID copied!', 'success'));
+  navigator.clipboard?.writeText(roomId)
+    .then(() => showToast('Room ID copied! 📋', 'success'))
+    .catch(() => showToast(`Copy manually: ${roomId}`, 'warn'));
 };
 
 window.cancelRoom = async function() {
-  if (!roomId) { window.location.href = 'index.html'; return; }
-  const snap = await get(ref(db, 'users/' + currentUser.uid));
-  if (betScore > 0) await update(ref(db, 'users/' + currentUser.uid), { score: snap.val().score + betScore });
-  await update(ref(db, 'rooms/' + roomId), { status: 'cancelled' });
-  if (roomListener) off(ref(db, 'rooms/' + roomId));
+  if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
+
+  if (roomId) {
+    // Refund bet
+    if (betScore > 0) {
+      const snap = await get(ref(db, 'users/' + currentUser.uid));
+      if (snap.exists()) {
+        await update(ref(db, 'users/' + currentUser.uid), {
+          score: (snap.val().score || 0) + betScore
+        });
+      }
+    }
+    await update(ref(db, 'rooms/' + roomId), { status: 'cancelled' });
+  }
   window.location.href = 'index.html';
 };
 
-function listenForGuest() {
+/**
+ * Host waits in the waiting room until a guest joins.
+ * Uses onValue with a self-detaching handler.
+ */
+function waitForGuest() {
   const rRef = ref(db, 'rooms/' + roomId);
-  roomListener = onValue(rRef, snap => {
+
+  const unsub = onValue(rRef, snap => {
     if (!snap.exists()) return;
     const room = snap.val();
-    if (room.guest && room.status === 'active') {
-      off(rRef);
-      initOnlineGameHost(room);
+
+    if (room.status === 'active' && room.guest) {
+      unsub();    // detach — we don't need this listener anymore
+      startHostView(room);
     }
+
     if (room.status === 'cancelled') {
-      showToast('Room cancelled.', 'warn');
+      unsub();
+      showToast('Room was cancelled.', 'warn');
       window.location.href = 'index.html';
     }
   });
 }
 
+/** Host enters spectator view — watches guest guesses in real-time */
+function startHostView(room) {
+  document.getElementById('opp-card').classList.remove('hidden');
+  document.getElementById('log-card').classList.remove('hidden');
+  document.getElementById('opp-name').textContent   = room.guest;
+  document.getElementById('opp-avatar').src         = avatarUrl('', room.guest);
+  document.getElementById('opp-status').textContent = 'Guessing…';
+
+  // Host knows the word, show it in the title for reference
+  startBoard(`🌐 HOST · Your word: ${secretWord}`, `${room.guest} is guessing`, false, true);
+  document.getElementById('sb-mode-lbl').textContent = '🌐 Online · Host';
+  document.getElementById('sb-bet-row').classList.remove('hidden');
+  document.getElementById('sb-bet').textContent      = room.betScore;
+
+  // Host doesn't type — hide input controls
+  document.getElementById('guess-input-area').classList.add('hidden');
+  document.getElementById('keyboard').style.display = 'none';
+
+  listenToGuestGuesses();
+}
+
+/**
+ * Host listens to the /guesses node and renders each guess onto the board.
+ *
+ * BUG FIXES applied here:
+ * 1. Track `lastCount` to avoid re-processing the full array on every update
+ * 2. gameOver guard prevents handleGameEnd from firing more than once
+ * 3. Host does NOT write DB outcome — that's the guest's job
+ */
+function listenToGuestGuesses() {
+  const gRef = ref(db, 'rooms/' + roomId + '/guesses');
+  let lastCount = 0;  // how many guesses we've already rendered
+
+  _guessUnsub = onValue(gRef, snap => {
+    if (!snap.exists() || gameOver) return;
+
+    const guesses = Object.values(snap.val()).sort((a, b) => a.ts - b.ts);
+    const board   = document.getElementById('game-board');
+    const rows    = board.querySelectorAll('.guess-row');
+    const log     = document.getElementById('online-log');
+
+    // Only process NEW guesses (those beyond lastCount)
+    for (let i = lastCount; i < guesses.length; i++) {
+      const g      = guesses[i];
+      const result = evaluateGuess(secretWord, g.guess);
+
+      // Render tile row
+      if (rows[i]) buildTileRow(rows[i], g.guess, result);
+
+      // Append to log
+      const entry = document.createElement('div');
+      entry.style.cssText = 'margin-bottom:3px;padding:2px 8px;background:var(--s1);border-radius:5px;font-family:var(--mono);letter-spacing:0.1em;';
+      entry.textContent   = g.guess.toUpperCase();
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    lastCount = guesses.length;
+
+    // Update sidebar
+    const used = guesses.length;
+    document.getElementById('sb-attempts').textContent = maxAttempts - used;
+    document.getElementById('opp-status').textContent  = `${used} / ${maxAttempts} guesses used`;
+
+    // Check if the room has been marked finished (by the guest side)
+    get(ref(db, 'rooms/' + roomId)).then(rSnap => {
+      if (!rSnap.exists() || gameOver) return;
+      const rData = rSnap.val();
+      if (rData.status === 'finished') {
+        if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
+        const hostWon = rData.winner === currentUser.username;
+        showHostResult(hostWon, secretWord, rData.winner);
+      }
+    });
+  });
+}
+
+/** Show result to host without touching the database (guest already wrote it) */
+function showHostResult(hostWon, word, winner) {
+  if (gameOver) return;
+  gameOver = true;
+
+  if (hostWon) { confettiBurst(); playSound('win');  }
+  else         {                  playSound('lose'); }
+
+  setTimeout(() => {
+    document.getElementById('res-emoji').textContent = hostWon ? '🏆' : '💀';
+    document.getElementById('res-title').textContent = hostWon ? 'YOU WIN!' : 'YOU LOSE!';
+    document.getElementById('res-word').textContent  = word;
+    document.getElementById('res-msg').textContent   = hostWon
+      ? `${winner} couldn't crack your word! +${betScore * 2} ⭐ awarded.`
+      : `${winner} guessed your word! They take the pot.`;
+    document.getElementById('result-overlay').classList.add('open');
+  }, 700);
+}
+
+// ════════════════════════════════════════════════════════════
+// ONLINE MODE — GUEST
+// ════════════════════════════════════════════════════════════
 window.joinRoom = async function() {
-  const id = document.getElementById('guest-room-id').value.trim().toUpperCase();
+  const id = document.getElementById('g-room-id').value.trim().toUpperCase();
   if (id.length !== 6) { showToast('Room ID must be 6 characters.', 'warn'); return; }
 
   const rRef = ref(db, 'rooms/' + id);
   const snap = await get(rRef);
-  if (!snap.exists()) { showToast('Room not found.', 'error'); return; }
 
+  if (!snap.exists())            { showToast('Room not found.', 'error'); return; }
   const room = snap.val();
+
+  // Safety checks
   if (room.status !== 'waiting') { showToast('Room is not available.', 'error'); return; }
   if (room.host === currentUser.username) { showToast("You can't join your own room.", 'warn'); return; }
+  if (room.guest)                { showToast('Room already has a guest.', 'error'); return; }
 
+  // Check guest has enough score
   const mySnap = await get(ref(db, 'users/' + currentUser.uid));
   const myData = mySnap.val();
   if ((room.betScore || 0) > (myData.score || 0)) {
-    showToast(`Need at least ${room.betScore} score to join.`, 'error'); return;
+    showToast(`Need at least ${room.betScore} ⭐ score to join.`, 'error'); return;
   }
 
-  if (room.betScore > 0) await update(ref(db, 'users/' + currentUser.uid), { score: myData.score - room.betScore });
+  // Deduct guest's bet
+  if (room.betScore > 0) {
+    await update(ref(db, 'users/' + currentUser.uid), {
+      score: (myData.score || 0) - room.betScore
+    });
+  }
 
+  // ── CRITICAL FIX: Load secretWord from the room NOW ───────
+  // Previously secretWord was never set for the guest, causing evaluateGuess('')
+  // to always return [] which .every() vacuously evaluates as true → instant "win".
   roomId      = id;
   isHost      = false;
-  betScore    = room.betScore || 0;
+  betScore    = room.betScore     || 0;
   maxAttempts = room.attempts;
   wordLength  = room.secretWordLength;
+  secretWord  = room.secretWord.toUpperCase();   // ← THE FIX
 
-  await update(rRef, { guest: currentUser.username, guestUid: currentUser.uid, status: 'active' });
+  // Mark room active — host's waitForGuest listener will detect this
+  await update(rRef, {
+    guest:    currentUser.username,
+    guestUid: currentUser.uid,
+    status:   'active'
+  });
 
-  initOnlineGameGuest(room, id);
+  startGuestView(room);
 };
 
-function initOnlineGameHost(room) {
-  document.getElementById('opponent-card').classList.remove('hidden');
-  document.getElementById('online-log-card').classList.remove('hidden');
-  document.getElementById('opp-name').textContent = room.guest;
-  document.getElementById('opp-avatar').src = avatarUrl('', room.guest);
+/** Guest enters interactive guessing view */
+function startGuestView(room) {
+  document.getElementById('opp-card').classList.remove('hidden');
+  document.getElementById('opp-name').textContent   = room.host;
+  document.getElementById('opp-avatar').src         = avatarUrl('', room.host);
+  document.getElementById('opp-status').textContent = 'Hosting';
 
-  initBoard('🌐 Hosting Room', `Opponent ${room.guest} is guessing`, false, true);
-  document.getElementById('sidebar-mode-label').textContent = '🌐 Online · Host';
+  startBoard('🌐 MULTIPLAYER', `Vs ${room.host} · Bet: ${room.betScore || 0} ⭐`);
+  document.getElementById('sb-mode-lbl').textContent = '🌐 Online · Guest';
   document.getElementById('sb-bet-row').classList.remove('hidden');
-  document.getElementById('sb-bet').textContent = room.betScore;
-  document.getElementById('guess-input-area').classList.add('hidden');
-  document.getElementById('keyboard').classList.add('hidden');
-
-  listenForGuestGuesses(room);
+  document.getElementById('sb-bet').textContent      = room.betScore;
 }
 
-function initOnlineGameGuest(room, id) {
-  document.getElementById('opponent-card').classList.remove('hidden');
-  document.getElementById('opp-name').textContent = room.host;
-  document.getElementById('opp-avatar').src = avatarUrl('', room.host);
-
-  maxAttempts = room.attempts;
-  wordLength  = room.secretWordLength;
-  roomId      = id;
-
-  initBoard('🌐 Online Multiplayer', `Vs ${room.host} · Bet: ${room.betScore} ⭐`, false);
-  document.getElementById('sidebar-mode-label').textContent = '🌐 Online · Guest';
-  document.getElementById('sb-bet-row').classList.remove('hidden');
-  document.getElementById('sb-bet').textContent = room.betScore;
-
-  window._onlineGuest = true;
-}
-
-function listenForGuestGuesses(room) {
-  const guessRef = ref(db, 'rooms/' + roomId + '/guesses');
-  onValue(guessRef, snap => {
-    if (!snap.exists()) return;
-    const guesses = Object.values(snap.val()).sort((a,b) => a.ts - b.ts);
-    const log = document.getElementById('online-log');
-    log.innerHTML = guesses.map(g =>
-      `<div style="margin-bottom:3px;padding:3px 8px;background:var(--s1);border-radius:5px;font-family:var(--mono);letter-spacing:0.1em;">
-        ${g.guess.toUpperCase()}
-      </div>`
-    ).join('');
-
-    const board = document.getElementById('game-board');
-    const rows  = board.querySelectorAll('.guess-row');
-    guesses.forEach((g, i) => {
-      if (!rows[i]) return;
-      const result = evaluateGuess(secretWord, g.guess);
-      buildTileRow(rows[i], g.guess, result);
-      if (result.every(r => r === 'correct')) handleGameEnd(false, g.guess);
-      if (i === maxAttempts - 1 && !result.every(r => r === 'correct')) handleGameEnd(true, secretWord);
-    });
-
-    document.getElementById('opp-status').textContent = `${guesses.length} guess${guesses.length !== 1 ? 'es' : ''} made`;
-  });
-}
-
-// ── Daily ───────────────────────────────────────────────────
-async function loadDailySetup() {
+// ════════════════════════════════════════════════════════════
+// DAILY MODE
+// ════════════════════════════════════════════════════════════
+async function initDailyScreen() {
   const today     = todayStr();
   const dailySnap = await get(ref(db, 'dailyWord'));
-  if (!dailySnap.exists()) { showToast('No daily challenge set yet.', 'warn'); return; }
+
+  if (!dailySnap.exists()) {
+    showToast('No daily challenge set yet. Check back soon!', 'warn');
+    document.getElementById('d-start-wrap').classList.add('hidden');
+    showScreen('screen-daily');
+    return;
+  }
+
   const daily = dailySnap.val();
+  document.getElementById('d-reward-money').textContent = '💰 ' + (daily.rewardMoney || 50);
+  document.getElementById('d-reward-score').textContent = '⭐ ' + (daily.rewardScore || 100);
+  document.getElementById('d-attempts').textContent     = daily.attempts || 6;
 
-  document.getElementById('daily-reward-money').textContent = '💰 ' + daily.rewardMoney;
-  document.getElementById('daily-reward-score').textContent = '⭐ ' + daily.rewardScore;
-
-  const resultSnap = await get(ref(db, `dailyResults/${today}/${currentUser.username}`));
-  if (resultSnap.exists()) {
-    document.getElementById('daily-already-played').classList.remove('hidden');
-    document.getElementById('daily-start-wrap').classList.add('hidden');
+  // Check if already played today
+  const resSnap = await get(ref(db, `dailyResults/${today}/${currentUser.username}`));
+  if (resSnap.exists()) {
+    document.getElementById('d-already-played').classList.remove('hidden');
+    document.getElementById('d-start-wrap').classList.add('hidden');
   }
 
   window._dailyData = daily;
+  showScreen('screen-daily');
 }
 
-window.startDailyGame = async function() {
+window.startDailyGame = function() {
   const daily = window._dailyData;
-  if (!daily) { showToast('Daily challenge not available.', 'error'); return; }
+  if (!daily) { showToast('Daily data missing.', 'error'); return; }
+
   secretWord  = daily.word.toUpperCase();
   maxAttempts = daily.attempts || 6;
   wordLength  = secretWord.length;
 
-  initBoard('📅 Daily Challenge', '60 seconds — guess the word!', true);
+  startBoard('📅 DAILY CHALLENGE', '⏱ 60 seconds — guess the word!', true);
 
   timer = new CountdownTimer({
     totalSeconds: 60,
-    containerEl: document.getElementById('timer-el'),
-    onEnd: () => { if (!gameOver) handleGameEnd(false, secretWord); }
+    containerEl:  document.getElementById('timer-el'),
+    onEnd: () => {
+      if (!gameOver) handleGameEnd(false, secretWord);
+    }
   });
   timer.start();
 };
 
-// ── Board init ──────────────────────────────────────────────
-function initBoard(title, subtitle, showTimer = false, hostView = false) {
+// ════════════════════════════════════════════════════════════
+// BOARD SETUP
+// ════════════════════════════════════════════════════════════
+function startBoard(title, subtitle, showTimer = false, hostView = false) {
   showScreen('screen-game');
   document.getElementById('game-title').textContent    = title;
   document.getElementById('game-subtitle').textContent = subtitle;
 
+  // Build empty grid rows
   const board = document.getElementById('game-board');
   board.innerHTML = '';
   for (let i = 0; i < maxAttempts; i++) {
-    const row = document.createElement('div');
+    const row     = document.createElement('div');
     row.className = 'guess-row';
-    row.id = `row-${i}`;
+    row.id        = `row-${i}`;
     buildEmptyRow(row, wordLength);
     board.appendChild(row);
   }
 
-  document.getElementById('sb-len').textContent = wordLength;
-  document.getElementById('sb-attempts').textContent = `0 / ${maxAttempts}`;
+  document.getElementById('sb-len').textContent      = wordLength;
+  document.getElementById('sb-attempts').textContent = maxAttempts;  // start with full attempts
 
   if (showTimer) document.getElementById('timer-area').classList.remove('hidden');
-  if (!hostView) buildKeyboard(document.getElementById('keyboard'), handleKey);
 
-  const input = document.getElementById('guess-input');
-  input.maxLength = wordLength;
-  input.addEventListener('input', e => {
-    e.target.value = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
-    updateCurrentRow(e.target.value);
-  });
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
-  setTimeout(() => input.focus(), 100);
+  if (!hostView) {
+    buildKeyboard(document.getElementById('keyboard'), handleKey);
+    attachInputListeners();
+    setTimeout(() => document.getElementById('guess-input').focus(), 150);
+  }
 }
 
-// ── Input ───────────────────────────────────────────────────
+/** Wire up the text input field with validation */
+function attachInputListeners() {
+  const inp = document.getElementById('guess-input');
+  inp.maxLength = wordLength;
+
+  // ── keydown: block non-letter keys before they enter the field ──
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { submitGuess(); return; }
+    // Pass through control keys (Backspace, Delete, Arrow keys, Tab, etc.)
+    if (e.key.length > 1) return;
+    // Block anything that isn't a letter A-Z
+    if (!/^[a-zA-Z]$/.test(e.key)) {
+      e.preventDefault();
+      showToast('Only letters A–Z allowed.', 'warn');
+    }
+  });
+
+  // ── input: clean and uppercase in case anything slipped through ──
+  inp.addEventListener('input', e => {
+    const clean = e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+    if (e.target.value !== clean) e.target.value = clean;
+    updateCurrentRow(clean);
+  });
+}
+
+// ── On-screen keyboard handler ────────────────────────────────
 function handleKey(k) {
   if (gameOver) return;
-  const input = document.getElementById('guess-input');
+  const inp = document.getElementById('guess-input');
+
   if (k === '⌫') {
-    input.value = input.value.slice(0, -1);
+    inp.value = inp.value.slice(0, -1);
   } else if (k === 'ENTER') {
-    submitGuess(); return;
-  } else if (input.value.length < wordLength) {
-    input.value += k;
+    submitGuess();
+    return;
+  } else if (/^[A-Z]$/.test(k) && inp.value.length < wordLength) {
+    inp.value += k;
     playSound('type');
   }
-  updateCurrentRow(input.value);
+  updateCurrentRow(inp.value);
 }
 
+/** Mirror typed letters onto the current board row */
 function updateCurrentRow(val) {
-  currentGuess = val.toUpperCase();
-  const row = document.getElementById(`row-${guessCount}`);
+  currentGuess  = val.toUpperCase();
+  const row     = document.getElementById(`row-${guessCount}`);
   if (!row) return;
+
   row.querySelectorAll('.tile').forEach((t, i) => {
     t.textContent = currentGuess[i] || '';
-    t.className   = 'tile' + (currentGuess[i] ? ' filled' : '');
+    t.className   = 'tile' + (currentGuess[i] ? ' filled' : ' empty');
   });
 }
 
-// ── Submit ──────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// SUBMIT GUESS — the fixed core loop
+// ════════════════════════════════════════════════════════════
 window.submitGuess = async function() {
+  // ── Guard: stop if game is already over ──────────────────
   if (gameOver) return;
-  const input = document.getElementById('guess-input');
-  const guess = input.value.toUpperCase().trim();
 
+  const inp   = document.getElementById('guess-input');
+  const guess = inp.value.toUpperCase().trim();
+
+  // ── Validate length ───────────────────────────────────────
   if (guess.length !== wordLength) {
-    showToast(`Word must be ${wordLength} letters.`, 'warn');
-    const row = document.getElementById(`row-${guessCount}`);
-    if (row) shakeRow(row);
+    showToast(`Word must be exactly ${wordLength} letters.`, 'warn');
+    shakeRow(document.getElementById(`row-${guessCount}`));
     return;
   }
 
-  if (mode === 'online' && !isHost) {
-    await push(ref(db, 'rooms/' + roomId + '/guesses'), { guess, ts: Date.now() });
+  // ── Validate characters: A-Z only ────────────────────────
+  if (!/^[A-Z]+$/.test(guess)) {
+    showToast('Only letters A–Z are allowed. No numbers or symbols.', 'warn');
+    shakeRow(document.getElementById(`row-${guessCount}`));
+    inp.value = '';
+    updateCurrentRow('');
+    return;
   }
 
+  // ── Disable controls to prevent double-submit ─────────────
+  inp.disabled = true;
+  document.getElementById('submit-btn').disabled = true;
+
+  // ── Evaluate guess against the secret word ────────────────
+  // evaluateGuess(secret, guess) → array of 'correct' | 'present' | 'absent'
+  // A WIN requires ALL positions to return 'correct' — exact character match
   const result = evaluateGuess(secretWord, guess);
+  const isWin  = result.length === wordLength && result.every(r => r === 'correct');
+
+  // ── For online guest: push guess to Firebase ──────────────
+  // Host's listener will pick this up for the spectator view
+  if (mode === 'online' && !isHost) {
+    await push(ref(db, 'rooms/' + roomId + '/guesses'), {
+      guess,
+      ts: Date.now()
+    });
+  }
+
+  // ── Render tiles and keyboard ──────────────────────────────
   buildTileRow(document.getElementById(`row-${guessCount}`), guess, result);
   updateKeyboard(document.getElementById('keyboard'), guess, result);
 
-  playSound(result.every(r => r === 'correct') ? 'correct' : result.includes('correct') || result.includes('present') ? 'present' : 'absent');
+  // Sound feedback
+  if (isWin) {
+    playSound('correct');
+  } else if (result.includes('correct') || result.includes('present')) {
+    playSound('present');
+  } else {
+    playSound('absent');
+  }
 
+  // ── Advance attempt counter ───────────────────────────────
   guessCount++;
-  document.getElementById('sb-attempts').textContent = `${guessCount} / ${maxAttempts}`;
-  input.value  = '';
+  const attemptsLeft = maxAttempts - guessCount;
+  document.getElementById('sb-attempts').textContent = attemptsLeft;
+
+  // ── Clear input field ─────────────────────────────────────
+  inp.value    = '';
   currentGuess = '';
 
-  if (result.every(r => r === 'correct')) {
+  // ── WIN: all letters correct ──────────────────────────────
+  if (isWin) {
     handleGameEnd(true, guess);
-  } else if (guessCount >= maxAttempts) {
-    handleGameEnd(false, guess);
+    return;   // controls stay disabled — game over
   }
+
+  // ── LOSS: exhausted all attempts ──────────────────────────
+  if (guessCount >= maxAttempts) {
+    handleGameEnd(false, guess);
+    return;   // controls stay disabled — game over
+  }
+
+  // ── Game continues — re-enable input for next attempt ──────
+  inp.disabled = false;
+  document.getElementById('submit-btn').disabled = false;
+  inp.focus();
 };
 
-// ── Game end ────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// GAME END — runs at most ONCE, protected by gameOver flag
+// ════════════════════════════════════════════════════════════
 async function handleGameEnd(won, finalGuess) {
+  // ── Critical guard: prevent double invocation ─────────────
   if (gameOver) return;
-  gameOver = true;
+  gameOver = true;  // lock IMMEDIATELY before any async work
+
+  // Stop timer
   if (timer) timer.stop();
 
+  // Detach Firebase listener
+  if (_guessUnsub) { _guessUnsub(); _guessUnsub = null; }
+
+  // Hide input UI
   document.getElementById('guess-input-area').classList.add('hidden');
   document.getElementById('keyboard').innerHTML = '';
 
-  playSound(won ? 'win' : 'lose');
+  // Victory / defeat effects
+  if (won) { confettiBurst(); playSound('win');  }
+  else     {                  playSound('lose'); }
 
+  // ── DB updates ────────────────────────────────────────────
   const today   = todayStr();
   const userRef = ref(db, 'users/' + currentUser.uid);
-  const snap    = await get(userRef);
-  const ud      = snap.val();
+  const uSnap   = await get(userRef);
+  const ud      = uSnap.val();
   const updates = { totalGames: (ud.totalGames || 0) + 1 };
-  let rewardMsg = '';
+  let   rewardMsg = '';
 
+  // ── OFFLINE ───────────────────────────────────────────────
   if (mode === 'offline') {
-    if (won) updates.wins   = (ud.wins || 0) + 1;
-    else     updates.losses = (ud.losses || 0) + 1;
+    if (won) { updates.wins   = (ud.wins   || 0) + 1; }
+    else     { updates.losses = (ud.losses || 0) + 1; }
+  }
 
-  } else if (mode === 'online' && !isHost) {
+  // ── ONLINE — GUEST (owns outcome write) ───────────────────
+  else if (mode === 'online' && !isHost) {
     if (won) {
-      updates.wins  = (ud.wins || 0) + 1;
+      // Guest wins: receives 2× the pot (both bets)
+      updates.wins  = (ud.wins  || 0) + 1;
       updates.score = (ud.score || 0) + betScore * 2;
-      rewardMsg = `+${betScore * 2} ⭐ score!`;
+      rewardMsg     = `+${betScore * 2} ⭐ score!`;
+
+      // Host loses: get a loss on record (they already lost their bet)
       const rSnap = await get(ref(db, 'rooms/' + roomId));
-      const rData = rSnap.val();
-      if (rData?.hostUid) {
-        const hSnap = await get(ref(db, 'users/' + rData.hostUid));
-        const hd    = hSnap.val();
-        await update(ref(db, 'users/' + rData.hostUid), { losses: (hd.losses||0)+1, totalGames: (hd.totalGames||0)+1 });
+      if (rSnap.exists()) {
+        const rData = rSnap.val();
+        if (rData.hostUid) {
+          const hSnap = await get(ref(db, 'users/' + rData.hostUid));
+          if (hSnap.exists()) {
+            const hd = hSnap.val();
+            await update(ref(db, 'users/' + rData.hostUid), {
+              losses:     (hd.losses     || 0) + 1,
+              totalGames: (hd.totalGames || 0) + 1
+            });
+          }
+        }
       }
-      await update(ref(db, 'rooms/' + roomId), { status: 'finished', winner: currentUser.username });
+
+      // Write room outcome — host's watcher will detect 'finished' status
+      await update(ref(db, 'rooms/' + roomId), {
+        status: 'finished',
+        winner: currentUser.username
+      });
+
     } else {
+      // Guest loses: host wins the pot
       updates.losses = (ud.losses || 0) + 1;
+
       const rSnap = await get(ref(db, 'rooms/' + roomId));
-      const rData = rSnap.val();
-      if (rData?.hostUid) {
-        const hSnap = await get(ref(db, 'users/' + rData.hostUid));
-        const hd    = hSnap.val();
-        await update(ref(db, 'users/' + rData.hostUid), {
-          wins: (hd.wins||0)+1, score: (hd.score||0)+betScore*2, totalGames: (hd.totalGames||0)+1
+      if (rSnap.exists()) {
+        const rData = rSnap.val();
+        if (rData.hostUid) {
+          const hSnap = await get(ref(db, 'users/' + rData.hostUid));
+          if (hSnap.exists()) {
+            const hd = hSnap.val();
+            await update(ref(db, 'users/' + rData.hostUid), {
+              wins:       (hd.wins       || 0) + 1,
+              score:      (hd.score      || 0) + betScore * 2,  // host gets both bets
+              totalGames: (hd.totalGames || 0) + 1
+            });
+          }
+        }
+        // Write room outcome
+        await update(ref(db, 'rooms/' + roomId), {
+          status: 'finished',
+          winner: rData.host
         });
       }
-      await update(ref(db, 'rooms/' + roomId), { status: 'finished', winner: rData?.host });
     }
+  }
 
-  } else if (mode === 'daily') {
+  // ── ONLINE — HOST (outcome written by guest; host shown via showHostResult) ──
+  else if (mode === 'online' && isHost) {
+    // The guest side writes the room status; listenToGuestGuesses() → showHostResult().
+    // Don't do anything here — it would cause a race condition / double DB write.
+    // The host's result UI is triggered from listenToGuestGuesses via get(room).
+    return;
+  }
+
+  // ── DAILY ─────────────────────────────────────────────────
+  else if (mode === 'daily') {
     const daily = window._dailyData;
     await set(ref(db, `dailyResults/${today}/${currentUser.username}`), {
-      result: won ? 'win' : 'lose', timeTaken: Date.now(), timestamp: Date.now()
+      result:    won ? 'win' : 'lose',
+      timeTaken: Date.now(),
+      timestamp: Date.now()
     });
     if (won) {
-      updates.wins   = (ud.wins || 0) + 1;
-      updates.money  = (ud.money || 0) + (daily.rewardMoney || 0);
-      updates.score  = (ud.score || 0) + (daily.rewardScore || 0);
+      updates.wins   = (ud.wins   || 0) + 1;
+      updates.money  = (ud.money  || 0) + (daily.rewardMoney || 0);
+      updates.score  = (ud.score  || 0) + (daily.rewardScore || 0);
       rewardMsg = `+${daily.rewardMoney} 💰  +${daily.rewardScore} ⭐`;
     } else {
       updates.losses = (ud.losses || 0) + 1;
     }
   }
 
+  // ── Write player stats ────────────────────────────────────
   await update(userRef, updates);
-  const fresh = await get(userRef);
-  saveSession({ uid: currentUser.uid, ...fresh.val() });
 
+  // ── Refresh session & award achievements ──────────────────
+  const fresh     = await get(userRef);
+  const freshData = fresh.val();
+  saveSession({ uid: currentUser.uid, ...freshData });
+
+  const newAch = await checkAchievements(freshData, currentUser.uid, db, ref, update);
+  if (newAch.length > 0) {
+    const a = ACHIEVEMENTS.find(x => x.id === newAch[0]);
+    if (a) setTimeout(() => showToast(`🎖 Achievement: ${a.label}!`, 'success', 4500), 1800);
+  }
+
+  // ── Show result overlay ───────────────────────────────────
   setTimeout(() => {
     document.getElementById('res-emoji').textContent = won ? '🏆' : '💀';
-    document.getElementById('res-title').textContent = won ? 'Victory!' : 'Defeated!';
+    document.getElementById('res-title').textContent = won ? 'VICTORY!' : 'DEFEATED!';
     document.getElementById('res-word').textContent  = secretWord;
     document.getElementById('res-msg').textContent   = won
-      ? `Solved in ${guessCount} attempt${guessCount !== 1 ? 's' : ''}! ${rewardMsg}`
-      : `The word was: ${secretWord}`;
+      ? `Cracked in ${guessCount} attempt${guessCount !== 1 ? 's' : ''}! ${rewardMsg}`
+      : `The word was: ${secretWord}. Better luck next time!`;
     document.getElementById('result-overlay').classList.add('open');
-  }, 600);
+  }, 700);
 }
 
 window.playAgain = function() {
@@ -689,6 +974,7 @@ window.playAgain = function() {
   window.location.href = 'game.html';
 };
 
+// ── Kick off init ─────────────────────────────────────────────
 init();
 </script>
 </body>

@@ -1,40 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WordWar — Game</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    #loading-cover {
-      position:fixed; inset:0;
-      background:#05050d;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:16px;
-      z-index:9999;
-      transition:opacity 0.35s;
-    }
-    .spin {
-      width:40px; height:40px; border-radius:50%;
-      border:3px solid rgba(109,81,245,0.2);
-      border-top-color:#6d51f5;
-      animation:sp 0.8s linear infinite;
-    }
-    @keyframes sp { to { transform:rotate(360deg); } }
-    #loading-cover p { color:#7878a0; font-family:'Outfit',sans-serif; font-size:0.85rem; }
-    #err-msg { color:#f04060; font-size:0.8rem; display:none; margin-top:8px; text-align:center; padding:0 24px; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WordWar — Game</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+#loading-cover{position:fixed;inset:0;background:#05050d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9999;}
+.spin{width:40px;height:40px;border-radius:50%;border:3px solid rgba(109,81,245,.2);border-top-color:#6d51f5;animation:sp .8s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+#load-msg{color:#7878a0;font-family:sans-serif;font-size:.9rem;text-align:center;padding:0 20px;}
+#load-btn{display:none;margin-top:12px;padding:10px 24px;background:#6d51f5;color:#fff;border:none;border-radius:8px;font-size:.9rem;cursor:pointer;}
+</style>
 </head>
 <body>
 
-<!-- Loading cover — fades out once JS is ready -->
 <div id="loading-cover">
-  <div class="spin"></div>
-  <p>Loading game…</p>
-  <p id="err-msg"></p>
+  <div class="spin" id="load-spin"></div>
+  <p id="load-msg">Loading game…</p>
+  <button id="load-btn" onclick="location.href='login.html'">Go to Login →</button>
 </div>
 
-<!-- Navbar -->
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
   <div class="nav-links">
@@ -48,84 +34,41 @@
   </div>
 </nav>
 
-<!-- ══════════════ SETUP SCREENS ══════════════════════════════ -->
-
-<!-- OFFLINE -->
+<!-- OFFLINE SETUP -->
 <div id="screen-offline" class="hidden setup-wrap">
   <div class="setup-card card card-elevated page-enter">
-    <div class="setup-head">
-      <div class="setup-ic">🤝</div>
-      <div>
-        <h2>Offline Mode</h2>
-        <p class="text-sm text-muted">Player 1 sets the word — Player 2 guesses.</p>
-      </div>
-    </div>
+    <div class="setup-head"><div class="setup-ic">🤝</div><div><h2>Offline Mode</h2><p class="text-sm text-muted">Player 1 sets word — Player 2 guesses.</p></div></div>
     <div class="divider"></div>
-    <div class="form-group">
-      <label class="form-label">Secret Word (letters A–Z only)</label>
-      <input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Word Length</label>
-      <input class="form-control" id="off-len" type="text" value="—" readonly/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Max Attempts</label>
-      <input class="form-control" id="off-attempts" type="number" value="6" min="3" max="10"/>
-    </div>
-    <div class="flex gap-8 mt-16">
-      <button class="btn btn-primary flex-1" onclick="startOfflineGame()">Start Game →</button>
-      <a href="index.html" class="btn btn-ghost">Cancel</a>
-    </div>
+    <div class="form-group"><label class="form-label">Secret Word (A–Z only)</label><input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12"/></div>
+    <div class="form-group"><label class="form-label">Word Length</label><input class="form-control" id="off-len" type="text" value="—" readonly/></div>
+    <div class="form-group"><label class="form-label">Max Attempts</label><input class="form-control" id="off-attempts" type="number" value="6" min="3" max="10"/></div>
+    <div class="flex gap-8 mt-16"><button class="btn btn-primary flex-1" onclick="startOfflineGame()">Start Game →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
   </div>
 </div>
 
-<!-- ONLINE -->
+<!-- ONLINE SETUP -->
 <div id="screen-online" class="hidden setup-wrap">
   <div class="setup-card wide card card-elevated page-enter">
-    <div class="setup-head">
-      <div class="setup-ic">🌐</div>
-      <div>
-        <h2>Online Multiplayer</h2>
-        <p class="text-sm text-muted">Host a room or join with a Room ID.</p>
-      </div>
-    </div>
+    <div class="setup-head"><div class="setup-ic">🌐</div><div><h2>Online Multiplayer</h2><p class="text-sm text-muted">Host or join a room.</p></div></div>
     <div class="divider"></div>
     <div class="tab-strip">
       <button class="tab-btn active" id="tab-host"  onclick="switchOnlineTab('host')">Host a Room</button>
       <button class="tab-btn"        id="tab-guest" onclick="switchOnlineTab('guest')">Join a Room</button>
     </div>
     <div id="host-panel">
-      <div class="form-group">
-        <label class="form-label">Secret Word (letters A–Z only)</label>
-        <input class="form-control" id="h-secret" type="password" placeholder="Your secret word…" maxlength="12"/>
-      </div>
+      <div class="form-group"><label class="form-label">Secret Word (A–Z only)</label><input class="form-control" id="h-secret" type="password" placeholder="Your secret word…" maxlength="12"/></div>
       <div class="flex gap-12">
-        <div class="form-group flex-1">
-          <label class="form-label">Max Attempts</label>
-          <input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10"/>
-        </div>
-        <div class="form-group flex-1">
-          <label class="form-label">Bet Score (have: <span id="h-score-cur" class="text-accent">0</span>)</label>
-          <input class="form-control" id="h-bet" type="number" value="50" min="0"/>
-        </div>
+        <div class="form-group flex-1"><label class="form-label">Max Attempts</label><input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10"/></div>
+        <div class="form-group flex-1"><label class="form-label">Bet Score (have: <span id="h-score-cur" class="text-accent">0</span>)</label><input class="form-control" id="h-bet" type="number" value="50" min="0"/></div>
       </div>
-      <div class="flex gap-8 mt-8">
-        <button class="btn btn-primary flex-1" onclick="createRoom()">Create Room →</button>
-        <a href="index.html" class="btn btn-ghost">Cancel</a>
-      </div>
+      <div class="flex gap-8 mt-8"><button class="btn btn-primary flex-1" onclick="createRoom()">Create Room →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
     </div>
     <div id="guest-panel" class="hidden">
-      <p class="text-muted text-sm mb-16">Enter the 6-character Room ID from your opponent.</p>
-      <div class="form-group">
-        <label class="form-label">Room ID</label>
-        <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6"
-          style="font-family:var(--mono);letter-spacing:0.25em;text-transform:uppercase;text-align:center;font-size:1.7rem;padding:14px;"/>
+      <p class="text-muted text-sm mb-16">Enter the 6-character Room ID.</p>
+      <div class="form-group"><label class="form-label">Room ID</label>
+        <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6" style="font-family:var(--mono);letter-spacing:.25em;text-transform:uppercase;text-align:center;font-size:1.7rem;padding:14px;"/>
       </div>
-      <div class="flex gap-8 mt-8">
-        <button class="btn btn-primary flex-1" onclick="joinRoom()">Join Room →</button>
-        <a href="index.html" class="btn btn-ghost">Cancel</a>
-      </div>
+      <div class="flex gap-8 mt-8"><button class="btn btn-primary flex-1" onclick="joinRoom()">Join Room →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
     </div>
   </div>
 </div>
@@ -142,31 +85,20 @@
   </div>
 </div>
 
-<!-- DAILY -->
+<!-- DAILY SETUP -->
 <div id="screen-daily" class="hidden setup-wrap">
   <div class="setup-card card card-elevated text-center page-enter">
     <div style="font-size:3rem;margin-bottom:12px;">📅</div>
     <h2 class="mb-8">Daily Challenge</h2>
     <p class="text-muted text-sm mb-16">60 seconds. One word. Beat the clock.</p>
-    <div class="card mb-16" style="background:rgba(240,180,41,0.05);border-color:rgba(240,180,41,0.18);">
-      <div class="flex justify-between mb-8">
-        <span class="text-muted text-sm">Reward Money</span>
-        <span class="text-gold text-mono fw-700" id="d-reward-money">—</span>
-      </div>
-      <div class="flex justify-between mb-8">
-        <span class="text-muted text-sm">Reward Score</span>
-        <span class="text-accent text-mono fw-700" id="d-reward-score">—</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-muted text-sm">Attempts</span>
-        <span class="text-mono fw-700" id="d-attempts">—</span>
-      </div>
+    <div class="card mb-16" style="background:rgba(240,180,41,.05);border-color:rgba(240,180,41,.18);">
+      <div class="flex justify-between mb-8"><span class="text-muted text-sm">Reward Money</span><span class="text-gold text-mono fw-700" id="d-reward-money">—</span></div>
+      <div class="flex justify-between mb-8"><span class="text-muted text-sm">Reward Score</span><span class="text-accent text-mono fw-700" id="d-reward-score">—</span></div>
+      <div class="flex justify-between"><span class="text-muted text-sm">Attempts</span><span class="text-mono fw-700" id="d-attempts">—</span></div>
     </div>
     <div id="d-already-played" class="hidden">
-      <div class="tag tag-green" style="display:inline-flex;padding:8px 18px;font-size:0.82rem;border-radius:var(--rS);">
-        ✓ Already completed today!
-      </div>
-      <p class="text-muted text-sm mt-12">Come back tomorrow for a new word.</p>
+      <div class="tag tag-green" style="display:inline-flex;padding:8px 18px;font-size:.82rem;">✓ Already completed today!</div>
+      <p class="text-muted text-sm mt-12">Come back tomorrow.</p>
       <a href="index.html" class="btn btn-ghost btn-full mt-16">← Back Home</a>
     </div>
     <div id="d-start-wrap">
@@ -176,7 +108,7 @@
   </div>
 </div>
 
-<!-- ══════════════ GAME SCREEN ═══════════════════════════════ -->
+<!-- GAME SCREEN -->
 <div id="screen-game" class="hidden">
   <div class="game-layout">
     <div class="game-main">
@@ -204,21 +136,18 @@
         <div class="sb-title">Opponent</div>
         <div class="flex items-center gap-12">
           <img id="opp-avatar" src="" alt="" style="width:36px;height:36px;border-radius:50%;border:2px solid var(--b2);flex-shrink:0;"/>
-          <div class="min-w-0">
-            <div class="fw-700 truncate" id="opp-name">—</div>
-            <div class="text-xs text-faint" id="opp-status">Connecting…</div>
-          </div>
+          <div class="min-w-0"><div class="fw-700 truncate" id="opp-name">—</div><div class="text-xs text-faint" id="opp-status">Connecting…</div></div>
         </div>
       </div>
       <div class="sb-card hidden" id="log-card">
         <div class="sb-title">Match Log</div>
-        <div id="online-log" style="font-size:0.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
+        <div id="online-log" style="font-size:.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════ RESULT OVERLAY ══════════════════════════ -->
+<!-- RESULT OVERLAY -->
 <div class="result-overlay" id="result-overlay">
   <div class="result-card">
     <span class="res-emoji" id="res-emoji">🏆</span>
@@ -232,783 +161,571 @@
   </div>
 </div>
 
-<!-- ══════════════ BANNER AD ═══════════════════════════════ -->
-<!-- Sandboxed in iframe so document.write() cannot wipe the page -->
+<!-- AD: sandboxed iframe -->
 <div class="ad-banner">
   <iframe id="ad-frame" scrolling="no" title="Ad" style="border:none;width:320px;height:50px;display:block;"></iframe>
 </div>
 
-<!-- ══════════════ FIREBASE SDK ════════════════════════════ -->
-<!-- Using compat (v8-style) CDN — no module bundler needed, works offline-first -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   STEP 1: Immediately check if user is logged in.
+   Do this BEFORE loading Firebase so we don't
+   wait for the SDK only to find out we need to login.
+══════════════════════════════════════════════ */
+(function earlyAuthCheck(){
+  var raw = sessionStorage.getItem('ww_user');
+  if(!raw){
+    // Not logged in — show helpful message instead of spinning forever
+    document.getElementById('load-msg').textContent = 'Please log in first.';
+    document.getElementById('load-spin').style.display = 'none';
+    document.getElementById('load-btn').style.display = 'inline-block';
+    return;
+  }
+  try{ JSON.parse(raw); }
+  catch(e){
+    sessionStorage.removeItem('ww_user');
+    document.getElementById('load-msg').textContent = 'Session error. Please log in again.';
+    document.getElementById('load-spin').style.display = 'none';
+    document.getElementById('load-btn').style.display = 'inline-block';
+  }
+})();
+</script>
+
+<!-- Firebase SDK — loaded AFTER early auth check so we show login message immediately if needed -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
+  onerror="document.getElementById('load-msg').textContent='Could not load Firebase SDK. Check internet connection.';document.getElementById('load-spin').style.display='none';">
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"
+  onerror="document.getElementById('load-msg').textContent='Could not load Firebase database. Check internet connection.';document.getElementById('load-spin').style.display='none';">
+</script>
 
 <script>
-// ════════════════════════════════════════════════════════════
-// FIREBASE INIT
-// ════════════════════════════════════════════════════════════
-const firebaseConfig = {
-  databaseURL: 'https://eduweb-fcfee-default-rtdb.firebaseio.com/'
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ════════════════════════════════════════════════════════════
-// UTILITIES
-// ════════════════════════════════════════════════════════════
-const $ = id => document.getElementById(id);
-
-function showErr(msg) {
-  $('err-msg').textContent = msg;
-  $('err-msg').style.display = 'block';
+/* ══════════════════════════════════════════════
+   STEP 2: Guard — if Firebase didn't load, stop here
+══════════════════════════════════════════════ */
+if(typeof firebase === 'undefined'){
+  document.getElementById('load-msg').textContent = 'Firebase SDK failed to load. Check your internet connection and refresh.';
+  document.getElementById('load-spin').style.display = 'none';
+  // Do not execute any further code
+  throw new Error('Firebase not loaded');
 }
 
-function hideCover() {
-  const c = $('loading-cover');
-  if (!c) return;
+/* ══════════════════════════════════════════════
+   FIREBASE INIT
+══════════════════════════════════════════════ */
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+
+/* ══════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════ */
+function $(id){ return document.getElementById(id); }
+function loadSession(){ try{ return JSON.parse(sessionStorage.getItem('ww_user')); }catch(e){ return null; } }
+function saveSession(u){ sessionStorage.setItem('ww_user', JSON.stringify(u)); }
+
+function hideCover(){
+  var c = $('loading-cover');
+  if(!c) return;
+  c.style.transition = 'opacity .3s';
   c.style.opacity = '0';
-  setTimeout(() => { if (c.parentNode) c.parentNode.removeChild(c); }, 380);
+  setTimeout(function(){ if(c.parentNode) c.parentNode.removeChild(c); }, 350);
 }
 
-function showScreen(id) {
-  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game']
-    .forEach(s => $(s).classList.toggle('hidden', s !== id));
+function showScreen(id){
+  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game'].forEach(function(s){
+    $(s).classList.toggle('hidden', s !== id);
+  });
   hideCover();
 }
 
-// Toast
-let _toastZone = null;
-function toast(msg, type) {
-  if (!_toastZone) {
-    _toastZone = document.createElement('div');
-    _toastZone.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;pointer-events:none;';
-    document.body.appendChild(_toastZone);
-  }
-  const colors = { success:'#16c26a', error:'#f04060', warn:'#f0b429', info:'#6d51f5' };
-  const icons  = { success:'✓', error:'✕', warn:'⚠', info:'ℹ' };
-  const t = document.createElement('div');
-  t.style.cssText = `display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid ${colors[type]||colors.info}44;font-family:'Outfit',sans-serif;font-size:0.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform 0.28s cubic-bezier(0.34,1.2,0.64,1);pointer-events:all;box-shadow:0 8px 28px rgba(0,0,0,0.5);`;
-  t.innerHTML = `<span style="color:${colors[type]||colors.info};font-size:1rem;flex-shrink:0;">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
-  _toastZone.appendChild(t);
-  requestAnimationFrame(() => requestAnimationFrame(() => t.style.transform = 'translateX(0)'));
-  setTimeout(() => { t.style.transform='translateX(120%)'; setTimeout(()=>t.remove(),320); }, 3400);
+function setMsg(msg){ var e=$('load-msg'); if(e) e.textContent=msg; }
+
+/* Toast */
+var _tz = null;
+function toast(msg, type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  if(!_tz){ _tz=document.createElement('div'); _tz.style.cssText='position:fixed;bottom:80px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;'; document.body.appendChild(_tz); }
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+'">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  _tz.appendChild(t);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ t.style.transform='translateX(0)'; }); });
+  setTimeout(function(){ t.style.transform='translateX(120%)'; setTimeout(function(){ t.remove(); },320); }, 3400);
 }
 
-// SHA-256
-async function sha256(msg) {
-  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+function fmtNum(n){ if(!n)return'0'; if(n>=1e6)return(n/1e6).toFixed(1)+'M'; if(n>=1e3)return(n/1e3).toFixed(1)+'K'; return String(n); }
+function avatarUrl(url,name){ if(url&&(url.startsWith('http')||url.startsWith('data:')))return url; return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80'; }
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function genRoomId(){ var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=''; for(var i=0;i<6;i++)r+=c[Math.floor(Math.random()*c.length)]; return r; }
+async function sha256(msg){ var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg)); return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
 
-// Session
-function loadSession() {
-  try { return JSON.parse(sessionStorage.getItem('ww_user')); } catch(_) { return null; }
-}
-function saveSession(u) { sessionStorage.setItem('ww_user', JSON.stringify(u)); }
-
-// Room ID
-function genRoomId() {
-  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
-}
-
-// Today
-function todayStr() { return new Date().toISOString().split('T')[0]; }
-
-// Avatar
-function avatarUrl(url, name) {
-  if (url && (url.startsWith('http')||url.startsWith('data:'))) return url;
-  const i = encodeURIComponent((name||'?').substring(0,2).toUpperCase());
-  return `https://ui-avatars.com/api/?name=${i}&background=6d51f5&color=fff&bold=true&size=80`;
-}
-
-function fmtNum(n) {
-  if (!n) return '0';
-  if (n>=1e6) return (n/1e6).toFixed(1)+'M';
-  if (n>=1e3) return (n/1e3).toFixed(1)+'K';
-  return String(n);
-}
-
-// ════════════════════════════════════════════════════════════
-// WORD EVALUATION
-// ════════════════════════════════════════════════════════════
-function evaluateGuess(secret, guess) {
-  secret = secret.toUpperCase();
-  guess  = guess.toUpperCase();
-  const n   = secret.length;
-  const res = Array(n).fill('absent');
-  const s   = [...secret];
-  const g   = [...guess];
-  // Pass 1: exact
-  for (let i=0;i<n;i++) if (g[i]===s[i]) { res[i]='correct'; s[i]=null; g[i]=null; }
-  // Pass 2: present
-  for (let i=0;i<n;i++) {
-    if (!g[i]) continue;
-    const idx = s.indexOf(g[i]);
-    if (idx!==-1) { res[i]='present'; s[idx]=null; }
-  }
+/* ══════════════════════════════════════════════
+   WORD EVALUATION
+══════════════════════════════════════════════ */
+function evaluateGuess(secret,guess){
+  secret=secret.toUpperCase(); guess=guess.toUpperCase();
+  var n=secret.length, res=[], s=[], g=[], i, idx;
+  for(i=0;i<n;i++){ res.push('absent'); s.push(secret[i]); g.push(guess[i]); }
+  for(i=0;i<n;i++){ if(g[i]===s[i]){ res[i]='correct'; s[i]=null; g[i]=null; } }
+  for(i=0;i<n;i++){ if(!g[i])continue; idx=s.indexOf(g[i]); if(idx!==-1){ res[i]='present'; s[idx]=null; } }
   return res;
 }
 
-// ════════════════════════════════════════════════════════════
-// TILE + BOARD RENDERING
-// ════════════════════════════════════════════════════════════
-function buildEmptyRow(rowEl, len) {
-  rowEl.innerHTML = '';
-  for (let i=0;i<len;i++) {
-    const t = document.createElement('div');
-    t.className = 'tile empty';
-    rowEl.appendChild(t);
+/* ══════════════════════════════════════════════
+   BOARD RENDERING
+══════════════════════════════════════════════ */
+function buildEmptyRow(rowEl,len){
+  rowEl.innerHTML='';
+  for(var i=0;i<len;i++){ var t=document.createElement('div'); t.className='tile empty'; rowEl.appendChild(t); }
+}
+function buildTileRow(rowEl,guess,result){
+  rowEl.innerHTML='';
+  guess=guess.toUpperCase();
+  for(var i=0;i<guess.length;i++){
+    (function(i){
+      var t=document.createElement('div'); t.className='tile'; t.textContent=guess[i]; rowEl.appendChild(t);
+      setTimeout(function(){ t.classList.add('flipping'); setTimeout(function(){ t.classList.remove('flipping'); t.classList.add(result[i]); },200); },i*80);
+    })(i);
   }
 }
+function shakeRow(rowEl){ if(!rowEl)return; rowEl.classList.add('row-shake'); rowEl.addEventListener('animationend',function(){rowEl.classList.remove('row-shake');},{once:true}); }
 
-function buildTileRow(rowEl, guess, result) {
-  rowEl.innerHTML = '';
-  guess = guess.toUpperCase();
-  for (let i=0;i<guess.length;i++) {
-    const t = document.createElement('div');
-    t.className = 'tile';
-    t.textContent = guess[i];
-    rowEl.appendChild(t);
-    // flip animation
-    setTimeout(()=>{
-      t.classList.add('flipping');
-      setTimeout(()=>{ t.classList.remove('flipping'); t.classList.add(result[i]); }, 200);
-    }, i*80);
-  }
-}
-
-function shakeRow(rowEl) {
-  if(!rowEl)return;
-  rowEl.classList.add('row-shake');
-  rowEl.addEventListener('animationend',()=>rowEl.classList.remove('row-shake'),{once:true});
-}
-
-// ════════════════════════════════════════════════════════════
-// KEYBOARD
-// ════════════════════════════════════════════════════════════
-function buildKeyboard(container, onKey) {
-  const rows = [
-    ['Q','W','E','R','T','Y','U','I','O','P'],
-    ['A','S','D','F','G','H','J','K','L'],
-    ['ENTER','Z','X','C','V','B','N','M','⌫']
-  ];
-  container.innerHTML = '';
-  rows.forEach(row => {
-    const rowEl = document.createElement('div');
-    rowEl.className = 'key-row';
-    row.forEach(k => {
-      const btn = document.createElement('button');
-      btn.className = 'key'+(['ENTER','⌫'].includes(k)?' wide':'');
-      btn.textContent = k;
-      btn.dataset.key = k;
-      btn.type = 'button';
-      btn.addEventListener('click', () => onKey(k));
+/* ══════════════════════════════════════════════
+   KEYBOARD
+══════════════════════════════════════════════ */
+function buildKeyboard(container,onKey){
+  var rows=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
+  container.innerHTML='';
+  rows.forEach(function(row){
+    var rowEl=document.createElement('div'); rowEl.className='key-row';
+    row.forEach(function(k){
+      var btn=document.createElement('button');
+      btn.className='key'+(k==='ENTER'||k==='⌫'?' wide':'');
+      btn.textContent=k; btn.dataset.key=k; btn.type='button';
+      btn.addEventListener('click',function(){ onKey(k); });
       rowEl.appendChild(btn);
     });
     container.appendChild(rowEl);
   });
 }
-
-function updateKeyboard(kbEl, guess, result) {
-  if (!kbEl) return;
-  const priority = { correct:3, present:2, absent:1 };
-  guess = guess.toUpperCase();
-  for (let i=0;i<guess.length;i++) {
-    const key = kbEl.querySelector(`[data-key="${guess[i]}"]`);
-    if (!key) continue;
-    const cur = priority[key.dataset.state]||0;
-    const nxt = priority[result[i]]||0;
-    if (nxt>cur) { key.classList.remove('correct','present','absent'); key.classList.add(result[i]); key.dataset.state=result[i]; }
+function updateKeyboard(kbEl,guess,result){
+  if(!kbEl)return;
+  var pri={correct:3,present:2,absent:1};
+  guess=guess.toUpperCase();
+  for(var i=0;i<guess.length;i++){
+    var key=kbEl.querySelector('[data-key="'+guess[i]+'"]');
+    if(!key)continue;
+    var cur=pri[key.dataset.state]||0, nxt=pri[result[i]]||0;
+    if(nxt>cur){ key.classList.remove('correct','present','absent'); key.classList.add(result[i]); key.dataset.state=result[i]; }
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// COUNTDOWN TIMER
-// ════════════════════════════════════════════════════════════
-function CountdownTimer({totalSeconds, containerEl, onEnd}) {
-  let remaining = totalSeconds;
-  let iv = null;
-  const C = 2*Math.PI*30;
-
-  function render() {
-    if (!containerEl) return;
-    const pct  = remaining/totalSeconds;
-    const warn = remaining<=10;
-    const fg   = warn?'#f04060':'#6d51f5';
-    containerEl.innerHTML=`
-      <div class="timer-wrap${warn?' warn':''}">
-        <svg width="76" height="76" viewBox="0 0 76 76">
-          <circle class="t-bg" cx="38" cy="38" r="30"/>
-          <circle class="t-fg" cx="38" cy="38" r="30"
-            stroke-dasharray="${C.toFixed(2)}"
-            stroke-dashoffset="${(C*(1-pct)).toFixed(2)}"
-            stroke="${fg}"/>
-        </svg>
-        <div class="timer-num" style="color:${fg}">${remaining}</div>
-      </div>
-      <span class="timer-label">Seconds Left</span>`;
+/* ══════════════════════════════════════════════
+   TIMER
+══════════════════════════════════════════════ */
+function CountdownTimer(opts){
+  var total=opts.totalSeconds, remaining=total, iv=null, el=opts.containerEl, C=2*Math.PI*30;
+  function render(){
+    if(!el)return;
+    var pct=remaining/total, warn=remaining<=10, fg=warn?'#f04060':'#6d51f5';
+    el.innerHTML='<div class="timer-wrap'+(warn?' warn':'')+'"><svg width="76" height="76" viewBox="0 0 76 76"><circle class="t-bg" cx="38" cy="38" r="30"/><circle class="t-fg" cx="38" cy="38" r="30" stroke-dasharray="'+C.toFixed(2)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(2)+'" stroke="'+fg+'"/></svg><div class="timer-num" style="color:'+fg+'">'+remaining+'</div></div><span class="timer-label">Seconds Left</span>';
   }
-
-  this.start = function() {
-    render();
-    iv = setInterval(()=>{
-      remaining = Math.max(0, remaining-1);
-      render();
-      if (remaining<=0) { this.stop(); if(onEnd) onEnd(); }
-    }, 1000);
-  };
-  this.stop = function() { clearInterval(iv); iv=null; };
+  this.start=function(){ var self=this; render(); iv=setInterval(function(){ remaining=Math.max(0,remaining-1); render(); if(remaining<=0){ self.stop(); if(opts.onEnd)opts.onEnd(); } },1000); };
+  this.stop=function(){ clearInterval(iv); iv=null; };
 }
 
-// ════════════════════════════════════════════════════════════
-// SOUND
-// ════════════════════════════════════════════════════════════
-let _ctx = null;
-function playSound(type) {
-  try {
-    if (!_ctx) _ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const o = _ctx.createOscillator();
-    const g = _ctx.createGain();
-    o.connect(g); g.connect(_ctx.destination);
-    const cfg = { correct:{f:660,t:'sine',d:0.14,v:0.12}, present:{f:440,t:'sine',d:0.12,v:0.1},
-      absent:{f:180,t:'square',d:0.08,v:0.07}, win:{f:880,t:'sine',d:0.55,v:0.18},
-      lose:{f:140,t:'sawtooth',d:0.4,v:0.13}, type:{f:300,t:'sine',d:0.04,v:0.05} }[type]||{f:400,t:'sine',d:0.1,v:0.1};
-    o.type=cfg.t; o.frequency.setValueAtTime(cfg.f, _ctx.currentTime);
-    if (type==='win') o.frequency.linearRampToValueAtTime(1320, _ctx.currentTime+0.3);
-    g.gain.setValueAtTime(cfg.v, _ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, _ctx.currentTime+cfg.d);
-    o.start(); o.stop(_ctx.currentTime+cfg.d+0.01);
-  } catch(_){}
+/* ══════════════════════════════════════════════
+   SOUND
+══════════════════════════════════════════════ */
+var _audioCtx=null;
+function playSound(type){
+  try{
+    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    var o=_audioCtx.createOscillator(), g=_audioCtx.createGain();
+    o.connect(g); g.connect(_audioCtx.destination);
+    var cfg={correct:{f:660,t:'sine',d:.14,v:.12},present:{f:440,t:'sine',d:.12,v:.1},absent:{f:180,t:'square',d:.08,v:.07},win:{f:880,t:'sine',d:.55,v:.18},lose:{f:140,t:'sawtooth',d:.4,v:.13},type:{f:300,t:'sine',d:.04,v:.05}}[type]||{f:400,t:'sine',d:.1,v:.1};
+    o.type=cfg.t; o.frequency.setValueAtTime(cfg.f,_audioCtx.currentTime);
+    if(type==='win')o.frequency.linearRampToValueAtTime(1320,_audioCtx.currentTime+.3);
+    g.gain.setValueAtTime(cfg.v,_audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,_audioCtx.currentTime+cfg.d);
+    o.start(); o.stop(_audioCtx.currentTime+cfg.d+.01);
+  }catch(e){}
 }
 
-// ════════════════════════════════════════════════════════════
-// CONFETTI
-// ════════════════════════════════════════════════════════════
-function confettiBurst() {
-  const colors=['#6d51f5','#f0b429','#16c26a','#f04060','#b44cff','#fff'];
-  for(let i=0;i<60;i++){
-    const d=document.createElement('div');
-    d.style.cssText=`position:fixed;left:${30+Math.random()*40}%;top:${-10+Math.random()*20}%;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};pointer-events:none;z-index:9000;animation:confFall ${1.2+Math.random()*1.6}s ease-in ${Math.random()*0.4}s forwards;`;
+/* ══════════════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════════════ */
+function confettiBurst(){
+  if(!document.getElementById('_ckf')){ var s=document.createElement('style'); s.id='_ckf'; s.textContent='@keyframes confFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}'; document.head.appendChild(s); }
+  var colors=['#6d51f5','#f0b429','#16c26a','#f04060','#b44cff','#fff'];
+  for(var i=0;i<60;i++){
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;left:'+(30+Math.random()*40)+'%;top:'+(Math.random()*10)+'%;width:'+(6+Math.random()*8)+'px;height:'+(6+Math.random()*8)+'px;background:'+colors[Math.floor(Math.random()*colors.length)]+';border-radius:'+(Math.random()>.5?'50%':'2px')+';pointer-events:none;z-index:9000;animation:confFall '+(1.2+Math.random()*1.6)+'s ease-in '+(Math.random()*.4)+'s forwards;';
     document.body.appendChild(d);
-    setTimeout(()=>d.remove(),3000);
+    setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); },3000);
   }
 }
-// inject confetti keyframe once
-(function(){
-  if(document.getElementById('_ckf')) return;
-  const s=document.createElement('style');
-  s.id='_ckf';
-  s.textContent='@keyframes confFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
-  document.head.appendChild(s);
-})();
 
-// ════════════════════════════════════════════════════════════
-// ACHIEVEMENTS
-// ════════════════════════════════════════════════════════════
-const ACHIEVEMENTS = [
-  { id:'first_win',  icon:'🏆', label:'First Victory',  cond: u=>(u.wins||0)>=1 },
-  { id:'ten_wins',   icon:'⚔️', label:'Veteran',        cond: u=>(u.wins||0)>=10 },
-  { id:'daily_hero', icon:'📅', label:'Daily Warrior',  cond: u=>(u.totalGames||0)>=1 },
-  { id:'score_500',  icon:'💰', label:'Score Hunter',   cond: u=>(u.score||0)>=500 },
-  { id:'score_2k',   icon:'👑', label:'Elite Player',   cond: u=>(u.score||0)>=2000 },
-  { id:'games_50',   icon:'🎮', label:'Dedicated',      cond: u=>(u.totalGames||0)>=50 },
+/* ══════════════════════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════════════════════ */
+var ACHIEVEMENTS=[
+  {id:'first_win',icon:'🏆',label:'First Victory',cond:function(u){return(u.wins||0)>=1;}},
+  {id:'ten_wins',icon:'⚔️',label:'Veteran',cond:function(u){return(u.wins||0)>=10;}},
+  {id:'daily_hero',icon:'📅',label:'Daily Warrior',cond:function(u){return(u.totalGames||0)>=1;}},
+  {id:'score_500',icon:'💰',label:'Score Hunter',cond:function(u){return(u.score||0)>=500;}},
+  {id:'score_2k',icon:'👑',label:'Elite Player',cond:function(u){return(u.score||0)>=2000;}},
+  {id:'games_50',icon:'🎮',label:'Dedicated',cond:function(u){return(u.totalGames||0)>=50;}},
 ];
-
-async function checkAchievements(ud, uid) {
-  const earned = ud.achievements||{};
-  const grant  = ACHIEVEMENTS.filter(a=>!earned[a.id]&&a.cond(ud)).map(a=>a.id);
-  if (!grant.length) return [];
-  const upd = {};
-  grant.forEach(id => upd[`achievements/${id}`]=Date.now());
+async function checkAchievements(ud,uid){
+  var earned=ud.achievements||{},grant=[],upd={};
+  ACHIEVEMENTS.forEach(function(a){ if(!earned[a.id]&&a.cond(ud))grant.push(a.id); });
+  if(!grant.length)return[];
+  grant.forEach(function(id){ upd['achievements/'+id]=Date.now(); });
   await db.ref('users/'+uid).update(upd);
   return grant;
 }
 
-// ════════════════════════════════════════════════════════════
-// GAME STATE
-// ════════════════════════════════════════════════════════════
-let currentUser  = loadSession();
-let mode         = sessionStorage.getItem('ww_mode')||'offline';
-let secretWord   = '';
-let maxAttempts  = 6;
-let wordLength   = 5;
-let guessCount   = 0;
-let gameOver     = false;
-let currentGuess = '';
-let timer        = null;
-let roomId       = null;
-let isHost       = false;
-let betScore     = 0;
-let _guessUnsub  = null;
-let dailyData    = null;
+/* ══════════════════════════════════════════════
+   GAME STATE
+══════════════════════════════════════════════ */
+var currentUser  = loadSession();
+var mode         = sessionStorage.getItem('ww_mode') || 'offline';
+var secretWord   = '';
+var maxAttempts  = 6;
+var wordLength   = 5;
+var guessCount   = 0;
+var gameOver     = false;
+var currentGuess = '';
+var timerObj     = null;
+var roomId       = null;
+var isHost       = false;
+var betScore     = 0;
+var guessUnsub   = null;
+var dailyData    = null;
 
-// ════════════════════════════════════════════════════════════
-// BOOTSTRAP
-// ════════════════════════════════════════════════════════════
-async function init() {
-  // Guard: must be logged in
-  if (!currentUser || !currentUser.uid) {
-    window.location.href = 'login.html';
+/* ══════════════════════════════════════════════
+   BOOTSTRAP
+══════════════════════════════════════════════ */
+async function init(){
+  /* Must be logged in */
+  if(!currentUser || !currentUser.uid){
+    setMsg('Please log in first.');
+    $('load-spin').style.display = 'none';
+    $('load-btn').style.display  = 'inline-block';
     return;
   }
 
   $('nav-username').textContent = currentUser.username || '…';
   $('nav-avatar').src = avatarUrl(currentUser.photoURL, currentUser.username);
+  setMsg('Connecting to server…');
 
-  // Try to refresh user data — but don't block if offline
-  try {
-    const snap = await db.ref('users/'+currentUser.uid).get();
-    if (snap.exists()) {
-      currentUser = Object.assign({}, currentUser, snap.val());
-      saveSession(currentUser);
-    }
-  } catch(e) {
-    console.warn('Offline or Firebase error, using cached session.');
-  }
+  /* Refresh user data — non-blocking */
+  try{
+    var snap = await db.ref('users/'+currentUser.uid).get();
+    if(snap.exists()){ currentUser = Object.assign({}, currentUser, snap.val()); saveSession(currentUser); }
+  }catch(e){ /* use cached session — offline or slow */ }
 
-  // Route to correct setup screen
-  if      (mode==='offline') initOfflineScreen();
-  else if (mode==='online')  initOnlineScreen();
-  else if (mode==='daily')   await initDailyScreen();
+  /* Route to correct screen */
+  if(mode==='offline')       initOfflineScreen();
+  else if(mode==='online')   initOnlineScreen();
+  else if(mode==='daily')    await initDailyScreen();
   else                       { mode='offline'; initOfflineScreen(); }
 }
 
-// ════════════════════════════════════════════════════════════
-// OFFLINE
-// ════════════════════════════════════════════════════════════
-function initOfflineScreen() {
+/* ══════════════════════════════════════════════
+   OFFLINE
+══════════════════════════════════════════════ */
+function initOfflineScreen(){
   showScreen('screen-offline');
-  $('off-secret').oninput = function() {
-    $('off-len').value = this.value.length || '—';
-  };
+  $('off-secret').oninput = function(){ $('off-len').value = this.value.length || '—'; };
 }
+window.startOfflineGame = function(){
+  var raw = $('off-secret').value.trim().toUpperCase();
+  if(raw.length<2){ toast('Word needs at least 2 letters.','warn'); return; }
+  if(!/^[A-Z]+$/.test(raw)){ toast('Letters A–Z only — no numbers or symbols.','warn'); return; }
+  secretWord=raw; maxAttempts=parseInt($('off-attempts').value)||6; wordLength=raw.length;
+  startBoard('🤝 OFFLINE', 'Player 2: Guess the secret word!');
+};
 
-function startOfflineGame() {
-  const raw = $('off-secret').value.trim().toUpperCase();
-  if (raw.length<2)          { toast('Word needs at least 2 letters.','warn'); return; }
-  if (!/^[A-Z]+$/.test(raw)) { toast('Letters A–Z only — no numbers or symbols.','warn'); return; }
-  secretWord  = raw;
-  maxAttempts = parseInt($('off-attempts').value)||6;
-  wordLength  = raw.length;
-  startBoard('🤝 OFFLINE','Player 2: Guess the secret word!');
-}
-window.startOfflineGame = startOfflineGame;
-
-// ════════════════════════════════════════════════════════════
-// ONLINE — HOST
-// ════════════════════════════════════════════════════════════
-function initOnlineScreen() {
+/* ══════════════════════════════════════════════
+   ONLINE — HOST
+══════════════════════════════════════════════ */
+function initOnlineScreen(){
   $('h-score-cur').textContent = fmtNum(currentUser.score||0);
   showScreen('screen-online');
 }
-
-window.switchOnlineTab = function(tab) {
-  $('tab-host').classList.toggle('active',   tab==='host');
-  $('tab-guest').classList.toggle('active',  tab==='guest');
+window.switchOnlineTab = function(tab){
+  $('tab-host').classList.toggle('active',  tab==='host');
+  $('tab-guest').classList.toggle('active', tab==='guest');
   $('host-panel').classList.toggle('hidden', tab!=='host');
   $('guest-panel').classList.toggle('hidden',tab!=='guest');
 };
-
-window.createRoom = async function() {
-  const secret   = $('h-secret').value.trim().toUpperCase();
-  const attempts = parseInt($('h-attempts').value)||6;
-  const bet      = Math.max(0,parseInt($('h-bet').value)||0);
-
-  if (secret.length<2)         { toast('Enter a secret word.','warn'); return; }
-  if (!/^[A-Z]+$/.test(secret)){ toast('Letters A–Z only.','warn'); return; }
-
-  const snap = await db.ref('users/'+currentUser.uid).get();
-  const hd   = snap.val();
-  if (bet>(hd.score||0)) { toast('Not enough score for this bet.','error'); return; }
-
-  const hash = await sha256(secret.toLowerCase());
-  roomId      = genRoomId();
-  isHost      = true;
-  secretWord  = secret;
-  maxAttempts = attempts;
-  wordLength  = secret.length;
-  betScore    = bet;
-
-  await db.ref('rooms/'+roomId).set({
-    host:currentUser.username, hostUid:currentUser.uid,
-    guest:null, guestUid:null,
-    secretWordHash:hash, secretWord:secret,
-    secretWordLength:secret.length,
-    attempts, betScore:bet,
-    status:'waiting', winner:null, createdAt:Date.now()
-  });
-
-  if (bet>0) await db.ref('users/'+currentUser.uid).update({ score:(hd.score||0)-bet });
-
-  $('room-id-show').textContent = roomId;
+window.createRoom = async function(){
+  var secret=  $('h-secret').value.trim().toUpperCase();
+  var attempts=parseInt($('h-attempts').value)||6;
+  var bet=     Math.max(0,parseInt($('h-bet').value)||0);
+  if(secret.length<2){ toast('Enter a secret word.','warn'); return; }
+  if(!/^[A-Z]+$/.test(secret)){ toast('Letters A–Z only.','warn'); return; }
+  var snap=await db.ref('users/'+currentUser.uid).get(); var hd=snap.val();
+  if(bet>(hd.score||0)){ toast('Not enough score for this bet.','error'); return; }
+  var hash=await sha256(secret.toLowerCase());
+  roomId=genRoomId(); isHost=true; secretWord=secret; maxAttempts=attempts; wordLength=secret.length; betScore=bet;
+  await db.ref('rooms/'+roomId).set({host:currentUser.username,hostUid:currentUser.uid,guest:null,guestUid:null,secretWordHash:hash,secretWord:secret,secretWordLength:secret.length,attempts:attempts,betScore:bet,status:'waiting',winner:null,createdAt:Date.now()});
+  if(bet>0) await db.ref('users/'+currentUser.uid).update({score:(hd.score||0)-bet});
+  $('room-id-show').textContent=roomId;
   showScreen('screen-waiting');
   waitForGuest();
 };
-
-window.copyRoomId = function() {
-  if (!roomId) return;
-  navigator.clipboard?.writeText(roomId)
-    .then(()=>toast('Copied! 📋','success'))
-    .catch(()=>toast('Copy manually: '+roomId,'warn'));
+window.copyRoomId = function(){
+  if(!roomId)return;
+  if(navigator.clipboard) navigator.clipboard.writeText(roomId).then(function(){toast('Copied! 📋','success');});
+  else toast('Room ID: '+roomId,'info');
 };
-
-window.cancelRoom = async function() {
-  if (_guessUnsub) { _guessUnsub(); _guessUnsub=null; }
-  if (roomId) {
-    if (betScore>0) {
-      const s = await db.ref('users/'+currentUser.uid).get();
-      if (s.exists()) await db.ref('users/'+currentUser.uid).update({score:(s.val().score||0)+betScore});
-    }
+window.cancelRoom = async function(){
+  if(guessUnsub){ guessUnsub(); guessUnsub=null; }
+  if(roomId){
+    if(betScore>0){ var s=await db.ref('users/'+currentUser.uid).get(); if(s.exists()) await db.ref('users/'+currentUser.uid).update({score:(s.val().score||0)+betScore}); }
     await db.ref('rooms/'+roomId).update({status:'cancelled'});
   }
   location.href='index.html';
 };
-
-function waitForGuest() {
-  const ref = db.ref('rooms/'+roomId);
-  ref.on('value', snap=>{
-    if (!snap.exists()) return;
-    const r=snap.val();
-    if (r.status==='active'&&r.guest) { ref.off(); startHostView(r); }
-    if (r.status==='cancelled') { ref.off(); toast('Room cancelled.','warn'); location.href='index.html'; }
+function waitForGuest(){
+  var rRef=db.ref('rooms/'+roomId);
+  rRef.on('value',function(snap){
+    if(!snap.exists())return;
+    var r=snap.val();
+    if(r.status==='active'&&r.guest){ rRef.off(); startHostView(r); }
+    if(r.status==='cancelled'){ rRef.off(); toast('Room cancelled.','warn'); location.href='index.html'; }
   });
 }
-
-function startHostView(room) {
-  $('opp-card').classList.remove('hidden');
-  $('log-card').classList.remove('hidden');
-  $('opp-name').textContent   = room.guest;
-  $('opp-avatar').src         = avatarUrl('',room.guest);
-  $('opp-status').textContent = 'Guessing…';
-  startBoard(`🌐 HOST — Word: "${secretWord}"`,`${room.guest} is guessing`,false,true);
-  $('sb-mode-lbl').textContent='🌐 Online · Host';
-  $('sb-bet-row').classList.remove('hidden');
-  $('sb-bet').textContent=betScore;
-  $('guess-input-area').classList.add('hidden');
-  $('keyboard').style.display='none';
+function startHostView(room){
+  $('opp-card').classList.remove('hidden'); $('log-card').classList.remove('hidden');
+  $('opp-name').textContent=room.guest; $('opp-avatar').src=avatarUrl('',room.guest); $('opp-status').textContent='Guessing…';
+  startBoard('🌐 HOST — Word: "'+secretWord+'"', room.guest+' is guessing', false, true);
+  $('sb-mode-lbl').textContent='🌐 Online · Host'; $('sb-bet-row').classList.remove('hidden'); $('sb-bet').textContent=betScore;
+  $('guess-input-area').classList.add('hidden'); $('keyboard').style.display='none';
   listenGuestGuesses();
 }
-
-function listenGuestGuesses() {
-  const gRef = db.ref('rooms/'+roomId+'/guesses');
-  let lastCount=0;
-  _guessUnsub = gRef.on('value', snap=>{
-    if (!snap.exists()||gameOver) return;
-    const guesses=Object.values(snap.val()).sort((a,b)=>a.ts-b.ts);
-    const rows=$('game-board').querySelectorAll('.guess-row');
-    const log=$('online-log');
-    for (let i=lastCount;i<guesses.length;i++){
-      const g=guesses[i], result=evaluateGuess(secretWord,g.guess);
-      if (rows[i]) buildTileRow(rows[i],g.guess,result);
-      const e=document.createElement('div');
-      e.style.cssText='margin-bottom:3px;padding:2px 8px;background:var(--s1);border-radius:5px;font-family:var(--mono);letter-spacing:0.1em;';
-      e.textContent=g.guess.toUpperCase();
-      log.appendChild(e);
-      log.scrollTop=log.scrollHeight;
+function listenGuestGuesses(){
+  var gRef=db.ref('rooms/'+roomId+'/guesses');
+  var lastCount=0;
+  guessUnsub=gRef.on('value',function(snap){
+    if(!snap.exists()||gameOver)return;
+    var guesses=Object.values(snap.val()).sort(function(a,b){return a.ts-b.ts;});
+    var rows=$('game-board').querySelectorAll('.guess-row');
+    var log=$('online-log');
+    for(var i=lastCount;i<guesses.length;i++){
+      var g=guesses[i], result=evaluateGuess(secretWord,g.guess);
+      if(rows[i]) buildTileRow(rows[i],g.guess,result);
+      var e=document.createElement('div');
+      e.style.cssText='margin-bottom:3px;padding:2px 8px;background:var(--s1);border-radius:5px;font-family:var(--mono);letter-spacing:.1em;';
+      e.textContent=g.guess.toUpperCase(); log.appendChild(e); log.scrollTop=log.scrollHeight;
     }
     lastCount=guesses.length;
     $('sb-attempts').textContent=maxAttempts-guesses.length;
-    $('opp-status').textContent=`${guesses.length}/${maxAttempts} guesses`;
-
-    // Check if guest resolved the room
-    db.ref('rooms/'+roomId).get().then(rs=>{
-      if (!rs.exists()||gameOver) return;
-      const rd=rs.val();
-      if (rd.status==='finished'){
-        gRef.off('value',_guessUnsub); _guessUnsub=null;
-        showHostResult(rd.winner===currentUser.username, secretWord, rd.winner);
-      }
+    $('opp-status').textContent=guesses.length+'/'+maxAttempts+' guesses';
+    db.ref('rooms/'+roomId).get().then(function(rs){
+      if(!rs.exists()||gameOver)return;
+      var rd=rs.val();
+      if(rd.status==='finished'){ gRef.off('value',guessUnsub); guessUnsub=null; showHostResult(rd.winner===currentUser.username,secretWord,rd.winner); }
     });
   });
 }
-
-function showHostResult(won, word, winner) {
-  if (gameOver) return;
-  gameOver=true;
-  won ? (confettiBurst(),playSound('win')) : playSound('lose');
-  setTimeout(()=>{
-    $('res-emoji').textContent=won?'🏆':'💀';
-    $('res-title').textContent=won?'YOU WIN!':'YOU LOSE!';
-    $('res-word').textContent=word;
-    $('res-msg').textContent=won?`${winner} couldn't crack your word! +${betScore*2} ⭐`:`${winner} guessed it correctly!`;
+function showHostResult(won,word,winner){
+  if(gameOver)return; gameOver=true;
+  won?(confettiBurst(),playSound('win')):playSound('lose');
+  setTimeout(function(){
+    $('res-emoji').textContent=won?'🏆':'💀'; $('res-title').textContent=won?'YOU WIN!':'YOU LOSE!';
+    $('res-word').textContent=word; $('res-msg').textContent=won?winner+' failed to guess your word!':winner+' cracked your word!';
     $('result-overlay').classList.add('open');
   },700);
 }
 
-// ════════════════════════════════════════════════════════════
-// ONLINE — GUEST
-// ════════════════════════════════════════════════════════════
-window.joinRoom = async function() {
-  const id=$('g-room-id').value.trim().toUpperCase();
-  if (id.length!==6){ toast('Room ID must be 6 characters.','warn'); return; }
-
-  const snap=await db.ref('rooms/'+id).get();
-  if (!snap.exists())          { toast('Room not found.','error'); return; }
-  const room=snap.val();
-  if (room.status!=='waiting') { toast('Room is not available.','error'); return; }
-  if (room.host===currentUser.username){ toast("Can't join your own room.",'warn'); return; }
-  if (room.guest)              { toast('Room already full.','error'); return; }
-
-  const ms=await db.ref('users/'+currentUser.uid).get();
-  const md=ms.val();
-  if ((room.betScore||0)>(md.score||0)){ toast(`Need ${room.betScore} ⭐ to join.`,'error'); return; }
-  if (room.betScore>0) await db.ref('users/'+currentUser.uid).update({score:(md.score||0)-room.betScore});
-
-  // Load secret word for guest evaluation
-  roomId     =id; isHost=false;
-  betScore   =room.betScore||0;
-  maxAttempts=room.attempts;
-  wordLength =room.secretWordLength;
-  secretWord =room.secretWord.toUpperCase();  // KEY FIX
-
+/* ══════════════════════════════════════════════
+   ONLINE — GUEST
+══════════════════════════════════════════════ */
+window.joinRoom = async function(){
+  var id=$('g-room-id').value.trim().toUpperCase();
+  if(id.length!==6){ toast('Room ID must be 6 characters.','warn'); return; }
+  var snap=await db.ref('rooms/'+id).get();
+  if(!snap.exists()){ toast('Room not found.','error'); return; }
+  var room=snap.val();
+  if(room.status!=='waiting'){ toast('Room not available.','error'); return; }
+  if(room.host===currentUser.username){ toast("Can't join your own room.",'warn'); return; }
+  if(room.guest){ toast('Room is full.','error'); return; }
+  var ms=await db.ref('users/'+currentUser.uid).get(); var md=ms.val();
+  if((room.betScore||0)>(md.score||0)){ toast('Need '+room.betScore+' ⭐ to join.','error'); return; }
+  if(room.betScore>0) await db.ref('users/'+currentUser.uid).update({score:(md.score||0)-room.betScore});
+  roomId=id; isHost=false; betScore=room.betScore||0; maxAttempts=room.attempts; wordLength=room.secretWordLength;
+  secretWord=room.secretWord.toUpperCase(); /* KEY FIX: populate for guest */
   await db.ref('rooms/'+id).update({guest:currentUser.username,guestUid:currentUser.uid,status:'active'});
   startGuestView(room);
 };
-
-function startGuestView(room) {
-  $('opp-card').classList.remove('hidden');
-  $('opp-name').textContent   =room.host;
-  $('opp-avatar').src         =avatarUrl('',room.host);
-  $('opp-status').textContent ='Hosting';
-  startBoard('🌐 MULTIPLAYER',`Vs ${room.host} · Bet: ${room.betScore||0} ⭐`);
-  $('sb-mode-lbl').textContent='🌐 Online · Guest';
-  $('sb-bet-row').classList.remove('hidden');
-  $('sb-bet').textContent=room.betScore;
+function startGuestView(room){
+  $('opp-card').classList.remove('hidden'); $('opp-name').textContent=room.host; $('opp-avatar').src=avatarUrl('',room.host); $('opp-status').textContent='Hosting';
+  startBoard('🌐 MULTIPLAYER','Vs '+room.host+' · Bet: '+(room.betScore||0)+' ⭐');
+  $('sb-mode-lbl').textContent='🌐 Online · Guest'; $('sb-bet-row').classList.remove('hidden'); $('sb-bet').textContent=room.betScore;
 }
 
-// ════════════════════════════════════════════════════════════
-// DAILY
-// ════════════════════════════════════════════════════════════
-async function initDailyScreen() {
-  try {
-    const today=todayStr();
-    const snap=await db.ref('dailyWord').get();
-    if (!snap.exists()){
-      toast('No daily challenge today. Check back soon!','warn');
-      $('d-start-wrap').classList.add('hidden');
-    } else {
+/* ══════════════════════════════════════════════
+   DAILY
+══════════════════════════════════════════════ */
+async function initDailyScreen(){
+  try{
+    var snap=await db.ref('dailyWord').get();
+    if(!snap.exists()){ toast('No daily challenge today.','warn'); $('d-start-wrap').classList.add('hidden'); }
+    else{
       dailyData=snap.val();
       $('d-reward-money').textContent='💰 '+(dailyData.rewardMoney||50);
       $('d-reward-score').textContent='⭐ '+(dailyData.rewardScore||100);
       $('d-attempts').textContent=dailyData.attempts||6;
-      const rs=await db.ref(`dailyResults/${today}/${currentUser.username}`).get();
-      if (rs.exists()){ $('d-already-played').classList.remove('hidden'); $('d-start-wrap').classList.add('hidden'); }
+      var rs=await db.ref('dailyResults/'+todayStr()+'/'+currentUser.username).get();
+      if(rs.exists()){ $('d-already-played').classList.remove('hidden'); $('d-start-wrap').classList.add('hidden'); }
     }
-  } catch(e) { toast('Failed to load daily challenge.','error'); }
+  }catch(e){ toast('Could not load daily challenge.','error'); }
   showScreen('screen-daily');
 }
-
-function startDailyGame() {
-  if (!dailyData){ toast('Daily data missing.','error'); return; }
-  secretWord =dailyData.word.toUpperCase();
-  maxAttempts=dailyData.attempts||6;
-  wordLength =secretWord.length;
+window.startDailyGame = function(){
+  if(!dailyData){ toast('Daily data missing.','error'); return; }
+  secretWord=dailyData.word.toUpperCase(); maxAttempts=dailyData.attempts||6; wordLength=secretWord.length;
   startBoard('📅 DAILY CHALLENGE','⏱ 60 seconds — guess the word!',true);
-  const t=new CountdownTimer({
-    totalSeconds:60, containerEl:$('timer-el'),
-    onEnd:()=>{ if(!gameOver) handleGameEnd(false,secretWord); }
-  });
-  timer=t; t.start();
-}
-window.startDailyGame = startDailyGame;
+  timerObj=new CountdownTimer({totalSeconds:60,containerEl:$('timer-el'),onEnd:function(){if(!gameOver)handleGameEnd(false,secretWord);}});
+  timerObj.start();
+};
 
-// ════════════════════════════════════════════════════════════
-// BOARD
-// ════════════════════════════════════════════════════════════
-function startBoard(title, subtitle, showTimer=false, hostView=false) {
+/* ══════════════════════════════════════════════
+   BOARD
+══════════════════════════════════════════════ */
+function startBoard(title,subtitle,showTimer,hostView){
   showScreen('screen-game');
-  $('game-title').textContent=title;
-  $('game-subtitle').textContent=subtitle;
-
-  const board=$('game-board');
-  board.innerHTML='';
-  for (let i=0;i<maxAttempts;i++){
-    const row=document.createElement('div');
-    row.className='guess-row'; row.id='row-'+i;
-    buildEmptyRow(row,wordLength);
-    board.appendChild(row);
-  }
-  $('sb-len').textContent=wordLength;
-  $('sb-attempts').textContent=maxAttempts;
-  if (showTimer) $('timer-area').classList.remove('hidden');
-
-  if (!hostView){
-    buildKeyboard($('keyboard'),handleKey);
-    attachInput();
-    setTimeout(()=>$('guess-input').focus(),200);
-  }
+  $('game-title').textContent=title; $('game-subtitle').textContent=subtitle;
+  var board=$('game-board'); board.innerHTML='';
+  for(var i=0;i<maxAttempts;i++){ var row=document.createElement('div'); row.className='guess-row'; row.id='row-'+i; buildEmptyRow(row,wordLength); board.appendChild(row); }
+  $('sb-len').textContent=wordLength; $('sb-attempts').textContent=maxAttempts;
+  if(showTimer) $('timer-area').classList.remove('hidden');
+  if(!hostView){ buildKeyboard($('keyboard'),handleKey); attachInput(); setTimeout(function(){$('guess-input').focus();},200); }
 }
-
-function attachInput() {
-  const inp=$('guess-input');
-  inp.maxLength=wordLength;
-  inp.value='';
-
-  inp.onkeydown=function(e){
-    if (e.key==='Enter'){ submitGuess(); return; }
-    if (e.key.length===1 && !/^[a-zA-Z]$/.test(e.key)) e.preventDefault();
-  };
-  inp.oninput=function(e){
-    const clean=e.target.value.replace(/[^a-zA-Z]/g,'').toUpperCase();
-    if (e.target.value!==clean) e.target.value=clean;
-    updateCurrentRow(clean);
-  };
+function attachInput(){
+  var inp=$('guess-input'); inp.maxLength=wordLength; inp.value='';
+  inp.onkeydown=function(e){ if(e.key==='Enter'){submitGuess();return;} if(e.key.length===1&&!/^[a-zA-Z]$/.test(e.key))e.preventDefault(); };
+  inp.oninput=function(e){ var clean=e.target.value.replace(/[^a-zA-Z]/g,'').toUpperCase(); if(e.target.value!==clean)e.target.value=clean; updateCurrentRow(clean); };
 }
-
 function handleKey(k){
-  if (gameOver) return;
-  const inp=$('guess-input');
-  if (k==='⌫'){ inp.value=inp.value.slice(0,-1); }
-  else if (k==='ENTER'){ submitGuess(); return; }
-  else if (/^[A-Z]$/.test(k)&&inp.value.length<wordLength){ inp.value+=k; playSound('type'); }
+  if(gameOver)return;
+  var inp=$('guess-input');
+  if(k==='⌫'){ inp.value=inp.value.slice(0,-1); }
+  else if(k==='ENTER'){ submitGuess(); return; }
+  else if(/^[A-Z]$/.test(k)&&inp.value.length<wordLength){ inp.value+=k; playSound('type'); }
   updateCurrentRow(inp.value);
 }
-
 function updateCurrentRow(val){
   currentGuess=val.toUpperCase();
-  const row=document.getElementById('row-'+guessCount);
-  if(!row)return;
-  row.querySelectorAll('.tile').forEach((t,i)=>{
-    t.textContent=currentGuess[i]||'';
-    t.className='tile'+(currentGuess[i]?' filled':' empty');
-  });
+  var row=document.getElementById('row-'+guessCount); if(!row)return;
+  row.querySelectorAll('.tile').forEach(function(t,i){ t.textContent=currentGuess[i]||''; t.className='tile'+(currentGuess[i]?' filled':' empty'); });
 }
 
-// ════════════════════════════════════════════════════════════
-// SUBMIT GUESS
-// ════════════════════════════════════════════════════════════
-async function submitGuess(){
-  if (gameOver) return;
-  const inp=$('guess-input');
-  const guess=inp.value.toUpperCase().trim();
-
-  if (guess.length!==wordLength){ toast(`Enter a ${wordLength}-letter word.`,'warn'); shakeRow(document.getElementById('row-'+guessCount)); return; }
-  if (!/^[A-Z]+$/.test(guess)){ toast('Letters A–Z only.','warn'); inp.value=''; updateCurrentRow(''); return; }
-
+/* ══════════════════════════════════════════════
+   SUBMIT
+══════════════════════════════════════════════ */
+window.submitGuess = async function(){
+  if(gameOver)return;
+  var inp=$('guess-input');
+  var guess=inp.value.toUpperCase().trim();
+  if(guess.length!==wordLength){ toast('Enter a '+wordLength+'-letter word.','warn'); shakeRow(document.getElementById('row-'+guessCount)); return; }
+  if(!/^[A-Z]+$/.test(guess)){ toast('Letters A–Z only.','warn'); inp.value=''; updateCurrentRow(''); return; }
   inp.disabled=true; $('submit-btn').disabled=true;
 
-  const result=evaluateGuess(secretWord,guess);
-  const isWin=result.length===wordLength&&result.every(r=>r==='correct');
+  var result=evaluateGuess(secretWord,guess);
+  var isWin=result.length===wordLength&&result.every(function(r){return r==='correct';});
 
-  if (mode==='online'&&!isHost){
-    await db.ref('rooms/'+roomId+'/guesses').push({guess,ts:Date.now()});
-  }
+  if(mode==='online'&&!isHost) await db.ref('rooms/'+roomId+'/guesses').push({guess:guess,ts:Date.now()});
 
   buildTileRow(document.getElementById('row-'+guessCount),guess,result);
   updateKeyboard($('keyboard'),guess,result);
-  playSound(isWin?'correct':result.includes('correct')||result.includes('present')?'present':'absent');
+  playSound(isWin?'correct':(result.indexOf('correct')>=0||result.indexOf('present')>=0)?'present':'absent');
 
-  guessCount++;
-  $('sb-attempts').textContent=maxAttempts-guessCount;
-  inp.value=''; currentGuess='';
+  guessCount++; $('sb-attempts').textContent=maxAttempts-guessCount; inp.value=''; currentGuess='';
 
-  if (isWin)                   { handleGameEnd(true,guess); return; }
-  if (guessCount>=maxAttempts) { handleGameEnd(false,guess); return; }
-
+  if(isWin){  handleGameEnd(true,guess);  return; }
+  if(guessCount>=maxAttempts){ handleGameEnd(false,guess); return; }
   inp.disabled=false; $('submit-btn').disabled=false; inp.focus();
-}
-window.submitGuess=submitGuess;
+};
 
-// ════════════════════════════════════════════════════════════
-// GAME END
-// ════════════════════════════════════════════════════════════
-async function handleGameEnd(won, finalGuess){
-  if (gameOver) return;
-  gameOver=true;
-  if (timer) timer.stop();
-  if (_guessUnsub){ db.ref('rooms/'+roomId+'/guesses').off('value',_guessUnsub); _guessUnsub=null; }
-
-  $('guess-input-area').classList.add('hidden');
-  $('keyboard').innerHTML='';
+/* ══════════════════════════════════════════════
+   GAME END
+══════════════════════════════════════════════ */
+async function handleGameEnd(won,finalGuess){
+  if(gameOver)return; gameOver=true;
+  if(timerObj)timerObj.stop();
+  if(guessUnsub){ db.ref('rooms/'+roomId+'/guesses').off('value',guessUnsub); guessUnsub=null; }
+  $('guess-input-area').classList.add('hidden'); $('keyboard').innerHTML='';
   won?(confettiBurst(),playSound('win')):playSound('lose');
 
-  const today=todayStr();
-  const uRef=db.ref('users/'+currentUser.uid);
-  const us=await uRef.get(); const ud=us.val();
-  const upd={totalGames:(ud.totalGames||0)+1};
-  let rewardMsg='';
+  var today=todayStr();
+  var uRef=db.ref('users/'+currentUser.uid);
+  var us=await uRef.get(); var ud=us.val();
+  var upd={totalGames:(ud.totalGames||0)+1}; var rewardMsg='';
 
-  if (mode==='offline'){
+  if(mode==='offline'){
     won?upd.wins=(ud.wins||0)+1:upd.losses=(ud.losses||0)+1;
   }
-  else if (mode==='online'&&!isHost){
-    if (won){
-      upd.wins=(ud.wins||0)+1; upd.score=(ud.score||0)+betScore*2; rewardMsg=`+${betScore*2} ⭐`;
-      const rs=await db.ref('rooms/'+roomId).get();
-      if (rs.exists()&&rs.val().hostUid){
-        const hs=await db.ref('users/'+rs.val().hostUid).get();
-        if (hs.exists()) await db.ref('users/'+rs.val().hostUid).update({losses:(hs.val().losses||0)+1,totalGames:(hs.val().totalGames||0)+1});
-      }
+  else if(mode==='online'&&!isHost){
+    if(won){
+      upd.wins=(ud.wins||0)+1; upd.score=(ud.score||0)+betScore*2; rewardMsg='+'+betScore*2+' ⭐';
+      var rs=await db.ref('rooms/'+roomId).get();
+      if(rs.exists()&&rs.val().hostUid){ var hs=await db.ref('users/'+rs.val().hostUid).get(); if(hs.exists())await db.ref('users/'+rs.val().hostUid).update({losses:(hs.val().losses||0)+1,totalGames:(hs.val().totalGames||0)+1}); }
       await db.ref('rooms/'+roomId).update({status:'finished',winner:currentUser.username});
-    } else {
+    }else{
       upd.losses=(ud.losses||0)+1;
-      const rs=await db.ref('rooms/'+roomId).get();
-      if (rs.exists()){
-        const rd=rs.val();
-        if (rd.hostUid){
-          const hs=await db.ref('users/'+rd.hostUid).get();
-          if (hs.exists()) await db.ref('users/'+rd.hostUid).update({wins:(hs.val().wins||0)+1,score:(hs.val().score||0)+betScore*2,totalGames:(hs.val().totalGames||0)+1});
-        }
-        await db.ref('rooms/'+roomId).update({status:'finished',winner:rd.host});
-      }
+      var rs2=await db.ref('rooms/'+roomId).get();
+      if(rs2.exists()){ var rd=rs2.val(); if(rd.hostUid){var hs2=await db.ref('users/'+rd.hostUid).get(); if(hs2.exists())await db.ref('users/'+rd.hostUid).update({wins:(hs2.val().wins||0)+1,score:(hs2.val().score||0)+betScore*2,totalGames:(hs2.val().totalGames||0)+1});} await db.ref('rooms/'+roomId).update({status:'finished',winner:rd.host}); }
     }
   }
-  else if (mode==='online'&&isHost){ return; } // host overlay via showHostResult
-  else if (mode==='daily'){
-    await db.ref(`dailyResults/${today}/${currentUser.username}`).set({result:won?'win':'lose',timestamp:Date.now()});
-    if (won){ upd.wins=(ud.wins||0)+1; upd.money=(ud.money||0)+(dailyData.rewardMoney||0); upd.score=(ud.score||0)+(dailyData.rewardScore||0); rewardMsg=`+${dailyData.rewardMoney} 💰 +${dailyData.rewardScore} ⭐`; }
-    else     upd.losses=(ud.losses||0)+1;
+  else if(mode==='online'&&isHost){ return; }
+  else if(mode==='daily'){
+    await db.ref('dailyResults/'+today+'/'+currentUser.username).set({result:won?'win':'lose',timestamp:Date.now()});
+    if(won){ upd.wins=(ud.wins||0)+1; upd.money=(ud.money||0)+(dailyData.rewardMoney||0); upd.score=(ud.score||0)+(dailyData.rewardScore||0); rewardMsg='+'+dailyData.rewardMoney+' 💰 +'+dailyData.rewardScore+' ⭐'; }
+    else upd.losses=(ud.losses||0)+1;
   }
 
   await uRef.update(upd);
-  const fresh=(await uRef.get()).val();
-  saveSession(Object.assign({},currentUser,fresh));
+  var fresh=(await uRef.get()).val(); saveSession(Object.assign({},currentUser,fresh));
+  var ach=await checkAchievements(fresh,currentUser.uid);
+  if(ach.length){ var a=ACHIEVEMENTS.find(function(x){return x.id===ach[0];}); if(a)setTimeout(function(){toast('🎖 '+a.label+' unlocked!','success');},1800); }
 
-  const ach=await checkAchievements(fresh,currentUser.uid);
-  if (ach.length){ const a=ACHIEVEMENTS.find(x=>x.id===ach[0]); if(a) setTimeout(()=>toast(`🎖 ${a.label} unlocked!`,'success'),1800); }
-
-  setTimeout(()=>{
+  setTimeout(function(){
     $('res-emoji').textContent=won?'🏆':'💀';
     $('res-title').textContent=won?'VICTORY!':'DEFEATED!';
     $('res-word').textContent=secretWord;
-    $('res-msg').textContent=won?`Solved in ${guessCount} attempt${guessCount!==1?'s':''}! ${rewardMsg}`:`The word was: ${secretWord}`;
+    $('res-msg').textContent=won?'Solved in '+guessCount+' attempt'+(guessCount!==1?'s':'')+'! '+rewardMsg:'The word was: '+secretWord;
     $('result-overlay').classList.add('open');
   },700);
 }
 
-// ════════════════════════════════════════════════════════════
-// AD BANNER — iframe-sandboxed so document.write is safe
-// ════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════
+   AD — iframe sandbox
+══════════════════════════════════════════════ */
 function injectAd(){
-  const f=$('ad-frame');
-  if (!f) return;
-  // Build ad HTML without any </script> sequence that would end this script block
-  const closeTag = '<' + '/script>';
-  const html = '<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
-    + '<script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');' + closeTag
-    + '</body></html>';
-  if ('srcdoc' in f) { f.srcdoc=html; }
-  else { const b=new Blob([html],{type:'text/html'}); f.src=URL.createObjectURL(b); }
+  var f=$('ad-frame'); if(!f)return;
+  var closeTag='<'+'/script>';
+  var html='<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
+    +'<'+'script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');'
+    +closeTag+'</body></html>';
+  if('srcdoc'in f){ f.srcdoc=html; }
+  else{ try{ var b=new Blob([html],{type:'text/html'}); f.src=URL.createObjectURL(b); }catch(e){} }
 }
 
-// ════════════════════════════════════════════════════════════
-// START
-// ════════════════════════════════════════════════════════════
-// Safety net: if init stalls for any reason, hide the cover after 6s
-setTimeout(() => {
-  const c = document.getElementById('loading-cover');
-  if (c && c.style.opacity !== '0') {
-    showErr('Taking too long. Check your connection and refresh.');
-  }
-}, 6000);
-
+/* ══════════════════════════════════════════════
+   START
+══════════════════════════════════════════════ */
 init()
-  .then(()=>{ injectAd(); })
-  .catch(e=>{
-    console.error('Fatal init error:', e);
-    showErr('Error: ' + e.message + '. Please refresh.');
-    hideCover();
+  .then(function(){ injectAd(); })
+  .catch(function(e){
+    console.error('Init error:', e);
+    setMsg('Error: ' + (e.message||String(e)) + ' — Please refresh the page.');
+    $('load-spin').style.display = 'none';
   });
 </script>
 </body>

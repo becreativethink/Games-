@@ -15,6 +15,54 @@
 <title>WordWar — Home</title>
 <link rel="stylesheet" href="style.css"/>
 <script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
+<script>
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function() {
+  var adUnits = [{
+    code: 'container-1',
+    mediaTypes: {
+      video: {
+        context: 'outstream',
+        playerSize: [300, 250],
+        renderer: {
+          url: 'https://docdn.ezmob.com/outstream_pb.js',
+          render: renderOutstream
+        }
+      }
+    },
+    bids: [{
+      bidder: 'adkernel',
+      params: {
+        zoneId: 338517,
+        host: 'cpm.ezmob.com'
+      }
+    }]
+  }];
+  pbjs.addAdUnits(adUnits);
+  pbjs.requestBids({
+    bidsBackHandler: function(bidResponses) {
+      process('container-1');
+    }
+  });
+});
+
+function process(adUnit) {
+  var bidResponses = pbjs.getHighestCpmBids(adUnit);
+  if (bidResponses.length == 0) { return; }
+  var bid = bidResponses[0];
+  pbjs.renderAd(document, bid.adId);
+}
+
+function renderOutstream(bid) {
+  OutstreamPlayerPB(bid, {
+    displayMode: 'floating',
+    transitions: true,
+    vpaidMode: 2
+  });
+}
+</script>
 </head>
 <body>
 
@@ -101,7 +149,7 @@
     </div>
     <button class="btn btn-gold" id="watchAdBtn" onclick="startRewardedAd()">Watch Ad</button>
   </div>
-  <div id="container-1" style="display:none;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
+  <div id="container-1" style="margin-top:12px;border-radius:12px;overflow:hidden;min-height:0;"></div>
 </div>
 
 <!-- YOUR STATS -->
@@ -280,32 +328,46 @@ window.startRewardedAd=function(){
   if(_adPlaying){return;}
   _adPlaying=true;
   var btn=document.getElementById('watchAdBtn');
-  var container=document.getElementById('container-1');
   if(btn){btn.disabled=true;btn.textContent='Loading…';}
-  container.style.display='block';
 
-  /* EZMob outstream: hook onComplete if API exists, else timed fallback */
+  /* pbjs outstream — bidsBackHandler fires when bid completes.
+     We hook into it to detect ad completion and reward the user. */
   var completed=false;
   function onAdComplete(){
     if(completed)return; completed=true;
     _adPlaying=false;
-    container.style.display='none';
     rewardUser();
   }
   function onAdError(){
     if(completed)return; completed=true;
     _adPlaying=false;
-    container.style.display='none';
     if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
     toast('Ad unavailable. Try again later.','warn');
   }
 
   try{
-    if(window.ezmob&&window.ezmob.play){
-      window.ezmob.play('container-1',{onComplete:onAdComplete,onError:onAdError});
+    if(window.pbjs){
+      /* Re-request a fresh bid for this session */
+      pbjs.que.push(function(){
+        pbjs.requestBids({
+          bidsBackHandler: function(){
+            var bids=pbjs.getHighestCpmBids('container-1');
+            if(bids.length===0){ onAdError(); return; }
+            var bid=bids[0];
+            pbjs.renderAd(document, bid.adId);
+            /* Reward after video completes — use bid duration or 15s fallback */
+            var duration=Math.max(5000,(bid.video&&bid.video.minduration?bid.video.minduration*1000:15000));
+            setTimeout(onAdComplete, duration);
+          }
+        });
+      });
     } else {
-      /* Timed simulation — ad SDK loads async, reward after 5s */
-      setTimeout(onAdComplete, 5000);
+      /* SDK not yet loaded — retry once after 2s */
+      setTimeout(function(){
+        if(window.pbjs){ window.startRewardedAd(); }
+        else { onAdError(); }
+        _adPlaying=false;
+      },2000);
     }
   }catch(e){ onAdError(); }
 };

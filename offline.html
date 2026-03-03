@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WordWar — Offline</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;width:100%;}
+body{
+  font-family:'Outfit',sans-serif;
+  background:#05050d;
+  color:#eeeef8;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;
+  text-align:center;
+  padding:24px;
+  overflow:hidden;
+}
+/* ambient glows */
+body::before{
+  content:'';position:fixed;
+  top:-20%;left:-20%;width:60%;height:60%;
+  background:radial-gradient(circle,rgba(109,81,245,.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;
+  bottom:-20%;right:-20%;width:60%;height:60%;
+  background:radial-gradient(circle,rgba(180,76,255,.14) 0%,transparent 70%);
+  pointer-events:none;
+}
+.logo{
+  font-family:'Orbitron',sans-serif;
+  font-size:2.2rem;font-weight:900;
+  letter-spacing:.08em;
+  margin-bottom:32px;
+}
+.logo .w1{
+  background:linear-gradient(135deg,#6d51f5,#b44cff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.logo .w2{color:#eeeef8;}
+.icon{font-size:4rem;margin-bottom:20px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.08);opacity:.7;}}
+h1{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;margin-bottom:12px;letter-spacing:.04em;}
+p{color:#7878a0;font-size:.9rem;line-height:1.6;max-width:300px;margin-bottom:28px;}
+.retry-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;border-radius:12px;
+  background:linear-gradient(135deg,#6d51f5,#b44cff);
+  color:#fff;border:none;font-family:'Outfit',sans-serif;
+  font-size:.9rem;font-weight:700;cursor:pointer;
+  letter-spacing:.03em;transition:transform .15s,opacity .15s;
+}
+.retry-btn:hover{transform:translateY(-2px);opacity:.9;}
+.retry-btn:active{transform:translateY(0);}
+.status{
+  margin-top:16px;font-size:.75rem;color:#3d3d5c;
+}
+</style>
+</head>
+<body>
+<div class="logo"><span class="w1">WORD</span><span class="w2">WAR</span></div>
+<div class="icon">📡</div>
+<h1>YOU'RE OFFLINE</h1>
+<p>No internet connection detected. Check your connection and try again to battle online.</p>
+<button class="retry-btn" onclick="tryReconnect()">⚡ Try Again</button>
+<p class="status" id="status-msg">Waiting for connection…</p>
+
+<script>
+function tryReconnect(){
+  document.getElementById('status-msg').textContent='Checking connection…';
+  fetch('/index.html',{cache:'no-store'})
+    .then(function(){window.location.href='/index.html';})
+    .catch(function(){document.getElementById('status-msg').textContent='Still offline. Try again shortly.';});
+}
+/* Auto-retry when connection returns */
+window.addEventListener('online',function(){
+  document.getElementById('status-msg').textContent='Connection restored! Redirecting…';
+  setTimeout(function(){window.location.href='/index.html';},800);
+});
+</script>
+</body>
+</html>

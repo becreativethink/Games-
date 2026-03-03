@@ -1,367 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AI Movie Scene Visualizer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --gold: #c8a96e;
-    --gold-dim: #c8a96e44;
-    --gold-glow: #c8a96e22;
-    --bg: #0a0a0a;
-    --card-border: #1e1e1e;
-    --input-bg: #0d0d0d;
-    --text: #d4d4d4;
-    --muted: #666;
-  }
+:root{--gold:#c8a96e;--gold-dim:#c8a96e44;--gold-glow:#c8a96e22;--bg:#0a0a0a;--inp:#0d0d0d;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:#d4d4d4;font-family:'Crimson Text',serif;min-height:100vh;overflow-x:hidden;}
+#vignette{position:fixed;inset:0;z-index:1;background:radial-gradient(ellipse at center,transparent 55%,#000c 100%);pointer-events:none;}
+#grain{position:fixed;inset:0;z-index:1;opacity:.04;pointer-events:none;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+#scanline{position:fixed;left:0;right:0;height:2px;z-index:1;pointer-events:none;background:linear-gradient(transparent,rgba(255,255,255,.05),transparent);animation:scanline 9s linear infinite;}
+.wrap{position:relative;z-index:10;max-width:860px;margin:0 auto;padding:0 1.25rem 4rem;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:#111;}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scanline{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 8px var(--gold-dim)}50%{box-shadow:0 0 20px var(--gold)}}
+.a1{animation:fadeUp .7s ease both;}.a2{animation:fadeUp .7s .15s ease both;}.a3{animation:fadeUp .7s .3s ease both;}
+header{text-align:center;padding:4.5rem 0 3.5rem;position:relative;}
+.hr{position:absolute;left:50%;transform:translateX(-50%);width:100%;max-width:600px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),var(--gold),var(--gold-dim),transparent);}
+.hr.t{top:3.5rem;}.hr.b{bottom:0;}
+.badge{display:inline-block;padding:.3rem 1rem;border:1px solid var(--gold-dim);border-radius:3px;font-size:.7rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;font-family:'Courier Prime',monospace;margin-bottom:1.75rem;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,6vw,3.8rem);font-weight:900;line-height:1.1;color:#f0e6cc;text-shadow:0 0 70px #c8a96e2a;margin-bottom:1.25rem;}
+h1 em{color:var(--gold);font-style:italic;}
+.tagline{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1rem,2.5vw,1.2rem);color:#777;max-width:420px;margin:0 auto;}
+/* NO overflow:hidden on card — that was clipping button z-index */
+.card{background:linear-gradient(135deg,#111,#0d0d0d);border:1px solid #1e1e1e;border-radius:12px;box-shadow:0 8px 70px rgba(0,0,0,.7);}
+.card-hd{display:flex;align-items:center;gap:.6rem;padding:1.1rem 1.5rem;border-bottom:1px solid #181818;background:#0d0d0d;border-radius:12px 12px 0 0;}
+.dot{width:8px;height:8px;border-radius:2px;background:#1a1a1a;border:1px solid #2a2a2a;flex-shrink:0;}
+.card-ttl{flex:1;text-align:center;font-family:'Courier Prime',monospace;font-size:.68rem;color:#3a3a3a;letter-spacing:.2em;text-transform:uppercase;}
+.card-bd{padding:1.75rem 1.5rem;}
+.field{margin-bottom:1.5rem;}
+.fl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem;}
+.lbl{color:var(--gold);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;font-family:'Courier Prime',monospace;}
+.wc{font-size:.72rem;font-family:'Courier Prime',monospace;transition:color .3s;}
+.wc.ok{color:#6a9955;}.wc.meh{color:var(--gold);}.wc.off{color:#555;}
+textarea{width:100%;background:var(--inp);border:1px solid #2a2a2a;border-radius:8px;color:#ccc;font-size:.93rem;font-family:'Crimson Text',serif;line-height:1.75;padding:.85rem 1rem;resize:vertical;transition:border-color .2s,box-shadow .2s;}
+textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-glow);}
+textarea::placeholder{color:#2e2e2e;}
+.selectors{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.slbl{color:var(--gold);font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;font-family:'Courier Prime',monospace;display:block;margin-bottom:.4rem;}
+.sw{position:relative;}
+.sw::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #666;pointer-events:none;}
+select{width:100%;background:var(--inp);border:1px solid #2a2a2a;border-radius:6px;color:#ccc;font-size:.9rem;font-family:'Crimson Text',serif;padding:.65rem 2rem .65rem 1rem;cursor:pointer;appearance:none;transition:border-color .2s;}
+select:focus{outline:none;border-color:var(--gold);}
+select option{background:#111;}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
+/* THE BUTTON FIX — isolated z-index, pointer-events forced, no disabled attr ever */
+#btn{
+  display:block;width:100%;padding:1rem;border-radius:8px;
+  font-size:1rem;font-weight:700;font-family:'Playfair Display',serif;letter-spacing:.08em;
+  cursor:pointer;transition:transform .15s,box-shadow .15s;
+  position:relative;z-index:9999;
+  pointer-events:auto !important;
+  border:none;
+}
+#btn.on{background:linear-gradient(135deg,#c8a96e,#a8893e);color:#0a0a0a;box-shadow:0 4px 24px var(--gold-dim);}
+#btn.on:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--gold-dim);}
+#btn.on:active{transform:translateY(1px);}
+#btn.off{background:#141414;color:#3a3a3a;border:1px solid #2a2a2a;}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Crimson Text', serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── Decorative overlays — pointer-events: none so they NEVER block clicks ── */
-  #vignette {
-    position: fixed; inset: 0; z-index: 1;
-    background: radial-gradient(ellipse at center, transparent 55%, #000000dd 100%);
-    pointer-events: none;
-  }
-  #grain {
-    position: fixed; inset: 0; z-index: 1;
-    opacity: .04; pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode: overlay;
-  }
-  #scanline {
-    position: fixed; left: 0; right: 0; height: 2px; z-index: 1;
-    background: linear-gradient(transparent, rgba(255,255,255,.05), transparent);
-    animation: scanline 9s linear infinite;
-    pointer-events: none;
-  }
-
-  /* ── All real content sits at z-index 10 — well above the overlays ── */
-  .wrap {
-    position: relative; z-index: 10;
-    max-width: 860px; margin: 0 auto;
-    padding: 0 1.25rem 4rem;
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: #111; }
-  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
-
-  /* ── Animations ── */
-  @keyframes fadeUp   { from { opacity:0; transform:translateY(22px) } to { opacity:1; transform:translateY(0) } }
-  @keyframes spin     { to   { transform: rotate(360deg) } }
-  @keyframes scanline { 0%   { transform: translateY(-100vh) } 100% { transform: translateY(100vh) } }
-  @keyframes barPulse { 0%,100% { box-shadow:0 0 6px var(--gold-dim) } 50% { box-shadow:0 0 16px var(--gold) } }
-
-  .fade-up   { animation: fadeUp .7s       ease both; }
-  .fade-up-2 { animation: fadeUp .7s .15s  ease both; }
-  .fade-up-3 { animation: fadeUp .7s .3s   ease both; }
-
-  /* ── Hero ── */
-  header {
-    text-align: center;
-    padding: 4.5rem 0 3.5rem;
-    position: relative;
-  }
-  .hero-rule {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 600px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold-dim), var(--gold), var(--gold-dim), transparent);
-  }
-  .hero-rule.top    { top: 3.5rem; }
-  .hero-rule.bottom { bottom: 0; }
-
-  .badge {
-    display: inline-block; padding: .3rem 1rem;
-    border: 1px solid var(--gold-dim); border-radius: 3px;
-    font-size: .7rem; letter-spacing: .25em; color: var(--gold);
-    text-transform: uppercase; font-family: 'Courier Prime', monospace;
-    margin-bottom: 1.75rem;
-  }
-
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2.2rem, 6vw, 3.8rem);
-    font-weight: 900; line-height: 1.1; color: #f0e6cc;
-    text-shadow: 0 0 70px #c8a96e2a; margin-bottom: 1.25rem;
-  }
-  h1 em { color: var(--gold); font-style: italic; }
-
-  .tagline {
-    font-family: 'Playfair Display', serif; font-style: italic;
-    font-size: clamp(1rem, 2.5vw, 1.2rem); color: #777;
-    max-width: 420px; margin: 0 auto; letter-spacing: .02em;
-  }
-
-  /* ── Card ── */
-  .card {
-    background: linear-gradient(135deg, #111 0%, #0d0d0d 100%);
-    border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden;
-    box-shadow: 0 8px 70px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04);
-  }
-
-  .card-header {
-    display: flex; align-items: center; gap: .6rem;
-    padding: 1.1rem 1.5rem; border-bottom: 1px solid #181818; background: #0d0d0d;
-  }
-  .perfhole { width:8px; height:8px; border-radius:2px; background:#1a1a1a; border:1px solid #2a2a2a; flex-shrink:0; }
-  .card-title {
-    flex:1; text-align:center;
-    font-family:'Courier Prime', monospace; font-size:.68rem; color:#3a3a3a;
-    letter-spacing:.2em; text-transform:uppercase;
-  }
-
-  .card-body { padding: 1.75rem 1.5rem; }
-
-  /* ── Fields ── */
-  .field { margin-bottom: 1.5rem; }
-  .field-label { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.5rem; }
-  .label-text { color:var(--gold); font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; font-family:'Courier Prime',monospace; }
-
-  .word-count { font-size:.72rem; font-family:'Courier Prime',monospace; transition:color .3s; }
-  .word-count.ok  { color: #6a9955; }
-  .word-count.meh { color: var(--gold); }
-  .word-count.off { color: #555; }
-
-  textarea {
-    width: 100%; background: var(--input-bg);
-    border: 1px solid #2a2a2a; border-radius: 8px;
-    color: #ccc; font-size: .93rem; font-family: 'Crimson Text', serif;
-    line-height: 1.75; padding: .85rem 1rem; resize: vertical;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  textarea:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-glow); }
-  textarea::placeholder { color: #2e2e2e; }
-
-  .selectors { display:grid; grid-template-columns:repeat(auto-fit, minmax(155px,1fr)); gap:1rem; margin-bottom:1.5rem; }
-
-  .sel-label { color:var(--gold); font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; font-family:'Courier Prime',monospace; display:block; margin-bottom:.4rem; }
-
-  .select-wrap { position:relative; }
-  .select-wrap::after {
-    content:''; position:absolute; right:12px; top:50%; transform:translateY(-50%);
-    border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid #666;
-    pointer-events:none;
-  }
-  select {
-    width:100%; background:var(--input-bg); border:1px solid #2a2a2a; border-radius:6px;
-    color:#ccc; font-size:.9rem; font-family:'Crimson Text',serif;
-    padding:.65rem 2rem .65rem 1rem; cursor:pointer; appearance:none;
-    transition:border-color .2s;
-  }
-  select:focus { outline:none; border-color:var(--gold); }
-  select option { background:#111; }
-
-  /* ── Generate button ── */
-  #generate-btn {
-    width:100%; padding:1rem; border-radius:8px;
-    font-size:1rem; font-weight:700; font-family:'Playfair Display',serif;
-    letter-spacing:.08em; transition:all .2s;
-    /* CRITICAL: always allow pointer events on the button itself */
-    pointer-events: auto;
-    position: relative; z-index: 20;
-  }
-
-  /* Active = gold, clickable */
-  #generate-btn.active {
-    background: linear-gradient(135deg, #c8a96e 0%, #a8893e 100%);
-    color: #0a0a0a; border: none; cursor: pointer;
-    box-shadow: 0 4px 24px var(--gold-dim);
-  }
-  #generate-btn.active:hover  { transform:translateY(-1px); box-shadow:0 6px 32px var(--gold-dim); }
-  #generate-btn.active:active { transform:translateY(0); }
-
-  /* Inactive = dimmed, still pointer-events:auto but we guard in JS */
-  #generate-btn.inactive {
-    background: #141414; color: #3a3a3a;
-    border: 1px solid #2a2a2a; cursor: not-allowed;
-  }
-
-  /* ── Demo notice ── */
-  .demo-notice {
-    text-align:center; margin-bottom:1rem;
-    padding:.6rem 1rem; border-radius:6px;
-    background:#0e1a0e; border:1px solid #2a4a2a;
-    color:#6a9955; font-size:.8rem;
-    font-family:'Courier Prime',monospace; letter-spacing:.06em;
-  }
-
-  /* ── Error ── */
-  .error-box { display:none; padding:.85rem 1rem; border-radius:6px; background:#1a0c0c; border:1px solid #5a2020; color:#c87070; font-size:.88rem; margin-bottom:1rem; }
-  .error-box.show { display:block; }
-
-  /* ── Loading ── */
-  #loading-section { display:none; flex-direction:column; align-items:center; padding:2.5rem 1rem; gap:1.5rem; }
-  #loading-section.show { display:flex; }
-
-  .reel-wrap { width:80px; height:80px; animation:spin 2s linear infinite; }
-
-  .loading-phrase { color:var(--gold); font-family:'Playfair Display',serif; font-size:1.05rem; text-align:center; }
-  .loading-sub    { color:#555; font-size:.75rem; letter-spacing:.15em; text-transform:uppercase; font-family:'Courier Prime',monospace; text-align:center; margin-top:-.5rem; }
-
-  .progress-track { width:100%; max-width:320px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:4px; height:6px; overflow:hidden; }
-  .progress-bar   { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--gold),#e8c98e); width:0%; transition:width .8s ease; animation:barPulse 2s ease-in-out infinite; }
-  .progress-pct   { color:#444; font-size:.72rem; font-family:'Courier Prime',monospace; }
-
-  /* ── Result ── */
-  #result-section { display:none; flex-direction:column; gap:1rem; animation:fadeUp .6s ease both; }
-  #result-section.show { display:flex; }
-
-  .success-rule   { display:flex; align-items:center; gap:.75rem; margin-bottom:.25rem; }
-  .success-line   { flex:1; height:1px; background:#2a2a2a; }
-  .success-label  { color:#6a9955; font-size:.72rem; font-family:'Courier Prime',monospace; letter-spacing:.15em; }
-
-  .video-frame { position:relative; border-radius:8px; overflow:hidden; border:1px solid #2a2a2a; background:#000; box-shadow:0 0 50px var(--gold-glow); }
-  .letterbox   { position:absolute; left:0; right:0; height:10px; background:#000; z-index:2; }
-  .letterbox.top    { top:0; }
-  .letterbox.bottom { bottom:0; }
-
-  video { width:100%; display:block; max-height:400px; object-fit:contain; }
-
-  .result-actions { display:flex; gap:.75rem; justify-content:flex-end; }
-
-  .btn-ghost {
-    display:flex; align-items:center; gap:.4rem; padding:.6rem 1.25rem;
-    background:transparent; border:1px solid var(--gold); color:var(--gold);
-    border-radius:6px; cursor:pointer; font-size:.85rem;
-    font-family:'Crimson Text',serif; letter-spacing:.05em; transition:background .2s;
-  }
-  .btn-ghost:hover { background:var(--gold-glow); }
-
-  .btn-outline {
-    width:100%; padding:.75rem; background:transparent; border:1px solid #2a2a2a;
-    border-radius:8px; color:var(--muted); cursor:pointer; font-size:.85rem;
-    font-family:'Crimson Text',serif; transition:all .2s; margin-top:.25rem;
-  }
-  .btn-outline:hover { border-color:var(--gold-dim); color:var(--gold); }
-
-  /* ── History ── */
-  #history-section { margin-top:2.5rem; }
-
-  .section-rule  { display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; }
-  .section-line  { flex:1; height:1px; background:#1a1a1a; }
-  .section-title { font-family:'Playfair Display',serif; font-size:1rem; color:#666; letter-spacing:.1em; white-space:nowrap; }
-
-  .history-list { display:flex; flex-direction:column; gap:.75rem; }
-
-  .history-card { display:flex; gap:1rem; align-items:flex-start; padding:1rem; border-radius:8px; background:#111; border:1px solid #1e1e1e; transition:border-color .2s; }
-  .history-card:hover { border-color:var(--gold-dim); }
-
-  .history-num { flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#1a1a1a; border:1px solid #2a2a2a; display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:.72rem; font-weight:700; font-family:'Playfair Display',serif; }
-
-  .history-body { flex:1; min-width:0; }
-
-  .history-tags  { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.4rem; }
-  .tag           { padding:2px 8px; border-radius:3px; font-size:.68rem; background:#1a1a1a; color:#777; border:1px solid #2a2a2a; font-family:'Courier Prime',monospace; }
-  .history-text  { color:#555; font-size:.8rem; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .history-date  { color:#363636; font-size:.68rem; margin-top:.35rem; }
-
-  .history-actions { display:flex; flex-direction:column; gap:.4rem; flex-shrink:0; align-items:flex-end; }
-  .history-link    { color:var(--gold); font-size:.72rem; text-decoration:none; }
-  .history-link:hover { text-decoration:underline; }
-  .btn-reuse       { background:none; border:none; color:#444; cursor:pointer; font-size:.72rem; font-family:'Crimson Text',serif; transition:color .2s; }
-  .btn-reuse:hover { color:#888; }
-
-  .clear-history { display:block; margin:1rem 0 0 auto; background:none; border:none; color:#333; cursor:pointer; font-size:.75rem; font-family:'Courier Prime',monospace; letter-spacing:.08em; transition:color .2s; }
-  .clear-history:hover { color:#666; }
-
-  footer { text-align:center; margin-top:3rem; padding-top:2rem; border-top:1px solid #141414; color:#282828; font-size:.72rem; font-family:'Courier Prime',monospace; letter-spacing:.12em; }
-
-  @media (max-width:480px) { .card-body { padding:1.25rem 1rem; } h1 { font-size:2rem; } }
+.demo-box{text-align:center;margin-bottom:1rem;padding:.6rem 1rem;border-radius:6px;background:#0e1a0e;border:1px solid #2a4a2a;color:#6a9955;font-size:.8rem;font-family:'Courier Prime',monospace;}
+.err{display:none;padding:.85rem 1rem;border-radius:6px;background:#1a0c0c;border:1px solid #5a2020;color:#c87070;font-size:.88rem;margin-bottom:1rem;}
+.err.show{display:block;}
+#loadSec{display:none;flex-direction:column;align-items:center;padding:2.5rem 1rem;gap:1.5rem;}
+#loadSec.show{display:flex;}
+.reel{width:80px;height:80px;animation:spin 2s linear infinite;}
+.lphrase{color:var(--gold);font-family:'Playfair Display',serif;font-size:1.05rem;text-align:center;}
+.lsub{color:#555;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;font-family:'Courier Prime',monospace;text-align:center;}
+.ptrack{width:100%;max-width:320px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;height:6px;overflow:hidden;}
+.pbar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),#e8c98e);width:0%;transition:width .8s ease;animation:pulse 2s ease-in-out infinite;}
+.ppct{color:#444;font-size:.72rem;font-family:'Courier Prime',monospace;}
+#resSec{display:none;flex-direction:column;gap:1rem;}
+#resSec.show{display:flex;animation:fadeUp .6s ease both;}
+.sukrow{display:flex;align-items:center;gap:.75rem;}
+.sukline{flex:1;height:1px;background:#2a2a2a;}
+.suklbl{color:#6a9955;font-size:.72rem;font-family:'Courier Prime',monospace;letter-spacing:.15em;}
+.vframe{position:relative;border-radius:8px;overflow:hidden;border:1px solid #2a2a2a;background:#000;box-shadow:0 0 50px var(--gold-glow);}
+.lb{position:absolute;left:0;right:0;height:10px;background:#000;z-index:2;}
+.lb.t{top:0;}.lb.b{bottom:0;}
+video{width:100%;display:block;max-height:400px;object-fit:contain;}
+.vacts{display:flex;gap:.75rem;justify-content:flex-end;}
+.ghost{display:flex;align-items:center;gap:.4rem;padding:.6rem 1.25rem;background:transparent;border:1px solid var(--gold);color:var(--gold);border-radius:6px;cursor:pointer;font-size:.85rem;font-family:'Crimson Text',serif;transition:background .2s;}
+.ghost:hover{background:var(--gold-glow);}
+.outline{width:100%;padding:.75rem;background:transparent;border:1px solid #2a2a2a;border-radius:8px;color:#666;cursor:pointer;font-size:.85rem;font-family:'Crimson Text',serif;transition:all .2s;margin-top:.25rem;}
+.outline:hover{border-color:var(--gold-dim);color:var(--gold);}
+#histSec{margin-top:2.5rem;}
+.srow{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;}
+.sline{flex:1;height:1px;background:#1a1a1a;}
+.sttl{font-family:'Playfair Display',serif;font-size:1rem;color:#666;letter-spacing:.1em;white-space:nowrap;}
+.hlist{display:flex;flex-direction:column;gap:.75rem;}
+.hcard{display:flex;gap:1rem;align-items:flex-start;padding:1rem;border-radius:8px;background:#111;border:1px solid #1e1e1e;transition:border-color .2s;}
+.hcard:hover{border-color:var(--gold-dim);}
+.hnum{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#1a1a1a;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:.72rem;font-weight:700;font-family:'Playfair Display',serif;}
+.hbody{flex:1;min-width:0;}
+.htags{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem;}
+.tag{padding:2px 8px;border-radius:3px;font-size:.68rem;background:#1a1a1a;color:#777;border:1px solid #2a2a2a;font-family:'Courier Prime',monospace;}
+.htxt{color:#555;font-size:.8rem;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.hdate{color:#363636;font-size:.68rem;margin-top:.35rem;}
+.hacts{display:flex;flex-direction:column;gap:.4rem;flex-shrink:0;align-items:flex-end;}
+.hlink{color:var(--gold);font-size:.72rem;text-decoration:none;}
+.hlink:hover{text-decoration:underline;}
+.reuse{background:none;border:none;color:#444;cursor:pointer;font-size:.72rem;font-family:'Crimson Text',serif;transition:color .2s;}
+.reuse:hover{color:#888;}
+.clr{display:block;margin:1rem 0 0 auto;background:none;border:none;color:#333;cursor:pointer;font-size:.75rem;font-family:'Courier Prime',monospace;letter-spacing:.08em;transition:color .2s;}
+.clr:hover{color:#666;}
+footer{text-align:center;margin-top:3rem;padding-top:2rem;border-top:1px solid #141414;color:#282828;font-size:.72rem;font-family:'Courier Prime',monospace;letter-spacing:.12em;}
+@media(max-width:480px){.card-bd{padding:1.25rem 1rem;}h1{font-size:2rem;}}
 </style>
 </head>
 <body>
-
-<!-- Decorative overlays — ALL pointer-events:none, well below z-index:10 content -->
 <div id="vignette"></div>
 <div id="grain"></div>
 <div id="scanline"></div>
-
 <div class="wrap">
-
-  <!-- ── Hero ── -->
   <header>
-    <div class="hero-rule top"></div>
-    <div class="fade-up">
-      <span class="badge">Powered by Odyssey.ml AI</span>
-    </div>
-    <h1 class="fade-up-2">AI Movie Scene<br><em>Visualizer</em></h1>
-    <p class="tagline fade-up-3">"Turn Your Imagination Into Cinematic Reality."</p>
-    <div class="hero-rule bottom" style="position:relative;margin-top:2.5rem;"></div>
+    <div class="hr t"></div>
+    <div class="a1"><span class="badge">Powered by Odyssey.ml AI</span></div>
+    <h1 class="a2">AI Movie Scene<br><em>Visualizer</em></h1>
+    <p class="tagline a3">"Turn Your Imagination Into Cinematic Reality."</p>
+    <div class="hr b" style="position:relative;margin-top:2.5rem;"></div>
   </header>
-
-  <!-- ── Main Card ── -->
   <main>
-    <div class="card fade-up-3">
-      <div class="card-header">
-        <div class="perfhole"></div><div class="perfhole"></div><div class="perfhole"></div>
-        <span class="card-title">Scene Configuration</span>
-        <div class="perfhole"></div><div class="perfhole"></div><div class="perfhole"></div>
+    <div class="card a3">
+      <div class="card-hd">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span class="card-ttl">Scene Configuration</span>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       </div>
-
-      <div class="card-body">
-
-        <!-- Demo mode notice -->
-        <div class="demo-notice" id="demo-notice">
-          ✦ Demo Mode — no backend required. Add 50+ words and click Generate to test the full UI flow.
-        </div>
-
-        <!-- Scene Text -->
+      <div class="card-bd">
+        <div class="demo-box" id="demoBox">✦ Demo Mode — type 50+ words then click Generate (no backend needed)</div>
         <div class="field">
-          <div class="field-label">
-            <span class="label-text">Scene Description</span>
-            <span class="word-count off" id="wc-display">0 / 50 words</span>
+          <div class="fl">
+            <span class="lbl">Scene Description</span>
+            <span class="wc off" id="wcEl">0 / 50 words</span>
           </div>
-          <textarea id="scene-text" rows="7"
-            placeholder="INT. ABANDONED CHURCH - NIGHT&#10;&#10;Rain hammers the stained glass windows as Detective MARA stands over the body, her flashlight cutting through thick fog. A single candle flickers on the altar. She hears footsteps echo behind her and spins around — the heavy oak door creaks open, and a tall figure in a black coat steps slowly from the storm, face obscured in shadow..."></textarea>
+          <textarea id="txtArea" rows="7" placeholder="INT. ABANDONED CHURCH - NIGHT&#10;&#10;Rain hammers the stained glass windows as Detective MARA stands over the body. Her flashlight cuts through thick fog rolling across the stone floor. A single candle flickers on the altar. She hears footsteps echoing behind her and spins — the heavy oak door creaks open, and a tall figure in a black coat steps slowly from the storm, face completely obscured in shadow..."></textarea>
         </div>
-
-        <!-- Selectors -->
         <div class="selectors">
           <div>
-            <span class="sel-label">Genre</span>
-            <div class="select-wrap">
+            <span class="slbl">Genre</span>
+            <div class="sw">
               <select id="genre">
-                <option>Action</option>
-                <option selected>Drama</option>
-                <option>Sci-Fi</option>
-                <option>Historical</option>
-                <option>Horror</option>
-                <option>Spiritual</option>
-                <option>Fantasy</option>
+                <option>Action</option><option selected>Drama</option><option>Sci-Fi</option>
+                <option>Historical</option><option>Horror</option><option>Spiritual</option><option>Fantasy</option>
               </select>
             </div>
           </div>
           <div>
-            <span class="sel-label">Visual Style</span>
-            <div class="select-wrap">
-              <select id="style">
-                <option selected>Realistic</option>
-                <option>Anime</option>
-                <option>Dark</option>
-                <option>Epic</option>
-                <option>Documentary</option>
-              </select>
+            <span class="slbl">Visual Style</span>
+            <div class="sw">
+              <select id="style"><option selected>Realistic</option><option>Anime</option><option>Dark</option><option>Epic</option><option>Documentary</option></select>
             </div>
           </div>
           <div>
-            <span class="sel-label">Duration</span>
-            <div class="select-wrap">
-              <select id="duration">
+            <span class="slbl">Duration</span>
+            <div class="sw">
+              <select id="dur">
                 <option value="5">5 seconds</option>
                 <option value="10" selected>10 seconds</option>
                 <option value="20">20 seconds</option>
@@ -369,367 +166,130 @@
             </div>
           </div>
         </div>
-
-        <!-- Error -->
-        <div class="error-box" id="error-box"></div>
-
-        <!-- Generate Button -->
-        <button id="generate-btn" class="inactive" onclick="handleGenerate()">
-          ◈ Generate Cinematic Scene
-        </button>
-
-        <!-- Loading -->
-        <div id="loading-section">
-          <svg class="reel-wrap" viewBox="0 0 80 80" fill="none">
+        <div class="err" id="errBox"></div>
+        <button id="btn" class="off">◈ Generate Cinematic Scene</button>
+        <div id="loadSec">
+          <svg class="reel" viewBox="0 0 80 80" fill="none">
             <circle cx="40" cy="40" r="35" stroke="#c8a96e" stroke-width="3" stroke-dasharray="8 6"/>
             <circle cx="40" cy="40" r="20" stroke="#c8a96e33" stroke-width="2"/>
-            <circle cx="68"   cy="40"   r="4" fill="#c8a96e"/>
-            <circle cx="54"   cy="63.9" r="4" fill="#c8a96e"/>
-            <circle cx="26"   cy="63.9" r="4" fill="#c8a96e"/>
-            <circle cx="12"   cy="40"   r="4" fill="#c8a96e"/>
-            <circle cx="26"   cy="16.1" r="4" fill="#c8a96e"/>
-            <circle cx="54"   cy="16.1" r="4" fill="#c8a96e"/>
-            <circle cx="40"   cy="40"   r="6" fill="#c8a96e"/>
+            <circle cx="68" cy="40" r="4" fill="#c8a96e"/><circle cx="54" cy="63.9" r="4" fill="#c8a96e"/>
+            <circle cx="26" cy="63.9" r="4" fill="#c8a96e"/><circle cx="12" cy="40" r="4" fill="#c8a96e"/>
+            <circle cx="26" cy="16.1" r="4" fill="#c8a96e"/><circle cx="54" cy="16.1" r="4" fill="#c8a96e"/>
+            <circle cx="40" cy="40" r="6" fill="#c8a96e"/>
           </svg>
-          <p class="loading-phrase" id="loading-phrase">Casting cinematic shadows…</p>
-          <p class="loading-sub">This may take 1–3 minutes</p>
-          <div class="progress-track">
-            <div class="progress-bar" id="progress-bar"></div>
-          </div>
-          <p class="progress-pct" id="progress-pct">0%</p>
+          <p class="lphrase" id="phraseEl">Casting cinematic shadows…</p>
+          <p class="lsub">This may take 1–3 minutes</p>
+          <div class="ptrack"><div class="pbar" id="pbar"></div></div>
+          <p class="ppct" id="pctEl">0%</p>
         </div>
-
-        <!-- Result -->
-        <div id="result-section">
-          <div class="success-rule">
-            <div class="success-line"></div>
-            <span class="success-label">✓ SCENE GENERATED</span>
-            <div class="success-line"></div>
+        <div id="resSec">
+          <div class="sukrow"><div class="sukline"></div><span class="suklbl">✓ SCENE GENERATED</span><div class="sukline"></div></div>
+          <div class="vframe">
+            <div class="lb t"></div>
+            <video id="vidEl" controls></video>
+            <div class="lb b"></div>
           </div>
-          <div class="video-frame">
-            <div class="letterbox top"></div>
-            <video id="video-player" controls></video>
-            <div class="letterbox bottom"></div>
-          </div>
-          <div class="result-actions">
-            <button class="btn-ghost" onclick="handleDownload()">↓ Download Scene</button>
-          </div>
-          <button class="btn-outline" onclick="resetUI()">+ Generate New Scene</button>
+          <div class="vacts"><button class="ghost" id="dlBtn">↓ Download Scene</button></div>
+          <button class="outline" id="newBtn">+ Generate New Scene</button>
         </div>
-
-      </div><!-- /card-body -->
-    </div><!-- /card -->
-
-    <!-- ── History ── -->
-    <section id="history-section" style="display:none">
-      <div class="section-rule">
-        <div class="section-line"></div>
-        <h2 class="section-title">Recent Scenes</h2>
-        <div class="section-line"></div>
-      </div>
-      <div class="history-list" id="history-list"></div>
-      <button class="clear-history" onclick="clearHistory()">Clear History</button>
-    </section>
-  </main>
-
-  <footer>AI MOVIE SCENE VISUALIZER &middot; POWERED BY ODYSSEY.ML</footer>
-</div>
-
-<script>
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIG — flip DEMO to false and set BACKEND_URL for live Odyssey generation
-// ─────────────────────────────────────────────────────────────────────────────
-const DEMO        = true;                      // true = no backend, simulates generation
-const BACKEND_URL = 'http://localhost:3001';   // only used when DEMO = false
-
-// Sample public video used in demo mode
-const DEMO_VIDEO  = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-
-const MAX_HISTORY = 5;
-
-const PHRASES = [
-  'Casting cinematic shadows…',
-  'Calibrating camera angles…',
-  'Rendering dramatic lighting…',
-  'Weaving narrative threads…',
-  'Composing visual symphony…',
-  'Sculpting atmospheric depth…',
-  'Finalizing 4K frames…',
-];
-
-// Visual progress milestones: [delay_ms, target_%]
-const PROGRESS_STEPS = [
-  [800,  12], [2000, 25], [4000, 40],
-  [6000, 55], [8000, 70], [9500, 85], [11000, 95],
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────────────────────────────────────
-let busy           = false;
-let currentVideoUrl = null;
-let phraseTimer    = null;
-let progressTimers = [];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DOM refs
-// ─────────────────────────────────────────────────────────────────────────────
-const sceneTextEl  = document.getElementById('scene-text');
-const wcDisplay    = document.getElementById('wc-display');
-const genBtn       = document.getElementById('generate-btn');
-const errorBox     = document.getElementById('error-box');
-const loadingEl    = document.getElementById('loading-section');
-const phraseEl     = document.getElementById('loading-phrase');
-const progressBar  = document.getElementById('progress-bar');
-const progressPct  = document.getElementById('progress-pct');
-const resultEl     = document.getElementById('result-section');
-const videoEl      = document.getElementById('video-player');
-const historyEl    = document.getElementById('history-section');
-const historyList  = document.getElementById('history-list');
-const demoNotice   = document.getElementById('demo-notice');
-
-// Hide demo notice when DEMO is off
-if (!DEMO) demoNotice.style.display = 'none';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────────────────────
-function wordCount(t) {
-  return t.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Word counter — updates button state on every keystroke
-// ─────────────────────────────────────────────────────────────────────────────
-function syncButtonState() {
-  const wc   = wordCount(sceneTextEl.value);
-  const canGo = wc >= 50 && !busy;
-
-  // Word count badge
-  wcDisplay.textContent = wc + '/50 words' + (wc >= 50 ? ' ✓' : '');
-  wcDisplay.className   = 'word-count ' + (wc >= 50 ? 'ok' : wc > 0 ? 'meh' : 'off');
-
-  // Button class drives all styling — NO disabled attribute (that kills pointer-events)
-  genBtn.className = canGo ? 'active' : 'inactive';
-}
-
-sceneTextEl.addEventListener('input', syncButtonState);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Error helpers
-// ─────────────────────────────────────────────────────────────────────────────
-function showError(msg) { errorBox.textContent = '⚠ ' + msg; errorBox.classList.add('show'); }
-function hideError()    { errorBox.classList.remove('show'); }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Progress bar
-// ─────────────────────────────────────────────────────────────────────────────
-function setProgress(pct) {
-  progressBar.style.width = pct + '%';
-  progressPct.textContent = Math.round(pct) + '%';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Loading UI
-// ─────────────────────────────────────────────────────────────────────────────
-function startLoadingUI() {
-  busy = true;
-  genBtn.style.display = 'none';
-  loadingEl.classList.add('show');
-  hideError();
-  setProgress(3);
-
-  let pi = 0;
-  phraseEl.textContent = PHRASES[0];
-  phraseTimer = setInterval(() => {
-    pi = (pi + 1) % PHRASES.length;
-    phraseEl.textContent = PHRASES[pi];
-  }, 4000);
-
-  progressTimers = PROGRESS_STEPS.map(([ms, pct]) =>
-    setTimeout(() => setProgress(pct), ms)
-  );
-}
-
-function stopLoadingUI() {
-  busy = false;
-  loadingEl.classList.remove('show');
-  clearInterval(phraseTimer);
-  progressTimers.forEach(clearTimeout);
-  progressTimers = [];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Show result / reset
-// ─────────────────────────────────────────────────────────────────────────────
-function showResult(url) {
-  currentVideoUrl  = url;
-  videoEl.src      = url;
-  videoEl.load();
-  resultEl.classList.add('show');
-}
-
-function resetUI() {
-  currentVideoUrl  = null;
-  videoEl.pause();
-  videoEl.removeAttribute('src');
-  videoEl.load();
-  resultEl.classList.remove('show');
-  hideError();
-  genBtn.style.display = '';
-  setProgress(0);
-  syncButtonState(); // re-evaluate based on current textarea content
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Generate — main handler
-// ─────────────────────────────────────────────────────────────────────────────
-async function handleGenerate() {
-  // Guard: not enough words, or already generating
-  if (wordCount(sceneTextEl.value) < 50 || busy) return;
-
-  const prompt   = sceneTextEl.value.trim();
-  const genre    = document.getElementById('genre').value;
-  const style    = document.getElementById('style').value;
-  const duration = document.getElementById('duration').value;
-
-  hideError();
-  resultEl.classList.remove('show');
-  videoEl.pause();
-  videoEl.removeAttribute('src');
-  videoEl.load();
-  startLoadingUI();
-
-  try {
-    let videoUrl;
-
-    if (DEMO) {
-      // ── Demo mode: simulate a realistic generation delay ──
-      await new Promise(r => setTimeout(r, 12000));
-      videoUrl = DEMO_VIDEO;
-
-    } else {
-      // ── Live mode: call Express backend ──
-      let res;
-      try {
-        res = await fetch(`${BACKEND_URL}/generate-scene`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ prompt, genre, style, duration }),
-        });
-      } catch (networkErr) {
-        throw new Error('Cannot reach backend. Is the server running at ' + BACKEND_URL + '?');
-      }
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generation failed (HTTP ' + res.status + ').');
-      videoUrl = data.videoUrl;
-    }
-
-    setProgress(100);
-    await new Promise(r => setTimeout(r, 400));
-    stopLoadingUI();
-    showResult(videoUrl);
-
-    // Save to history
-    addToHistory({
-      id:          Date.now(),
-      prompt:      prompt.slice(0, 160),
-      genre, style, duration,
-      videoUrl,
-      generatedAt: new Date().toISOString(),
-    });
-
-  } catch (err) {
-    stopLoadingUI();
-    genBtn.style.display = '';
-    syncButtonState();
-    showError(err.message || 'Something went wrong. Please try again.');
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Download
-// ─────────────────────────────────────────────────────────────────────────────
-function handleDownload() {
-  if (!currentVideoUrl) return;
-  const a = document.createElement('a');
-  a.href     = currentVideoUrl;
-  a.download = 'scene-' + Date.now() + '.mp4';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// History — localStorage
-// ─────────────────────────────────────────────────────────────────────────────
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem('sceneHistory') || '[]'); }
-  catch { return []; }
-}
-function saveHistory(h) {
-  try { localStorage.setItem('sceneHistory', JSON.stringify(h)); } catch {}
-}
-
-function addToHistory(item) {
-  const h = [item, ...loadHistory()].slice(0, MAX_HISTORY);
-  saveHistory(h);
-  renderHistory();
-}
-
-function clearHistory() {
-  saveHistory([]);
-  renderHistory();
-}
-
-function reloadScene(i) {
-  const item = loadHistory()[i];
-  if (!item) return;
-  sceneTextEl.value = item.prompt;
-  syncButtonState();
-  document.getElementById('genre').value    = item.genre;
-  document.getElementById('style').value    = item.style;
-  document.getElementById('duration').value = item.duration;
-  resetUI();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function renderHistory() {
-  const h = loadHistory();
-  if (!h.length) { historyEl.style.display = 'none'; return; }
-  historyEl.style.display = 'block';
-  historyList.innerHTML = h.map((item, i) => `
-    <div class="history-card">
-      <div class="history-num">${i + 1}</div>
-      <div class="history-body">
-        <div class="history-tags">
-          <span class="tag">${esc(item.genre)}</span>
-          <span class="tag">${esc(item.style)}</span>
-          <span class="tag">${esc(item.duration)}s</span>
-        </div>
-        <p class="history-text">${esc(item.prompt)}</p>
-        <p class="history-date">${new Date(item.generatedAt).toLocaleString()}</p>
-      </div>
-      <div class="history-actions">
-        ${item.videoUrl ? `<a class="history-link" href="${esc(item.videoUrl)}" target="_blank" rel="noreferrer">▶ View</a>` : ''}
-        <button class="btn-reuse" onclick="reloadScene(${i})">↺ Reuse</button>
       </div>
     </div>
-  `).join('');
+    <section id="histSec" style="display:none">
+      <div class="srow"><div class="sline"></div><h2 class="sttl">Recent Scenes</h2><div class="sline"></div></div>
+      <div class="hlist" id="histList"></div>
+      <button class="clr" id="clrBtn">Clear History</button>
+    </section>
+  </main>
+  <footer>AI MOVIE SCENE VISUALIZER · POWERED BY ODYSSEY.ML</footer>
+</div>
+<script>
+const DEMO=true, BACKEND='http://localhost:3001';
+const DEMO_VID='https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+const PHRASES=['Casting cinematic shadows…','Calibrating camera angles…','Rendering dramatic lighting…','Weaving narrative threads…','Composing visual symphony…','Sculpting atmospheric depth…','Finalizing 4K frames…'];
+const STEPS=[[500,15],[1500,30],[3000,50],[5000,68],[7500,82],[9500,92],[11000,97]];
+let busy=false,curUrl=null,pTimer=null,sTimers=[];
+const $=id=>document.getElementById(id);
+const txtArea=$('txtArea'),wcEl=$('wcEl'),btnEl=$('btn'),errBox=$('errBox');
+const loadSec=$('loadSec'),phraseEl=$('phraseEl'),pbar=$('pbar'),pctEl=$('pctEl');
+const resSec=$('resSec'),vidEl=$('vidEl'),histSec=$('histSec'),histList=$('histList');
+if(!DEMO) $('demoBox').style.display='none';
+const cw=t=>t.trim().split(/\s+/).filter(Boolean).length;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function syncBtn(){
+  const n=cw(txtArea.value);
+  wcEl.textContent=n+'/50 words'+(n>=50?' ✓':'');
+  wcEl.className='wc '+(n>=50?'ok':n>0?'meh':'off');
+  btnEl.className=(n>=50&&!busy)?'on':'off';
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────────────────────────────────
-syncButtonState();
-renderHistory();
+txtArea.addEventListener('input',syncBtn);
+btnEl.addEventListener('click',function(){
+  if(cw(txtArea.value)<50){showErr('Need at least 50 words ('+cw(txtArea.value)+' so far).');return;}
+  if(busy)return;
+  go();
+});
+$('dlBtn').addEventListener('click',function(){
+  if(!curUrl)return;
+  const a=document.createElement('a');a.href=curUrl;a.download='scene-'+Date.now()+'.mp4';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+});
+$('newBtn').addEventListener('click',reset);
+$('clrBtn').addEventListener('click',()=>{setH([]);renderH();});
+function showErr(m){errBox.textContent='⚠ '+m;errBox.classList.add('show');}
+function hideErr(){errBox.classList.remove('show');}
+function setBar(p){pbar.style.width=p+'%';pctEl.textContent=Math.round(p)+'%';}
+function startLoad(){
+  busy=true;syncBtn();btnEl.style.display='none';
+  loadSec.classList.add('show');hideErr();setBar(3);
+  let pi=0;phraseEl.textContent=PHRASES[0];
+  pTimer=setInterval(()=>{pi=(pi+1)%PHRASES.length;phraseEl.textContent=PHRASES[pi];},4000);
+  sTimers=STEPS.map(([ms,p])=>setTimeout(()=>setBar(p),ms));
+}
+function stopLoad(){
+  busy=false;loadSec.classList.remove('show');
+  clearInterval(pTimer);sTimers.forEach(clearTimeout);sTimers=[];
+}
+function showRes(url){curUrl=url;vidEl.src=url;vidEl.load();resSec.classList.add('show');}
+function reset(){
+  curUrl=null;vidEl.pause();vidEl.removeAttribute('src');vidEl.load();
+  resSec.classList.remove('show');hideErr();btnEl.style.display='';setBar(0);syncBtn();
+}
+async function go(){
+  const prompt=txtArea.value.trim();
+  const genre=$('genre').value,style=$('style').value,dur=$('dur').value;
+  resSec.classList.remove('show');vidEl.pause();vidEl.removeAttribute('src');vidEl.load();
+  startLoad();
+  try{
+    let url;
+    if(DEMO){await new Promise(r=>setTimeout(r,12000));url=DEMO_VID;}
+    else{
+      let res;
+      try{res=await fetch(BACKEND+'/generate-scene',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,genre,style,duration:dur})});}
+      catch(e){throw new Error('Cannot reach backend at '+BACKEND);}
+      const d=await res.json();
+      if(!res.ok)throw new Error(d.error||'HTTP '+res.status);
+      url=d.videoUrl;
+    }
+    setBar(100);await new Promise(r=>setTimeout(r,400));
+    stopLoad();showRes(url);
+    addH({id:Date.now(),prompt:prompt.slice(0,160),genre,style,duration:dur,videoUrl:url,at:new Date().toISOString()});
+  }catch(e){stopLoad();btnEl.style.display='';syncBtn();showErr(e.message||'Something went wrong.');}
+}
+const getH=()=>{try{return JSON.parse(localStorage.getItem('sh')||'[]');}catch{return[];}};
+const setH=h=>{try{localStorage.setItem('sh',JSON.stringify(h));}catch{}};
+function addH(item){setH([item,...getH()].slice(0,5));renderH();}
+function reloadScene(i){
+  const item=getH()[i];if(!item)return;
+  txtArea.value=item.prompt;syncBtn();
+  $('genre').value=item.genre;$('style').value=item.style;$('dur').value=item.duration;
+  reset();window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderH(){
+  const h=getH();
+  if(!h.length){histSec.style.display='none';return;}
+  histSec.style.display='block';
+  histList.innerHTML=h.map((item,i)=>`<div class="hcard"><div class="hnum">${i+1}</div><div class="hbody"><div class="htags"><span class="tag">${esc(item.genre)}</span><span class="tag">${esc(item.style)}</span><span class="tag">${esc(item.duration)}s</span></div><p class="htxt">${esc(item.prompt)}</p><p class="hdate">${new Date(item.at).toLocaleString()}</p></div><div class="hacts">${item.videoUrl?`<a class="hlink" href="${esc(item.videoUrl)}" target="_blank" rel="noreferrer">▶ View</a>`:''}<button class="reuse" onclick="reloadScene(${i})">↺ Reuse</button></div></div>`).join('');
+}
+syncBtn();renderH();
 </script>
 </body>
 </html>

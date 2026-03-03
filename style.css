@@ -951,3 +951,82 @@ body { padding-bottom: 70px; }
   display: block;
   background: transparent;
 }
+
+/* ══════════════════════════════════════════════
+   PWA — Safe area insets, standalone display, install UI
+   ══════════════════════════════════════════════ */
+
+/* Respect notch / Dynamic Island / home bar on iOS & Android */
+:root {
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+}
+
+/* When running as installed PWA (standalone / fullscreen) */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  /* Push navbar below status bar on iOS */
+  .navbar {
+    padding-top: var(--safe-top);
+    height: calc(58px + var(--safe-top));
+  }
+
+  /* Ensure content starts below taller navbar */
+  body {
+    padding-top: var(--safe-top);
+  }
+
+  /* Ad banner respects home indicator */
+  .ad-banner {
+    padding-bottom: calc(5px + var(--safe-bottom));
+    min-height: calc(60px + var(--safe-bottom));
+  }
+
+  /* Body bottom padding accounts for home bar */
+  body {
+    padding-bottom: calc(70px + var(--safe-bottom));
+  }
+
+  /* Hide browser-only elements */
+  .browser-only { display: none !important; }
+
+  /* Slightly larger touch targets for installed app */
+  .btn { min-height: 44px; }
+  .key { min-height: 44px; }
+  .nav-link { min-height: 44px; }
+}
+
+/* Splash screen fade — matches background_color in manifest */
+html {
+  background-color: #05050d;
+}
+
+/* Prevent text size adjustment on orientation change (iOS PWA) */
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Disable callout/selection on game tiles for better touch feel */
+.tile, .key, .mode-card {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Smooth scrolling momentum on iOS */
+.game-board, .admin-main, .lb-list, #online-log {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Install prompt / offline ribbon (injected by pwa.js) ── */
+#_pwa-install-banner,
+#_pwa-update-banner {
+  /* Already styled inline in pwa.js; this just sets touch behaviour */
+  touch-action: manipulation;
+}
+
+#_pwa-offline-ribbon {
+  touch-action: manipulation;
+}

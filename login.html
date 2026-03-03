@@ -1,126 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WordWar — Login</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WordWar — Login</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
 <div class="auth-page">
-  <div class="auth-wrap card card-elevated">
-
-    <div class="auth-hero">
+  <div class="auth-wrap page-enter">
+    <div class="auth-brand">
       <div class="auth-logo-text"><span class="g">WORD</span><span>WAR</span></div>
-      <p class="auth-sub">The ultimate competitive word battle platform</p>
+      <p class="auth-tagline">The ultimate competitive word battle arena</p>
     </div>
-
-    <div class="tab-strip">
-      <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Login</button>
-      <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
+    <div class="card card-elevated">
+      <div class="tab-strip">
+        <button class="tab-btn active" id="tab-login"    onclick="switchTab('login')">Login</button>
+        <button class="tab-btn"        id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+      <!-- LOGIN FORM -->
+      <div id="form-login">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-control" id="l-user" type="text" placeholder="your_username" autocomplete="username"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-control" id="l-pass" type="password" placeholder="••••••••"/>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg mt-16" id="login-btn" onclick="doLogin()">⚔️ Enter the Arena</button>
+      </div>
+      <!-- REGISTER FORM -->
+      <div id="form-register" class="hidden">
+        <div class="form-group">
+          <label class="form-label">Username (letters, numbers, _)</label>
+          <input class="form-control" id="r-user" type="text" placeholder="choose_username" maxlength="20"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password (min 6 chars)</label>
+          <input class="form-control" id="r-pass" type="password" placeholder="••••••••"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input class="form-control" id="r-pass2" type="password" placeholder="••••••••"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Profile Photo URL (optional)</label>
+          <input class="form-control" id="r-photo" type="url" placeholder="https://…"/>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg mt-16" id="reg-btn" onclick="doRegister()">🚀 Create Account</button>
+      </div>
     </div>
-
-    <!-- Login -->
-    <div id="form-login">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input class="form-control" id="login-username" type="text" placeholder="your_username" autocomplete="username" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-control" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-      <button class="btn btn-primary btn-full btn-lg mt-16" id="login-btn" onclick="doLogin()">Enter the Arena</button>
-      <p class="text-center text-sm text-muted mt-12">
-        No account? <a href="#" onclick="switchTab('register')">Register free</a>
-      </p>
-    </div>
-
-    <!-- Register -->
-    <div id="form-register" class="hidden">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input class="form-control" id="reg-username" type="text" placeholder="choose_username" maxlength="20" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password <span class="text-faint">(min 6 chars)</span></label>
-        <input class="form-control" id="reg-password" type="password" placeholder="••••••••" autocomplete="new-password" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Confirm Password</label>
-        <input class="form-control" id="reg-password2" type="password" placeholder="••••••••" autocomplete="new-password" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Profile Photo URL <span class="text-faint">(optional)</span></label>
-        <input class="form-control" id="reg-photo" type="url" placeholder="https://..." />
-      </div>
-      <button class="btn btn-primary btn-full btn-lg mt-16" id="reg-btn" onclick="doRegister()">Create Account</button>
-      <p class="text-center text-sm text-muted mt-12">
-        Already registered? <a href="#" onclick="switchTab('login')">Login</a>
-      </p>
-    </div>
-
   </div>
 </div>
 
-<script type="module">
-import { registerUser, loginUser, saveSession, loadSession } from './firebase-config.js';
-import { showToast } from './main.js';
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({ databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/' });
+var db = firebase.database();
 
-if (loadSession()) window.location.href = 'index.html';
+/* ── session ── */
+function saveSession(u){ localStorage.setItem('ww_user',JSON.stringify(u)); }
+function loadSession(){ try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;} }
 
-window.switchTab = function(tab) {
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
-  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+/* already logged in? */
+if(loadSession()) location.href='index.html';
+
+/* ── toast ── */
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+';font-size:1rem;">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
+}
+
+/* ── sha256 ── */
+async function sha256(msg){
+  var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+
+/* ── tab switch ── */
+function switchTab(tab){
+  document.getElementById('tab-login').classList.toggle('active',tab==='login');
+  document.getElementById('tab-register').classList.toggle('active',tab==='register');
+  document.getElementById('form-login').classList.toggle('hidden',tab!=='login');
+  document.getElementById('form-register').classList.toggle('hidden',tab!=='register');
+}
+window.switchTab=switchTab;
+
+/* ── login ── */
+window.doLogin=async function(){
+  var btn=document.getElementById('login-btn');
+  var username=document.getElementById('l-user').value.trim();
+  var password=document.getElementById('l-pass').value;
+  if(!username||!password){toast('Fill in all fields.','warn');return;}
+  btn.disabled=true;btn.textContent='⏳ Logging in…';
+  try{
+    var ns=await db.ref('usernames/'+username.toLowerCase()).get();
+    if(!ns.exists())throw new Error('User not found.');
+    var uid=ns.val();
+    var us=await db.ref('users/'+uid).get();
+    if(!us.exists())throw new Error('Account data missing.');
+    var u=us.val();
+    var hash=await sha256(password);
+    if(hash!==u.passwordHash)throw new Error('Incorrect password.');
+    await db.ref('users/'+uid).update({isOnline:true});
+    saveSession(Object.assign({uid:uid},u,{isOnline:true}));
+    toast('Welcome back, '+u.username+'! ⚔️','success');
+    setTimeout(function(){location.href='index.html';},600);
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='⚔️ Enter the Arena';}
 };
 
-window.doLogin = async function() {
-  const btn = document.getElementById('login-btn');
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!username || !password) { showToast('Fill in all fields.', 'warn'); return; }
-  btn.disabled = true; btn.textContent = 'Logging in…';
-  try {
-    const user = await loginUser({ username, password });
-    saveSession(user);
-    showToast(`Welcome back, ${user.username}!`, 'success');
-    setTimeout(() => window.location.href = 'index.html', 600);
-  } catch(e) {
-    showToast(e.message, 'error');
-  } finally { btn.disabled = false; btn.textContent = 'Enter the Arena'; }
+/* ── register ── */
+window.doRegister=async function(){
+  var btn=document.getElementById('reg-btn');
+  var username=document.getElementById('r-user').value.trim();
+  var password=document.getElementById('r-pass').value;
+  var confirm=document.getElementById('r-pass2').value;
+  var photoURL=document.getElementById('r-photo').value.trim();
+  if(!username||!password){toast('Fill in required fields.','warn');return;}
+  if(username.length<3){toast('Username needs 3+ characters.','warn');return;}
+  if(password.length<6){toast('Password needs 6+ characters.','warn');return;}
+  if(password!==confirm){toast('Passwords do not match.','error');return;}
+  if(!/^[a-zA-Z0-9_]+$/.test(username)){toast('Username: letters, numbers, _ only.','warn');return;}
+  btn.disabled=true;btn.textContent='⏳ Creating…';
+  try{
+    var ns=await db.ref('usernames/'+username.toLowerCase()).get();
+    if(ns.exists())throw new Error('Username already taken.');
+    var uid='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    var hash=await sha256(password);
+    var ud={username:username,passwordHash:hash,photoURL:photoURL||'',money:100,score:0,wins:0,losses:0,totalGames:0,createdAt:Date.now(),isOnline:true,achievements:{}};
+    await db.ref('users/'+uid).set(ud);
+    await db.ref('usernames/'+username.toLowerCase()).set(uid);
+    saveSession(Object.assign({uid:uid},ud));
+    toast('Welcome, '+username+'! 🎉','success');
+    setTimeout(function(){location.href='index.html';},700);
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='🚀 Create Account';}
 };
 
-window.doRegister = async function() {
-  const btn = document.getElementById('reg-btn');
-  const username = document.getElementById('reg-username').value.trim();
-  const password = document.getElementById('reg-password').value;
-  const password2 = document.getElementById('reg-password2').value;
-  const photoURL  = document.getElementById('reg-photo').value.trim();
-
-  if (!username || !password) { showToast('Fill in required fields.', 'warn'); return; }
-  if (username.length < 3)    { showToast('Username: at least 3 characters.', 'warn'); return; }
-  if (password.length < 6)    { showToast('Password: at least 6 characters.', 'warn'); return; }
-  if (password !== password2) { showToast('Passwords do not match.', 'error'); return; }
-  if (!/^[a-zA-Z0-9_]+$/.test(username)) { showToast('Username: letters, numbers and _ only.', 'warn'); return; }
-
-  btn.disabled = true; btn.textContent = 'Creating account…';
-  try {
-    const user = await registerUser({ username, password, photoURL });
-    saveSession(user);
-    showToast(`Welcome to WordWar, ${user.username}!`, 'success');
-    setTimeout(() => window.location.href = 'index.html', 600);
-  } catch(e) {
-    showToast(e.message, 'error');
-  } finally { btn.disabled = false; btn.textContent = 'Create Account'; }
-};
-
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  const loginVis = !document.getElementById('form-login').classList.contains('hidden');
-  if (loginVis) window.doLogin(); else window.doRegister();
+/* enter key */
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var loginShown=!document.getElementById('form-login').classList.contains('hidden');
+  if(loginShown)window.doLogin();else window.doRegister();
 });
 </script>
 </body>

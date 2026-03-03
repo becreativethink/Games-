@@ -1,411 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WordWar — Admin</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#6d51f5"/>
+<title>WordWar — Admin</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<!-- ── LOGIN GATE ─────────────────────────────────────────── -->
-<div id="admin-login" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;">
-  <div class="card card-elevated" style="max-width:360px;width:100%;text-align:center;">
-    <div style="font-size:3rem;margin-bottom:14px;">🛡</div>
-    <h2 class="mb-8">Admin Access</h2>
-    <p class="text-muted text-sm mb-24">Restricted area. Enter your admin password.</p>
-    <div class="form-group" style="text-align:left;">
-      <label class="form-label">Admin Password</label>
-      <input class="form-control" id="admin-pass" type="password" placeholder="••••••••••••" />
-    </div>
-    <button class="btn btn-primary btn-full mt-8" onclick="tryAdminLogin()">Access Panel</button>
-    <a href="index.html" class="btn btn-ghost btn-full mt-8">← Back to Site</a>
+<!-- LOGIN GATE -->
+<div id="admin-login" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+  <div class="card card-elevated page-enter" style="max-width:360px;width:100%;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🛡</div>
+    <h2 style="margin-bottom:20px;font-family:var(--font-display);">Admin Access</h2>
+    <input class="form-control" id="admin-pw" type="password" placeholder="Admin password" style="text-align:center;letter-spacing:.15em;font-size:1rem;margin-bottom:12px;"/>
+    <button class="btn btn-primary btn-full" onclick="tryAdminLogin()">Enter Admin Panel</button>
   </div>
 </div>
 
-<!-- ── ADMIN PANEL ─────────────────────────────────────────── -->
-<div id="admin-panel" class="hidden admin-layout">
+<!-- ADMIN PANEL -->
+<div id="admin-panel" class="hidden">
+  <div class="admin-layout">
 
-  <!-- Sidebar -->
-  <nav class="admin-sidebar">
-    <div class="admin-brand">
-      <div class="admin-brand-ico">⚡</div>
-      <span>WordWar <span style="color:var(--accent)">Admin</span></span>
-    </div>
-
-    <div class="admin-nav">
-      <div class="admin-nav-grp">Overview</div>
-      <button class="admin-nav-btn active" data-section="analytics" onclick="showSection('analytics')">
-        <span class="admin-nav-ico">📊</span> Analytics
-      </button>
-
-      <div class="admin-nav-grp">Game</div>
-      <button class="admin-nav-btn" data-section="daily" onclick="showSection('daily')">
-        <span class="admin-nav-ico">📅</span> Daily Word
-      </button>
-      <button class="admin-nav-btn" data-section="currency" onclick="showSection('currency')">
-        <span class="admin-nav-ico">💰</span> Currency
-      </button>
-
-      <div class="admin-nav-grp">Players</div>
-      <button class="admin-nav-btn" data-section="users" onclick="showSection('users')">
-        <span class="admin-nav-ico">👥</span> All Users
-      </button>
-      <button class="admin-nav-btn" data-section="rankings" onclick="showSection('rankings')">
-        <span class="admin-nav-ico">🏆</span> Rankings
-      </button>
-    </div>
-
-    <div class="admin-footer">
-      <button class="admin-nav-btn" onclick="adminLogout()" style="color:var(--red);">
-        <span class="admin-nav-ico">🚪</span> Logout
-      </button>
-    </div>
-  </nav>
-
-  <!-- Main content -->
-  <main class="admin-main">
-
-    <!-- ANALYTICS -->
-    <section class="admin-section active" id="section-analytics">
-      <div class="admin-page-title">
-        <h2>📊 Analytics Dashboard</h2>
-        <p class="text-muted">Platform-wide stats — live data</p>
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand"><span class="w1">WORD</span><span class="w2">WAR</span> <span style="font-size:.6rem;color:var(--text3);margin-left:4px;">ADMIN</span></div>
+      <nav class="admin-nav">
+        <div class="admin-nav-grp">Dashboard</div>
+        <button class="admin-nav-btn active" onclick="showSection('analytics')">📊 Analytics</button>
+        <button class="admin-nav-btn" onclick="showSection('daily')">📅 Daily Word</button>
+        <button class="admin-nav-btn" onclick="showSection('currency')">💰 Currency</button>
+        <button class="admin-nav-btn" onclick="showSection('users')">👥 Users</button>
+        <div class="admin-nav-grp">Content</div>
+        <button class="admin-nav-btn" onclick="showSection('about')">📄 About Us</button>
+        <button class="admin-nav-btn" onclick="showSection('privacy')">🔐 Privacy Policy</button>
+      </nav>
+      <div class="admin-footer">
+        <button class="btn btn-ghost btn-sm btn-full" onclick="adminLogout()">← Logout</button>
       </div>
+    </aside>
 
-      <div class="analytics-grid" id="analytics-cards">
-        <div class="analytics-card"><span class="an-icon">👤</span><span class="an-val" id="an-users">—</span><span class="an-lbl">Total Users</span></div>
-        <div class="analytics-card"><span class="an-icon">🎮</span><span class="an-val" id="an-games">—</span><span class="an-lbl">Total Games</span></div>
-        <div class="analytics-card"><span class="an-icon">🌐</span><span class="an-val" id="an-rooms">—</span><span class="an-lbl">Rooms Created</span></div>
-        <div class="analytics-card"><span class="an-icon">📅</span><span class="an-val" id="an-daily">—</span><span class="an-lbl">Daily Plays</span></div>
-        <div class="analytics-card"><span class="an-icon">⭐</span><span class="an-val" id="an-score">—</span><span class="an-lbl">Score in Circulation</span></div>
-        <div class="analytics-card"><span class="an-icon">🟢</span><span class="an-val" id="an-online">—</span><span class="an-lbl">Online Now</span></div>
-        <div class="analytics-card" style="grid-column:span 2;">
-          <span class="an-icon">🏅</span>
-          <span class="an-val" id="an-active-name">—</span>
-          <span class="an-lbl">Most Active Player · <span id="an-active-games">—</span> games</span>
+    <!-- MAIN -->
+    <main class="admin-main">
+
+      <!-- ANALYTICS -->
+      <section id="sec-analytics">
+        <h2 class="admin-page-title">📊 Analytics</h2>
+        <div class="analytics-grid" id="analytics-grid">
+          <div class="analytics-card"><span class="an-icon">👤</span><span class="an-val" id="an-users">…</span><span class="an-lbl">Total Users</span></div>
+          <div class="analytics-card"><span class="an-icon">🎮</span><span class="an-val" id="an-games">…</span><span class="an-lbl">Total Games</span></div>
+          <div class="analytics-card"><span class="an-icon">🌐</span><span class="an-val" id="an-rooms">…</span><span class="an-lbl">Total Rooms</span></div>
+          <div class="analytics-card"><span class="an-icon">📅</span><span class="an-val" id="an-daily">…</span><span class="an-lbl">Daily Plays</span></div>
+          <div class="analytics-card"><span class="an-icon">⭐</span><span class="an-val" id="an-score">…</span><span class="an-lbl">Score Pool</span></div>
+          <div class="analytics-card"><span class="an-icon">🟢</span><span class="an-val" id="an-online">…</span><span class="an-lbl">Online Now</span></div>
+          <div class="analytics-card"><span class="an-icon">🏆</span><span class="an-val" id="an-top">…</span><span class="an-lbl">Most Active</span></div>
+          <div class="analytics-card"><span class="an-icon">🎯</span><span class="an-val" id="an-topg">…</span><span class="an-lbl">Top Games</span></div>
         </div>
-      </div>
+        <button class="btn btn-secondary" onclick="refreshAnalytics()">↻ Refresh</button>
+      </section>
 
-      <button class="btn btn-ghost btn-sm" onclick="reloadAnalytics()">↻ Refresh Data</button>
-    </section>
-
-    <!-- DAILY WORD -->
-    <section class="admin-section hidden" id="section-daily">
-      <div class="admin-page-title">
-        <h2>📅 Daily Word</h2>
-        <p class="text-muted">Set today's challenge word and rewards.</p>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
-        <!-- Set form -->
-        <div class="card card-elevated">
-          <h3 class="mb-16">Set New Daily Word</h3>
-          <div class="form-group">
-            <label class="form-label">Secret Word</label>
-            <input class="form-control" id="dw-word" type="text" placeholder="e.g. brave"
-                   style="text-transform:lowercase;letter-spacing:0.08em;" />
-          </div>
+      <!-- DAILY WORD -->
+      <section id="sec-daily" class="hidden">
+        <h2 class="admin-page-title">📅 Daily Word</h2>
+        <div class="card" style="max-width:440px;">
+          <div class="form-group"><label class="form-label">Secret Word</label><input class="form-control" id="dw-word" placeholder="e.g. FLAME" style="text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono);"/></div>
           <div class="flex gap-12">
-            <div class="form-group flex-1">
-              <label class="form-label">Max Attempts</label>
-              <input class="form-control" id="dw-attempts" type="number" value="6" min="3" max="10" />
-            </div>
-            <div class="form-group flex-1">
-              <label class="form-label">Reward Money 💰</label>
-              <input class="form-control" id="dw-money" type="number" value="50" min="0" />
-            </div>
+            <div class="form-group flex-1"><label class="form-label">Max Attempts</label><input class="form-control" id="dw-attempts" type="number" value="6" min="3" max="10"/></div>
+            <div class="form-group flex-1"><label class="form-label">Reward Money</label><input class="form-control" id="dw-money" type="number" value="50" min="0"/></div>
+            <div class="form-group flex-1"><label class="form-label">Reward Score</label><input class="form-control" id="dw-score" type="number" value="100" min="0"/></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveDailyWord()">💾 Set Daily Word</button>
+        </div>
+      </section>
+
+      <!-- CURRENCY -->
+      <section id="sec-currency" class="hidden">
+        <h2 class="admin-page-title">💰 Currency Management</h2>
+        <div class="card" style="max-width:440px;">
+          <div class="form-group"><label class="form-label">Username</label><input class="form-control" id="cur-user" placeholder="username"/></div>
+          <div class="flex gap-8 mb-12">
+            <button class="btn btn-sm btn-secondary" onclick="setCurField('money')">💰 Money</button>
+            <button class="btn btn-sm btn-secondary" onclick="setCurField('score')">⭐ Score</button>
+          </div>
+          <div id="cur-field-lbl" class="text-sm text-muted mb-8">Select currency above</div>
+          <div class="amount-row mb-12">
+            <input class="form-control" id="cur-amount" type="number" placeholder="Amount" min="1"/>
+            <button class="btn btn-success" onclick="doCurrency(1)">+ Add</button>
+            <button class="btn btn-danger"  onclick="doCurrency(-1)">− Remove</button>
+          </div>
+          <div id="cur-result" class="text-sm text-muted"></div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section id="sec-users" class="hidden">
+        <h2 class="admin-page-title">👥 Users</h2>
+        <div class="search-bar mb-16"><span>🔍</span><input id="user-search" placeholder="Search username…" oninput="filterUsers()"/></div>
+        <div class="tbl-wrap"><table class="data-table" id="user-table">
+          <thead><tr><th>#</th><th>Username</th><th>Score</th><th>Wins</th><th>Games</th><th>Money</th><th>Online</th></tr></thead>
+          <tbody id="user-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">Loading…</td></tr></tbody>
+        </table></div>
+      </section>
+
+      <!-- ABOUT US CMS -->
+      <section id="sec-about" class="hidden">
+        <h2 class="admin-page-title">📄 About Us — Edit Content</h2>
+        <div class="card" style="max-width:700px;">
+          <div class="form-group">
+            <label class="form-label">Page Title</label>
+            <input class="form-control" id="about-title" placeholder="About WordWar" value="About WordWar"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Reward Score ⭐</label>
-            <input class="form-control" id="dw-score" type="number" value="100" min="0" />
+            <label class="form-label">Content <span class="text-faint text-xs">(HTML supported — p, h2, h3, ul, li, strong, em)</span></label>
+            <div class="cms-editor-wrap">
+              <textarea class="form-control" id="about-content" rows="10" placeholder="<p>Your about us text here…</p>"></textarea>
+            </div>
           </div>
-          <button class="btn btn-primary mt-8" onclick="saveDailyWord()">Set Daily Word →</button>
+          <div class="flex gap-8 mt-8">
+            <button class="btn btn-primary" onclick="saveAbout()">💾 Save Changes</button>
+            <button class="btn btn-ghost btn-sm" onclick="previewCms('about')">👁 Preview</button>
+          </div>
+          <div class="cms-preview hidden mt-12" id="about-preview"></div>
         </div>
+      </section>
 
-        <!-- Current daily -->
-        <div class="card card-elevated">
-          <h3 class="mb-16">Current Daily Word</h3>
-          <div id="current-daily-info" class="text-muted text-sm">Loading…</div>
+      <!-- PRIVACY POLICY CMS -->
+      <section id="sec-privacy" class="hidden">
+        <h2 class="admin-page-title">🔐 Privacy Policy — Edit Content</h2>
+        <div class="card" style="max-width:700px;">
+          <div class="form-group">
+            <label class="form-label">Page Title</label>
+            <input class="form-control" id="privacy-title" placeholder="Privacy Policy" value="Privacy Policy"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content <span class="text-faint text-xs">(HTML supported)</span></label>
+            <div class="cms-editor-wrap">
+              <textarea class="form-control" id="privacy-content" rows="14" placeholder="<p>Your privacy policy text here…</p>"></textarea>
+            </div>
+          </div>
+          <div class="flex gap-8 mt-8">
+            <button class="btn btn-primary" onclick="savePrivacy()">💾 Save Changes</button>
+            <button class="btn btn-ghost btn-sm" onclick="previewCms('privacy')">👁 Preview</button>
+          </div>
+          <div class="cms-preview hidden mt-12" id="privacy-preview"></div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- USERS -->
-    <section class="admin-section hidden" id="section-users">
-      <div class="admin-page-title">
-        <h2>👥 All Users</h2>
-        <p class="text-muted">Complete user registry with live stats.</p>
-      </div>
-
-      <div class="section-head">
-        <span class="text-muted text-sm" id="user-count">Loading…</span>
-        <div class="search-bar">
-          <span class="search-ic">🔍</span>
-          <input type="text" id="user-search" placeholder="Search by username…" oninput="filterUsers()" />
-        </div>
-      </div>
-
-      <div class="tbl-wrap">
-        <table class="data-table" id="users-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Username</th>
-              <th>Score</th>
-              <th>Money</th>
-              <th>Wins</th>
-              <th>Losses</th>
-              <th>Games</th>
-              <th>Status</th>
-              <th>Joined</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- CURRENCY -->
-    <section class="admin-section hidden" id="section-currency">
-      <div class="admin-page-title">
-        <h2>💰 Currency Management</h2>
-        <p class="text-muted">Add or remove money and score from any user.</p>
-      </div>
-
-      <div class="card card-elevated" style="max-width:520px;">
-        <div class="form-group">
-          <label class="form-label">Select User</label>
-          <select class="form-control" id="cur-user-select">
-            <option value="">— Choose a user —</option>
-          </select>
-        </div>
-
-        <div class="divider"></div>
-
-        <h3 class="mb-12">💰 Money</h3>
-        <div class="amount-row mb-16">
-          <input class="form-control" id="cur-money-amount" type="number" placeholder="Amount" min="1" />
-          <button class="btn btn-success btn-sm" onclick="adjustCur('money',1)">＋ Add</button>
-          <button class="btn btn-danger btn-sm"  onclick="adjustCur('money',-1)">－ Remove</button>
-        </div>
-
-        <h3 class="mb-12">⭐ Score</h3>
-        <div class="amount-row">
-          <input class="form-control" id="cur-score-amount" type="number" placeholder="Amount" min="1" />
-          <button class="btn btn-success btn-sm" onclick="adjustCur('score',1)">＋ Add</button>
-          <button class="btn btn-danger btn-sm"  onclick="adjustCur('score',-1)">－ Remove</button>
-        </div>
-
-        <div id="cur-result" class="mt-16 text-sm text-muted"></div>
-      </div>
-    </section>
-
-    <!-- RANKINGS -->
-    <section class="admin-section hidden" id="section-rankings">
-      <div class="admin-page-title">
-        <h2>🏆 Live Rankings</h2>
-        <p class="text-muted">Current player standings by score.</p>
-      </div>
-      <div class="lb-list" id="rankings-list">
-        <div class="text-center text-muted" style="padding:40px;">Loading…</div>
-      </div>
-    </section>
-
-  </main>
+    </main>
+  </div>
 </div>
 
-<script type="module">
-import { db, ref, get } from './firebase-config.js';
-import { checkAdminAuth, attemptAdminLogin, listenUsers, adjustCurrency, setDailyWord, loadAnalytics } from './admin.js';
-import { showToast, avatarUrl, fmtNum } from './main.js';
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
 
-function init() {
-  if (checkAdminAuth()) showPanel();
-}
+/* ── Admin password ── */
+var ADMIN_PW='s\u221a11o\u221a22n\u221a33u\u221a44';
 
-window.tryAdminLogin = function() {
-  const pass = document.getElementById('admin-pass').value;
-  if (attemptAdminLogin(pass)) {
-    showPanel();
-  } else {
-    showToast('Invalid admin credentials.', 'error');
-    document.getElementById('admin-pass').value = '';
+function tryAdminLogin(){
+  var pw=document.getElementById('admin-pw').value;
+  if(pw===ADMIN_PW){
+    sessionStorage.setItem('ww_admin','granted');
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').classList.remove('hidden');
+    initAdmin();
+  }else{
+    document.getElementById('admin-pw').style.borderColor='var(--red)';
+    setTimeout(function(){document.getElementById('admin-pw').style.borderColor='';},1200);
   }
-};
+}
+function adminLogout(){sessionStorage.removeItem('ww_admin');location.href='index.html';}
 
-function showPanel() {
-  document.getElementById('admin-login').style.display = 'none';
-  const panel = document.getElementById('admin-panel');
-  panel.classList.remove('hidden');
-  reloadAnalytics();
-  loadUsers();
-  loadCurrentDaily();
+/* Auto-login if session active */
+if(sessionStorage.getItem('ww_admin')==='granted'){
+  document.getElementById('admin-login').style.display='none';
+  document.getElementById('admin-panel').classList.remove('hidden');
 }
 
-window.adminLogout = function() {
-  sessionStorage.removeItem('ww_admin');
-  window.location.href = 'index.html';
-};
+document.getElementById('admin-pw').addEventListener('keydown',function(e){if(e.key==='Enter')tryAdminLogin();});
 
-// ── Section navigation ─────────────────────────────────────
-window.showSection = function(name) {
-  document.querySelectorAll('.admin-section').forEach(s => {
-    const active = s.id === `section-${name}`;
-    s.classList.toggle('active', active);
-    s.classList.toggle('hidden', !active);
+/* ── Section routing ── */
+var _sections=['analytics','daily','currency','users','about','privacy'];
+function showSection(name){
+  _sections.forEach(function(s){
+    document.getElementById('sec-'+s).classList.toggle('hidden',s!==name);
   });
-  document.querySelectorAll('.admin-nav-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.section === name);
+  document.querySelectorAll('.admin-nav-btn').forEach(function(b,i){
+    b.classList.toggle('active',b.textContent.toLowerCase().includes(name)||
+      (name==='about'&&b.textContent.includes('About'))||
+      (name==='privacy'&&b.textContent.includes('Privacy')));
   });
-};
-
-// ── Analytics ──────────────────────────────────────────────
-window.reloadAnalytics = async function() {
-  const a = await loadAnalytics();
-  document.getElementById('an-users').textContent       = a.totalUsers;
-  document.getElementById('an-games').textContent       = a.totalGames;
-  document.getElementById('an-rooms').textContent       = a.totalRooms;
-  document.getElementById('an-daily').textContent       = a.totalDailyPlays;
-  document.getElementById('an-score').textContent       = fmtNum(a.totalScore);
-  document.getElementById('an-online').textContent      = a.onlineCount;
-  document.getElementById('an-active-name').textContent = a.mostActive;
-  document.getElementById('an-active-games').textContent= a.mostActiveGames;
-};
-
-// ── Daily word ─────────────────────────────────────────────
-async function loadCurrentDaily() {
-  const snap = await get(ref(db, 'dailyWord'));
-  const el   = document.getElementById('current-daily-info');
-  if (!snap.exists()) { el.innerHTML = '<span class="text-faint">No daily word set yet.</span>'; return; }
-  const d = snap.val();
-  el.innerHTML = `
-    <div class="flex justify-between mb-12"><span class="text-muted">Word</span><strong class="text-mono text-accent" style="font-size:1.1rem;letter-spacing:0.15em;">${d.word?.toUpperCase()}</strong></div>
-    <div class="flex justify-between mb-8"><span class="text-muted">Date</span><span class="text-mono">${d.date}</span></div>
-    <div class="flex justify-between mb-8"><span class="text-muted">Attempts allowed</span><span class="text-mono">${d.attempts}</span></div>
-    <div class="flex justify-between mb-8"><span class="text-muted">Reward Money</span><span class="text-mono text-gold">${d.rewardMoney} 💰</span></div>
-    <div class="flex justify-between"><span class="text-muted">Reward Score</span><span class="text-mono text-accent">${d.rewardScore} ⭐</span></div>`;
+  if(name==='analytics')refreshAnalytics();
+  if(name==='users')refreshUsers();
+  if(name==='about'||name==='privacy')loadCmsContent();
 }
 
-window.saveDailyWord = async function() {
-  const word     = document.getElementById('dw-word').value.trim().toLowerCase();
-  const attempts = document.getElementById('dw-attempts').value;
-  const money    = document.getElementById('dw-money').value;
-  const score    = document.getElementById('dw-score').value;
-
-  if (!word || word.length < 2)  { showToast('Enter a valid word (min 2 letters).', 'warn'); return; }
-  if (!/^[a-z]+$/.test(word))    { showToast('Letters only.', 'warn'); return; }
-
-  await setDailyWord({ word, rewardMoney: money, rewardScore: score, attempts });
-  showToast('Daily word set!', 'success');
-  loadCurrentDaily();
-};
-
-// ── Users table ────────────────────────────────────────────
-let allUsersList = [];
-
-function loadUsers() {
-  listenUsers(users => {
-    allUsersList = users;
-    document.getElementById('user-count').textContent = `${users.length} users`;
-
-    // Currency select
-    const sel  = document.getElementById('cur-user-select');
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">— Choose a user —</option>' +
-      users.map(u => `<option value="${u.uid}">${u.username}</option>`).join('');
-    if (prev) sel.value = prev;
-
-    renderTable(users);
-    renderRankings(users);
-  });
+function initAdmin(){
+  refreshAnalytics();
+  refreshUsers();
+  loadCmsContent();
 }
 
-function renderTable(users) {
-  const tbody = document.getElementById('users-tbody');
-  if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">No users found.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = users.map((u, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td class="col-name">${u.username}</td>
-      <td><span class="text-mono text-accent">${fmtNum(u.score||0)}</span></td>
-      <td><span class="text-mono text-gold">${fmtNum(u.money||0)}</span></td>
-      <td class="text-green">${u.wins||0}</td>
-      <td class="text-red">${u.losses||0}</td>
-      <td class="text-muted">${u.totalGames||0}</td>
-      <td>${u.isOnline
-        ? '<span class="tag tag-green" style="font-size:0.65rem;">Online</span>'
-        : '<span style="color:var(--text3);font-size:0.75rem;">Offline</span>'}</td>
-      <td class="text-faint text-xs">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
-    </tr>`).join('');
+/* ── Helpers ── */
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;top:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='padding:12px 16px;border-radius:10px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'55;font-family:Outfit,sans-serif;font-size:.82rem;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 4px 20px rgba(0,0,0,.5);';
+  t.textContent=msg; z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},300);},3200);
 }
 
-window.filterUsers = function() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  renderTable(allUsersList.filter(u => u.username.toLowerCase().includes(q)));
-};
-
-function renderRankings(users) {
-  const sorted   = [...users].sort((a,b) => (b.score||0)-(a.score||0));
-  const medals   = ['🥇','🥈','🥉'];
-  const rkClasses = ['r1','r2','r3'];
-  const rnkClss   = ['gold','silver','bronze'];
-
-  document.getElementById('rankings-list').innerHTML = sorted.map((u, i) => `
-    <div class="lb-item ${rkClasses[i] || ''}">
-      <span class="lb-rank ${rnkClss[i] || ''}">${medals[i] || '#'+(i+1)}</span>
-      <img class="lb-avatar" src="${avatarUrl(u.photoURL, u.username)}" alt="${u.username}" />
-      <div class="lb-info">
-        <div class="lb-name">${u.username}</div>
-        <div class="lb-sub">${u.wins||0} wins · ${u.totalGames||0} games</div>
-      </div>
-      <div class="lb-stats">
-        <div class="lb-stat">
-          <span class="lb-stat-val text-accent">${fmtNum(u.score||0)}</span>
-          <span class="lb-stat-lbl">Score</span>
-        </div>
-        <div class="lb-stat">
-          <span class="lb-stat-val text-gold">${fmtNum(u.money||0)}</span>
-          <span class="lb-stat-lbl">Money</span>
-        </div>
-      </div>
-    </div>`).join('');
+/* ── Analytics ── */
+async function refreshAnalytics(){
+  try{
+    var [uSnap,rSnap,dSnap]=await Promise.all([
+      db.ref('users').get(), db.ref('rooms').get(), db.ref('dailyResults').get()
+    ]);
+    var users=uSnap.exists()?Object.values(uSnap.val()).filter(function(u){return u.username;}):[];
+    var rooms=rSnap.exists()?Object.values(rSnap.val()):[];
+    var daily=dSnap.exists()?dSnap.val():{};
+    var dailyPlays=Object.values(daily).reduce(function(a,d){return a+Object.keys(d).length;},0);
+    var totalScore=users.reduce(function(a,u){return a+(u.score||0);},0);
+    var online=users.filter(function(u){return u.isOnline;}).length;
+    var top=users.slice().sort(function(a,b){return(b.totalGames||0)-(a.totalGames||0)})[0]||{};
+    document.getElementById('an-users').textContent=users.length;
+    document.getElementById('an-games').textContent=fmtNum(users.reduce(function(a,u){return a+(u.totalGames||0);},0));
+    document.getElementById('an-rooms').textContent=rooms.length;
+    document.getElementById('an-daily').textContent=dailyPlays;
+    document.getElementById('an-score').textContent=fmtNum(totalScore);
+    document.getElementById('an-online').textContent=online;
+    document.getElementById('an-top').textContent=top.username||'—';
+    document.getElementById('an-topg').textContent=top.totalGames||0;
+  }catch(e){toast('Analytics error: '+e.message,'error');}
 }
 
-// ── Currency management ────────────────────────────────────
-window.adjustCur = async function(field, sign) {
-  const uid = document.getElementById('cur-user-select').value;
-  if (!uid) { showToast('Select a user first.', 'warn'); return; }
-
-  const inputId = field === 'money' ? 'cur-money-amount' : 'cur-score-amount';
-  const amount  = parseInt(document.getElementById(inputId).value, 10);
-  if (!amount || amount <= 0) { showToast('Enter a valid amount.', 'warn'); return; }
-
-  try {
-    const newVal = await adjustCurrency(uid, field, sign * amount);
-    const u      = allUsersList.find(u => u.uid === uid);
-    document.getElementById('cur-result').innerHTML =
-      `✓ <strong>${u?.username}'s</strong> ${field} updated to <strong class="text-mono">${fmtNum(newVal)}</strong>`;
-    showToast(`${u?.username}'s ${field} updated!`, 'success');
-  } catch(e) {
-    showToast(e.message, 'error');
-  }
+/* ── Daily word ── */
+window.saveDailyWord=async function(){
+  var word=document.getElementById('dw-word').value.trim().toUpperCase();
+  if(word.length<2||!/^[A-Z]+$/.test(word)){toast('Enter a valid word (A-Z only).','warn');return;}
+  try{
+    await db.ref('dailyWord').set({
+      word:word.toLowerCase(),
+      rewardMoney:parseInt(document.getElementById('dw-money').value)||50,
+      rewardScore:parseInt(document.getElementById('dw-score').value)||100,
+      attempts:parseInt(document.getElementById('dw-attempts').value)||6,
+      date:new Date().toISOString().split('T')[0],
+      setAt:Date.now()
+    });
+    toast('Daily word set: '+word,'success');
+  }catch(e){toast('Error: '+e.message,'error');}
 };
 
-// ── Init ───────────────────────────────────────────────────
-init();
+/* ── Currency ── */
+var _curField='money';
+window.setCurField=function(f){_curField=f;document.getElementById('cur-field-lbl').textContent='Adjusting: '+(f==='money'?'💰 Money':'⭐ Score');};
+window.doCurrency=async function(dir){
+  var username=document.getElementById('cur-user').value.trim().toLowerCase();
+  var amount=parseInt(document.getElementById('cur-amount').value)||0;
+  if(!username||!amount){toast('Fill in username and amount.','warn');return;}
+  try{
+    var ns=await db.ref('usernames/'+username).get();
+    if(!ns.exists()){toast('User not found.','error');return;}
+    var uid=ns.val();
+    var us=await db.ref('users/'+uid).get();
+    var cur=us.val()[_curField]||0;
+    var newVal=Math.max(0,cur+dir*amount);
+    await db.ref('users/'+uid).update({[_curField]:newVal});
+    document.getElementById('cur-result').textContent=_curField+': '+cur+' → '+newVal;
+    toast('Updated '+_curField+' for '+username,'success');
+  }catch(e){toast('Error: '+e.message,'error');}
+};
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.getElementById('admin-login').style.display !== 'none') {
-    window.tryAdminLogin();
-  }
-});
+/* ── Users table ── */
+var _allUsers=[];
+async function refreshUsers(){
+  var snap=await db.ref('users').get();
+  _allUsers=snap.exists()?Object.entries(snap.val()).filter(function(e){return e[1].username;}).map(function(e){return Object.assign({uid:e[0]},e[1]);}).sort(function(a,b){return(b.score||0)-(a.score||0);}):[];
+  renderUsersTable(_allUsers);
+}
+function filterUsers(){
+  var q=document.getElementById('user-search').value.toLowerCase();
+  renderUsersTable(_allUsers.filter(function(u){return u.username.toLowerCase().includes(q);}));
+}
+function renderUsersTable(users){
+  var tb=document.getElementById('user-tbody');
+  if(!users.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3);">No users found.</td></tr>';return;}
+  tb.innerHTML=users.map(function(u,i){
+    return'<tr>'
+      +'<td class="text-faint">'+(i+1)+'</td>'
+      +'<td class="col-name">'+u.username+'</td>'
+      +'<td class="text-accent fw-700">'+fmtNum(u.score||0)+'</td>'
+      +'<td>'+fmtNum(u.wins||0)+'</td>'
+      +'<td class="text-muted">'+fmtNum(u.totalGames||0)+'</td>'
+      +'<td class="text-gold">'+fmtNum(u.money||0)+'</td>'
+      +'<td>'+(u.isOnline?'<span style="color:var(--green);">●</span>':'<span style="color:var(--text3);">○</span>')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+/* ── CMS: load existing content ── */
+async function loadCmsContent(){
+  try{
+    var snap=await db.ref('siteContent').get();
+    if(!snap.exists())return;
+    var d=snap.val();
+    if(d.aboutUs){
+      if(d.aboutUs.title)document.getElementById('about-title').value=d.aboutUs.title;
+      if(d.aboutUs.content)document.getElementById('about-content').value=d.aboutUs.content;
+    }
+    if(d.privacyPolicy){
+      if(d.privacyPolicy.title)document.getElementById('privacy-title').value=d.privacyPolicy.title;
+      if(d.privacyPolicy.content)document.getElementById('privacy-content').value=d.privacyPolicy.content;
+    }
+  }catch(e){}
+}
+
+/* ── CMS: save About Us ── */
+window.saveAbout=async function(){
+  var title=document.getElementById('about-title').value.trim();
+  var content=document.getElementById('about-content').value.trim();
+  if(!title||!content){toast('Title and content required.','warn');return;}
+  try{
+    await db.ref('siteContent/aboutUs').set({title:title,content:content,updatedAt:Date.now()});
+    toast('About Us saved!','success');
+  }catch(e){toast('Save failed: '+e.message,'error');}
+};
+
+/* ── CMS: save Privacy Policy ── */
+window.savePrivacy=async function(){
+  var title=document.getElementById('privacy-title').value.trim();
+  var content=document.getElementById('privacy-content').value.trim();
+  if(!title||!content){toast('Title and content required.','warn');return;}
+  try{
+    await db.ref('siteContent/privacyPolicy').set({title:title,content:content,updatedAt:Date.now()});
+    toast('Privacy Policy saved!','success');
+  }catch(e){toast('Save failed: '+e.message,'error');}
+};
+
+/* ── CMS: preview ── */
+window.previewCms=function(page){
+  var preview=document.getElementById(page+'-preview');
+  var content=document.getElementById(page+'-content').value;
+  preview.innerHTML=content;
+  preview.classList.toggle('hidden');
+};
+
+/* Init if already authed */
+if(sessionStorage.getItem('ww_admin')==='granted') initAdmin();
 </script>
 </body>
 </html>

@@ -118,15 +118,7 @@ function render(){
   }).join('')+'</div>';
 }
 
-/* ad */
-(function(){
-  var f=document.getElementById('ad-frame');if(!f)return;
-  var close='<'+'/script>';
-  var html='<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
-    +'<script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');'
-    +close+'</body></html>';
-  if('srcdoc'in f){f.srcdoc=html;}else{var b=new Blob([html],{type:'text/html'});f.src=URL.createObjectURL(b);}
-})();
+
 </script>
 
 <!-- BOTTOM NAV -->

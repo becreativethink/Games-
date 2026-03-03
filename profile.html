@@ -2,7 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WordWar"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png"/>
 <title>WordWar — Profile</title>
 <link rel="stylesheet" href="style.css"/>
 </head>
@@ -58,9 +67,6 @@
   </div>
 </div>
 
-<div class="ad-banner">
-  <iframe id="ad-frame" scrolling="no" title="Ad" style="border:none;width:320px;height:50px;display:block;"></iframe>
-</div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -150,5 +156,34 @@ window.deleteAccount=async function(){
   if('srcdoc'in f){f.srcdoc=html;}else{var b=new Blob([html],{type:'text/html'});f.src=URL.createObjectURL(b);}
 })();
 </script>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'" data-page="home">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-lbl">Home</span>
+  </button>
+  <button class="bn-btn " onclick="location.href='leaderboard.html'" data-page="leaderboard">
+    <span class="bn-icon">🏆</span>
+    <span class="bn-lbl">Ranks</span>
+  </button>
+  <button class="bn-btn active" onclick="location.href='profile.html'" data-page="profile">
+    <span class="bn-icon">👤</span>
+    <span class="bn-lbl">Profile</span>
+  </button>
+  <button class="bn-btn" onclick="selectDailyMode()" data-page="daily">
+    <span class="bn-icon">📅</span>
+    <span class="bn-lbl">Daily</span>
+  </button>
+</nav>
+<script>
+function selectDailyMode(){
+  var u=localStorage.getItem('ww_user');
+  if(!u){location.href='login.html';return;}
+  sessionStorage.setItem('ww_mode','daily');
+  location.href='game.html';
+}
+</script>
+<script src="/pwa.js"></script>
 </body>
 </html>

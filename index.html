@@ -14,14 +14,13 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png"/>
 <title>WordWar — Home</title>
 <link rel="stylesheet" href="style.css"/>
+<script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
 </head>
 <body>
+
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
   <div class="nav-links">
-    <a href="index.html"       class="nav-link active m-show">Home</a>
-    <a href="leaderboard.html" class="nav-link">Ranks</a>
-    <a href="profile.html"     class="nav-link">Profile</a>
     <div class="nav-sep"></div>
     <a href="profile.html" class="user-badge">
       <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
@@ -40,31 +39,47 @@
   <p class="hero-sub">Competitive word guessing. Battle friends. Climb the ranks.</p>
 </div>
 
-<!-- Currency strip -->
-<div class="currency-strip page-enter">
-  <div class="cs-item"><span class="cs-icon">💰</span><span class="cs-val" id="bar-money">0</span><span class="cs-lbl">Money</span></div>
-  <div class="cs-item"><span class="cs-icon">⭐</span><span class="cs-val" id="bar-score">0</span><span class="cs-lbl">Score</span></div>
-  <div class="cs-item"><span class="cs-icon">🏆</span><span class="cs-val" id="bar-wins">0</span><span class="cs-lbl">Wins</span></div>
-  <div class="cs-item"><span class="cs-icon">🏅</span><span class="cs-val" id="bar-rank">—</span><span class="cs-lbl">Rank</span></div>
+<!-- FIXED 2x2 STATS GRID -->
+<div class="home-stats-grid page-enter">
+  <div class="hsg-card">
+    <span class="hsg-icon">💰</span>
+    <span class="hsg-val" id="bar-money">0</span>
+    <span class="hsg-lbl">Money</span>
+  </div>
+  <div class="hsg-card">
+    <span class="hsg-icon">⭐</span>
+    <span class="hsg-val" id="bar-score">0</span>
+    <span class="hsg-lbl">Score</span>
+  </div>
+  <div class="hsg-card">
+    <span class="hsg-icon">🏆</span>
+    <span class="hsg-val" id="bar-wins">0</span>
+    <span class="hsg-lbl">Wins</span>
+  </div>
+  <div class="hsg-card">
+    <span class="hsg-icon">🏅</span>
+    <span class="hsg-val" id="bar-rank">—</span>
+    <span class="hsg-lbl">Rank</span>
+  </div>
 </div>
 
-<!-- Mode cards -->
+<!-- GAME MODES -->
 <div class="section-wrap page-enter">
   <h2 class="section-title">Choose Your Battle</h2>
   <div class="mode-grid">
-    <div class="mode-card" onclick="selectMode('offline')">
+    <div class="mode-card offline" onclick="selectMode('offline')">
       <div class="mc-icon">🤝</div>
       <h3 class="mc-title">Offline</h3>
       <p class="mc-desc">Pass-and-play. Player 1 sets the word, Player 2 guesses.</p>
       <button class="btn btn-primary btn-full mt-16">Play Offline</button>
     </div>
-    <div class="mode-card" onclick="selectMode('online')">
+    <div class="mode-card online" onclick="selectMode('online')">
       <div class="mc-icon">🌐</div>
       <h3 class="mc-title">Online</h3>
       <p class="mc-desc">Challenge real players with score bets. Real-time multiplayer.</p>
       <button class="btn btn-primary btn-full mt-16">Play Online</button>
     </div>
-    <div class="mode-card" onclick="selectMode('daily')">
+    <div class="mode-card daily" onclick="selectMode('daily')">
       <div class="mc-icon">📅</div>
       <h3 class="mc-title">Daily</h3>
       <p class="mc-desc">One word per day. 60-second timer. Earn money and score.</p>
@@ -73,7 +88,23 @@
   </div>
 </div>
 
-<!-- Stats -->
+<!-- REWARDED VIDEO AD -->
+<div class="section-wrap page-enter">
+  <div class="reward-ad-card">
+    <div class="rad-left">
+      <span class="rad-icon">🎬</span>
+      <div>
+        <div class="rad-title">Watch &amp; Earn</div>
+        <div class="rad-sub">Watch a short video — earn <strong>+10 💰</strong></div>
+        <div class="rad-timer hidden" id="rad-timer">Next ad in <span id="rad-countdown">5:00</span></div>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="watchAdBtn" onclick="startRewardedAd()">Watch Ad</button>
+  </div>
+  <div id="container-1" style="display:none;margin-top:12px;border-radius:12px;overflow:hidden;"></div>
+</div>
+
+<!-- YOUR STATS -->
 <div class="section-wrap page-enter" id="stats-section">
   <h2 class="section-title">Your Stats</h2>
   <div class="stat-grid">
@@ -93,9 +124,32 @@
   </div>
 </div>
 
-<div class="ad-banner">
-  <iframe id="ad-frame" scrolling="no" title="Ad" style="border:none;width:320px;height:50px;display:block;"></iframe>
+<!-- FOOTER LINKS -->
+<div class="footer-links page-enter">
+  <a href="about.html">About Us</a>
+  <span class="fl-sep">·</span>
+  <a href="privacy.html">Privacy Policy</a>
 </div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bn-btn active" onclick="bnNav('index.html')" data-page="home">
+    <span class="bn-icon">🏠</span>
+    <span class="bn-lbl">Home</span>
+  </button>
+  <button class="bn-btn" onclick="bnNav('leaderboard.html')" data-page="leaderboard">
+    <span class="bn-icon">🏆</span>
+    <span class="bn-lbl">Ranks</span>
+  </button>
+  <button class="bn-btn" onclick="bnNav('profile.html')" data-page="profile">
+    <span class="bn-icon">👤</span>
+    <span class="bn-lbl">Profile</span>
+  </button>
+  <button class="bn-btn" onclick="selectMode('daily')" data-page="daily">
+    <span class="bn-icon">📅</span>
+    <span class="bn-lbl">Daily</span>
+  </button>
+</nav>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -105,15 +159,25 @@ var db=firebase.database();
 
 function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
 function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
-
 var user=loadSession();
 if(!user){location.href='login.html';}
 
 function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
 function avatarUrl(url,name){
   if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
-  var i=encodeURIComponent((name||'?').substring(0,2).toUpperCase());
-  return'https://ui-avatars.com/api/?name='+i+'&background=6d51f5&color=fff&bold=true&size=80';
+  return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
+}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+';">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
 }
 
 function fillUI(u){
@@ -141,9 +205,7 @@ if(user){
   db.ref('users/'+user.uid).get().then(function(snap){
     if(snap.exists()){
       var fresh=Object.assign({uid:user.uid},snap.val());
-      saveSession(fresh);
-      fillUI(fresh);
-      // global rank
+      saveSession(fresh); user=fresh; fillUI(fresh);
       db.ref('users').get().then(function(all){
         if(!all.exists())return;
         var arr=Object.values(all.val()).filter(function(x){return x.username;}).sort(function(a,b){return(b.score||0)-(a.score||0);});
@@ -152,29 +214,118 @@ if(user){
       });
     }
   }).catch(function(){});
+  checkAdCooldown();
 }
 
+/* ── Navigation ── */
 window.selectMode=function(mode){
+  if(!loadSession()){location.href='login.html';return;}
   sessionStorage.setItem('ww_mode',mode);
   location.href='game.html';
 };
-
+window.bnNav=function(page){
+  if(!loadSession()){location.href='login.html';return;}
+  location.href=page;
+};
 window.doLogout=async function(){
   if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}
-  localStorage.removeItem('ww_user'); sessionStorage.removeItem('ww_mode');
+  localStorage.removeItem('ww_user');sessionStorage.removeItem('ww_mode');
   location.href='login.html';
 };
 
-/* ad */
-(function(){
-  var f=document.getElementById('ad-frame');
-  if(!f)return;
-  var close='<'+'/script>';
-  var html='<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
-    +'<script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');'
-    +close+'</body></html>';
-  if('srcdoc'in f){f.srcdoc=html;}else{var b=new Blob([html],{type:'text/html'});f.src=URL.createObjectURL(b);}
-})();
+/* ══════════════════════════════════════════════
+   REWARDED VIDEO AD — 5-min cooldown via Firebase
+══════════════════════════════════════════════ */
+var AD_COOLDOWN = 5*60*1000;
+var AD_REWARD   = 10;
+var _adPlaying  = false;
+var _cooldownIv = null;
+
+function checkAdCooldown(){
+  if(!user||!user.uid)return;
+  db.ref('users/'+user.uid+'/lastAdWatch').get().then(function(snap){
+    var last=snap.exists()?snap.val():0;
+    var elapsed=Date.now()-last;
+    if(elapsed>=AD_COOLDOWN){ enableAdBtn(); }
+    else{ startCooldownUI(AD_COOLDOWN-elapsed); }
+  }).catch(function(){enableAdBtn();});
+}
+
+function enableAdBtn(){
+  var btn=document.getElementById('watchAdBtn');
+  if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
+  document.getElementById('rad-timer').classList.add('hidden');
+  if(_cooldownIv){clearInterval(_cooldownIv);_cooldownIv=null;}
+}
+
+function startCooldownUI(ms){
+  var btn=document.getElementById('watchAdBtn');
+  var timerEl=document.getElementById('rad-timer');
+  var cd=document.getElementById('rad-countdown');
+  if(btn){btn.disabled=true;btn.textContent='On Cooldown';}
+  timerEl.classList.remove('hidden');
+  var end=Date.now()+ms;
+  function tick(){
+    var left=Math.max(0,end-Date.now());
+    var m=Math.floor(left/60000), s=Math.floor((left%60000)/1000);
+    if(cd)cd.textContent=m+':'+(s<10?'0':'')+s;
+    if(left<=0){clearInterval(_cooldownIv);_cooldownIv=null;enableAdBtn();}
+  }
+  tick();
+  _cooldownIv=setInterval(tick,1000);
+}
+
+window.startRewardedAd=function(){
+  if(!user){toast('Log in to earn rewards.','warn');return;}
+  if(_adPlaying){return;}
+  _adPlaying=true;
+  var btn=document.getElementById('watchAdBtn');
+  var container=document.getElementById('container-1');
+  if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  container.style.display='block';
+
+  /* EZMob outstream: hook onComplete if API exists, else timed fallback */
+  var completed=false;
+  function onAdComplete(){
+    if(completed)return; completed=true;
+    _adPlaying=false;
+    container.style.display='none';
+    rewardUser();
+  }
+  function onAdError(){
+    if(completed)return; completed=true;
+    _adPlaying=false;
+    container.style.display='none';
+    if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
+    toast('Ad unavailable. Try again later.','warn');
+  }
+
+  try{
+    if(window.ezmob&&window.ezmob.play){
+      window.ezmob.play('container-1',{onComplete:onAdComplete,onError:onAdError});
+    } else {
+      /* Timed simulation — ad SDK loads async, reward after 5s */
+      setTimeout(onAdComplete, 5000);
+    }
+  }catch(e){ onAdError(); }
+};
+
+async function rewardUser(){
+  if(!user||!user.uid)return;
+  try{
+    var snap=await db.ref('users/'+user.uid).get();
+    if(!snap.exists())return;
+    var ud=snap.val();
+    var newMoney=(ud.money||0)+AD_REWARD;
+    await db.ref('users/'+user.uid).update({money:newMoney,lastAdWatch:Date.now()});
+    user.money=newMoney; saveSession(user);
+    document.getElementById('bar-money').textContent=fmtNum(newMoney);
+    toast('+'+AD_REWARD+' 💰 Reward added!','success');
+    startCooldownUI(AD_COOLDOWN);
+  }catch(e){
+    toast('Could not save reward. Check connection.','error');
+  }
+}
 </script>
 <script src="/pwa.js"></script>
 </body>

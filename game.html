@@ -173,7 +173,7 @@
    wait for the SDK only to find out we need to login.
 ══════════════════════════════════════════════ */
 (function earlyAuthCheck(){
-  var raw = sessionStorage.getItem('ww_user');
+  var raw = localStorage.getItem('ww_user');
   if(!raw){
     // Not logged in — show helpful message instead of spinning forever
     document.getElementById('load-msg').textContent = 'Please log in first.';
@@ -183,7 +183,7 @@
   }
   try{ JSON.parse(raw); }
   catch(e){
-    sessionStorage.removeItem('ww_user');
+    localStorage.removeItem('ww_user');
     document.getElementById('load-msg').textContent = 'Session error. Please log in again.';
     document.getElementById('load-spin').style.display = 'none';
     document.getElementById('load-btn').style.display = 'inline-block';
@@ -220,8 +220,8 @@ var db = firebase.database();
    UTILITIES
 ══════════════════════════════════════════════ */
 function $(id){ return document.getElementById(id); }
-function loadSession(){ try{ return JSON.parse(sessionStorage.getItem('ww_user')); }catch(e){ return null; } }
-function saveSession(u){ sessionStorage.setItem('ww_user', JSON.stringify(u)); }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem('ww_user')); }catch(e){ return null; } }
+function saveSession(u){ localStorage.setItem('ww_user', JSON.stringify(u)); }
 
 function hideCover(){
   var c = $('loading-cover');

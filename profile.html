@@ -1,249 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WordWar — Profile</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WordWar — Profile</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
   <div class="nav-links">
-    <a href="index.html"       class="nav-link">Home</a>
-    <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+    <a href="index.html"       class="nav-link m-show">← Home</a>
+    <a href="leaderboard.html" class="nav-link">Ranks</a>
     <a href="profile.html"     class="nav-link active">Profile</a>
     <div class="nav-sep"></div>
-    <a href="profile.html" class="user-badge">
-      <img class="ub-avatar" id="nav-avatar" src="" alt="" />
-      <span class="ub-name" id="nav-username">…</span>
-      <div class="online-dot"></div>
-    </a>
+    <button class="nav-link" onclick="doLogout()">Logout</button>
   </div>
 </nav>
 
-<div style="max-width:780px;margin:0 auto;padding:36px 24px 60px;">
-
-  <!-- Profile card -->
-  <div class="card mb-16">
-    <div class="profile-header">
-      <div class="profile-avatar-wrap">
-        <img id="profile-avatar" class="profile-avatar" src="" alt="avatar" />
-        <div class="avatar-edit-btn" onclick="document.getElementById('photo-input').click()" title="Change photo">✏️</div>
-        <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="changePhoto(event)" />
-      </div>
-      <div class="profile-info min-w-0">
-        <div class="profile-name truncate" id="profile-username">Loading…</div>
-        <div class="profile-meta">
-          <div class="status-badge">
-            <span class="status-dot online"></span>
-            Online
-          </div>
-          <span class="tag tag-purple" id="level-tag">Level 1</span>
-        </div>
-        <p class="text-sm text-faint" id="profile-joined">Joined —</p>
-        <div class="lv-wrap">
-          <div class="lv-info">
-            <span id="lvl-from">Level 1</span>
-            <span id="lvl-xp" class="text-faint">0 / 500 XP</span>
-          </div>
-          <div class="lv-track">
-            <div class="lv-fill" id="lvl-fill" style="width:0%"></div>
-          </div>
-        </div>
-      </div>
+<div class="section-wrap page-enter">
+  <div class="profile-header">
+    <div style="position:relative;display:inline-block;">
+      <img id="prof-avatar" src="" alt="" style="width:84px;height:84px;border-radius:50%;border:3px solid var(--b2);display:block;"/>
     </div>
-
-    <div class="divider"></div>
-
-    <!-- Currency row -->
-    <div class="flex gap-20" style="flex-wrap:wrap;">
-      <div class="flex items-center gap-12">
-        <span style="font-size:1.5rem;">💰</span>
-        <div>
-          <div class="text-mono fw-700" id="p-money" style="font-size:1.25rem;">—</div>
-          <div class="text-xs text-faint">Money</div>
-        </div>
+    <div class="profile-info">
+      <h2 id="prof-name">…</h2>
+      <div class="flex gap-8 flex-wrap mt-4">
+        <span class="tag tag-purple" id="prof-level">Lv. 1</span>
+        <span class="tag" id="prof-online" style="background:rgba(22,194,106,0.12);color:#16c26a;border-color:rgba(22,194,106,0.25);">● Online</span>
       </div>
-      <div class="flex items-center gap-12">
-        <span style="font-size:1.5rem;">⭐</span>
-        <div>
-          <div class="text-mono fw-700" id="p-score" style="font-size:1.25rem;">—</div>
-          <div class="text-xs text-faint">Score</div>
-        </div>
-      </div>
-      <div class="flex items-center gap-12">
-        <span style="font-size:1.5rem;">🏅</span>
-        <div>
-          <div class="text-mono fw-700" id="p-rank" style="font-size:1.25rem;">—</div>
-          <div class="text-xs text-faint">Global Rank</div>
-        </div>
+      <div class="flex gap-16 mt-12">
+        <div><div class="text-mono fw-700 text-accent" id="prof-score">0</div><div class="text-xs text-muted">Score</div></div>
+        <div><div class="text-mono fw-700 text-gold"   id="prof-money">0</div><div class="text-xs text-muted">Money</div></div>
+        <div><div class="text-mono fw-700"             id="prof-wins">0</div><div class="text-xs text-muted">Wins</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Stat grid -->
-  <div class="stat-grid mb-16">
-    <div class="stat-card">
-      <span class="stat-val text-green" id="s-wins">—</span>
-      <span class="stat-lbl">Wins</span>
+  <div class="level-bar-wrap mt-16">
+    <div class="flex justify-between text-xs text-muted mb-4">
+      <span>Level <span id="lv-cur">1</span></span>
+      <span><span id="lv-xp">0</span> / 500 XP to next</span>
     </div>
-    <div class="stat-card">
-      <span class="stat-val text-red" id="s-losses">—</span>
-      <span class="stat-lbl">Losses</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val" id="s-total">—</span>
-      <span class="stat-lbl">Total Games</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val text-yellow" id="s-wr">—%</span>
-      <span class="stat-lbl">Win Rate</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val text-accent" id="s-score">—</span>
-      <span class="stat-lbl">Score</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val text-gold" id="s-money">—</span>
-      <span class="stat-lbl">Money</span>
-    </div>
+    <div class="level-bar"><div class="level-fill" id="lv-fill" style="width:0%"></div></div>
   </div>
 
-  <!-- Achievements -->
-  <div class="card mb-16">
-    <h3 class="mb-16">🎖 Achievements</h3>
-    <div class="badges-wrap" id="achievements-list">
-      <span class="text-faint text-sm">Loading…</span>
-    </div>
-  </div>
+  <div class="divider mt-20"></div>
+  <h3 class="mt-16 mb-12">Achievements</h3>
+  <div class="badges-strip" id="badges"></div>
 
-  <!-- Account actions -->
-  <div class="card">
-    <h3 class="mb-16">Account Settings</h3>
-    <div class="flex gap-8" style="flex-wrap:wrap;">
-      <a href="index.html" class="btn btn-ghost btn-sm">← Home</a>
-      <button class="btn btn-danger btn-sm" onclick="openModal('modal-delete')">Delete Account</button>
-      <button class="btn btn-secondary btn-sm" onclick="doLogout()">Logout</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- Delete modal -->
-<div class="modal-overlay" id="modal-delete">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>⚠️ Delete Account</h3>
-      <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
-    </div>
-    <p class="text-muted text-sm mb-16">
-      This is permanent. All progress, score, and data will be deleted.
-    </p>
-    <div class="form-group">
-      <label class="form-label">Type your username to confirm</label>
-      <input class="form-control" id="del-confirm" type="text" placeholder="your_username" />
-    </div>
-    <div class="flex gap-8 mt-16">
-      <button class="btn btn-danger flex-1" onclick="doDelete()">Delete Forever</button>
-      <button class="btn btn-ghost flex-1" onclick="closeModal('modal-delete')">Cancel</button>
-    </div>
+  <div class="divider mt-20"></div>
+  <h3 class="mt-16 mb-12">Actions</h3>
+  <div class="flex gap-8 flex-wrap">
+    <button class="btn btn-secondary" onclick="changePhoto()">📷 Change Photo URL</button>
+    <button class="btn btn-danger"    onclick="deleteAccount()">🗑 Delete Account</button>
+    <button class="btn btn-ghost"     onclick="doLogout()">← Logout</button>
   </div>
 </div>
 
-<script type="module">
-import {
-  requireAuth, logoutUser, deleteAccount, saveSession,
-  db, ref, onValue, get, update
-} from './firebase-config.js';
-import { showToast, getLevel, getLevelProgress, ACHIEVEMENTS, avatarUrl, fmtNum, openModal, closeModal } from './main.js';
+<div class="ad-banner">
+  <iframe id="ad-frame" scrolling="no" title="Ad" style="border:none;width:320px;height:50px;display:block;"></iframe>
+</div>
 
-const user = requireAuth('login.html');
-document.getElementById('nav-username').textContent = user.username;
-document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
 
-window.openModal  = openModal;
-window.closeModal = closeModal;
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user=loadSession();
+if(!user){location.href='login.html';}
 
-const userRef = ref(db, 'users/' + user.uid);
+function avatarUrl(url,name){
+  if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
+  return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
+}
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
 
-onValue(userRef, snap => {
-  if (!snap.exists()) return;
-  const d = snap.val();
-  saveSession({ uid: user.uid, ...d });
+var ACHIEVEMENTS=[
+  {id:'first_win',icon:'🏆',label:'First Victory',cond:function(u){return(u.wins||0)>=1;}},
+  {id:'ten_wins',icon:'⚔️',label:'Veteran',cond:function(u){return(u.wins||0)>=10;}},
+  {id:'daily_hero',icon:'📅',label:'Daily Warrior',cond:function(u){return(u.totalGames||0)>=1;}},
+  {id:'score_500',icon:'💰',label:'Score Hunter',cond:function(u){return(u.score||0)>=500;}},
+  {id:'score_2k',icon:'👑',label:'Elite Player',cond:function(u){return(u.score||0)>=2000;}},
+  {id:'games_50',icon:'🎮',label:'Dedicated',cond:function(u){return(u.totalGames||0)>=50;}},
+  {id:'streak_3',icon:'🔥',label:'On Fire',cond:function(u){return(u.winStreak||0)>=3;}},
+];
 
-  document.getElementById('profile-username').textContent = d.username;
-  const av = avatarUrl(d.photoURL, d.username);
-  document.getElementById('profile-avatar').src = av;
-  document.getElementById('nav-avatar').src     = av;
-  document.getElementById('profile-joined').textContent = 'Joined ' + new Date(d.createdAt).toLocaleDateString();
-
-  document.getElementById('p-money').textContent = fmtNum(d.money);
-  document.getElementById('p-score').textContent = fmtNum(d.score);
-
-  document.getElementById('s-wins').textContent   = fmtNum(d.wins);
-  document.getElementById('s-losses').textContent = fmtNum(d.losses);
-  document.getElementById('s-total').textContent  = fmtNum(d.totalGames);
-  document.getElementById('s-score').textContent  = fmtNum(d.score);
-  document.getElementById('s-money').textContent  = fmtNum(d.money);
-
-  const wr = d.totalGames > 0 ? Math.round((d.wins / d.totalGames) * 100) : 0;
-  document.getElementById('s-wr').textContent = wr + '%';
-
-  const lvl  = getLevel(d.score);
-  const pct  = getLevelProgress(d.score);
-  const base = (lvl - 1) * 500;
-  document.getElementById('level-tag').textContent = 'Level ' + lvl;
-  document.getElementById('lvl-from').textContent  = 'Level ' + lvl;
-  document.getElementById('lvl-xp').textContent    = `${(d.score||0) - base} / 500 XP`;
-  document.getElementById('lvl-fill').style.width  = pct + '%';
-
-  // Achievements
-  document.getElementById('achievements-list').innerHTML = ACHIEVEMENTS.map(a => {
-    const earned = a.condition(d);
-    return `<div class="badge ${earned ? 'earned' : 'locked'}">
-      <span>${a.icon}</span>
-      <span>${a.label}</span>
-      ${earned ? '' : '<span style="font-size:0.6rem;opacity:0.5;">🔒</span>'}
-    </div>`;
+function fillUI(u){
+  document.getElementById('prof-avatar').src=avatarUrl(u.photoURL,u.username);
+  document.getElementById('prof-name').textContent=u.username||'…';
+  document.getElementById('prof-score').textContent=fmtNum(u.score||0)+' ⭐';
+  document.getElementById('prof-money').textContent=fmtNum(u.money||0)+' 💰';
+  document.getElementById('prof-wins').textContent=(u.wins||0)+' 🏆';
+  var lvl=Math.floor((u.score||0)/500)+1;
+  var xp=(u.score||0)%500;
+  document.getElementById('prof-level').textContent='Lv. '+lvl;
+  document.getElementById('lv-cur').textContent=lvl;
+  document.getElementById('lv-xp').textContent=xp;
+  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
+  var earned=u.achievements||{};
+  document.getElementById('badges').innerHTML=ACHIEVEMENTS.map(function(a){
+    var e=earned[a.id];
+    return'<div class="badge badge-tooltip'+(e?' earned':' locked')+'">'
+      +'<span>'+a.icon+'</span><span>'+a.label+'</span>'
+      +(e?'':'<span style="font-size:.58rem;opacity:.5;">🔒</span>')
+      +'</div>';
   }).join('');
-});
+}
 
-// Global rank
-(async () => {
-  const snap = await get(ref(db, 'users'));
-  if (!snap.exists()) return;
-  const all  = Object.values(snap.val()).filter(u => u.username).sort((a,b) => (b.score||0)-(a.score||0));
-  const idx  = all.findIndex(u => u.username === user.username);
-  document.getElementById('p-rank').textContent = idx >= 0 ? '#' + (idx + 1) : '—';
+if(user){
+  fillUI(user);
+  db.ref('users/'+user.uid).get().then(function(snap){
+    if(snap.exists()){var f=Object.assign({uid:user.uid},snap.val());saveSession(f);fillUI(f);}
+  }).catch(function(){});
+}
+
+window.doLogout=async function(){
+  if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}
+  localStorage.removeItem('ww_user'); sessionStorage.removeItem('ww_mode');location.href='login.html';
+};
+
+window.changePhoto=async function(){
+  var url=prompt('Enter new photo URL:');
+  if(!url||!url.startsWith('http')){alert('Please enter a valid URL starting with http');return;}
+  await db.ref('users/'+user.uid).update({photoURL:url});
+  var s=await db.ref('users/'+user.uid).get();
+  var f=Object.assign({uid:user.uid},s.val());
+  saveSession(f);fillUI(f);
+};
+
+window.deleteAccount=async function(){
+  if(!confirm('Delete your account permanently? This cannot be undone.'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  await db.ref('users/'+user.uid).remove();
+  await db.ref('usernames/'+user.username.toLowerCase()).remove();
+  localStorage.removeItem('ww_user'); sessionStorage.removeItem('ww_mode');location.href='login.html';
+};
+
+/* ad */
+(function(){
+  var f=document.getElementById('ad-frame');if(!f)return;
+  var close='<'+'/script>';
+  var html='<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
+    +'<script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');'
+    +close+'</body></html>';
+  if('srcdoc'in f){f.srcdoc=html;}else{var b=new Blob([html],{type:'text/html'});f.src=URL.createObjectURL(b);}
 })();
-
-// Change photo
-window.changePhoto = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 600_000) { showToast('Photo must be under 600KB.', 'warn'); return; }
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    await update(userRef, { photoURL: ev.target.result });
-    showToast('Profile photo updated!', 'success');
-  };
-  reader.readAsDataURL(file);
-};
-
-window.doDelete = async function() {
-  const val = document.getElementById('del-confirm').value.trim();
-  if (val !== user.username) { showToast('Username does not match.', 'error'); return; }
-  await deleteAccount(user.uid, user.username);
-  showToast('Account deleted.', 'info');
-  setTimeout(() => window.location.href = 'login.html', 800);
-};
-
-window.doLogout = async function() {
-  await logoutUser(user.uid);
-  window.location.href = 'login.html';
-};
 </script>
 </body>
 </html>

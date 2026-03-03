@@ -1,175 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WordWar — Home</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WordWar — Home</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
-<!-- Navbar -->
 <nav class="navbar">
-  <a href="index.html" class="nav-logo">
-    <span class="w1">WORD</span><span class="w2">WAR</span>
-  </a>
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
   <div class="nav-links">
-    <a href="index.html"       class="nav-link active">Home</a>
-    <a href="leaderboard.html" class="nav-link">Leaderboard</a>
+    <a href="index.html"       class="nav-link active m-show">Home</a>
+    <a href="leaderboard.html" class="nav-link">Ranks</a>
     <a href="profile.html"     class="nav-link">Profile</a>
     <div class="nav-sep"></div>
-    <a href="profile.html" class="user-badge" id="user-badge">
-      <img class="ub-avatar" id="nav-avatar" src="" alt="" />
-      <span class="ub-name"  id="nav-username">…</span>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
       <div class="online-dot"></div>
     </a>
-    <button onclick="doLogout()" class="nav-link btn-ghost" style="cursor:pointer;color:var(--text2);border:none;">Logout</button>
+    <button class="nav-link" onclick="doLogout()">Logout</button>
   </div>
 </nav>
 
-<!-- Hero -->
-<div class="hero">
-  <h1><span class="accent">Choose</span> Your Battle</h1>
-  <p class="mt-8">Guess secret words, crush opponents, climb the ranks. Your next word war starts now.</p>
+<div class="hero page-enter">
+  <div class="hero-title">
+    <span class="ht-line1">WORD</span>
+    <span class="ht-line2">WAR</span>
+  </div>
+  <p class="hero-sub">Competitive word guessing. Battle friends. Climb the ranks.</p>
 </div>
 
 <!-- Currency strip -->
-<div class="currency-strip">
-  <div class="cur-item">
-    <span class="cur-icon">💰</span>
-    <div>
-      <div class="cur-val" id="bar-money">—</div>
-      <div class="cur-lbl">Money</div>
+<div class="currency-strip page-enter">
+  <div class="cs-item"><span class="cs-icon">💰</span><span class="cs-val" id="bar-money">0</span><span class="cs-lbl">Money</span></div>
+  <div class="cs-item"><span class="cs-icon">⭐</span><span class="cs-val" id="bar-score">0</span><span class="cs-lbl">Score</span></div>
+  <div class="cs-item"><span class="cs-icon">🏆</span><span class="cs-val" id="bar-wins">0</span><span class="cs-lbl">Wins</span></div>
+  <div class="cs-item"><span class="cs-icon">🏅</span><span class="cs-val" id="bar-rank">—</span><span class="cs-lbl">Rank</span></div>
+</div>
+
+<!-- Mode cards -->
+<div class="section-wrap page-enter">
+  <h2 class="section-title">Choose Your Battle</h2>
+  <div class="mode-grid">
+    <div class="mode-card" onclick="selectMode('offline')">
+      <div class="mc-icon">🤝</div>
+      <h3 class="mc-title">Offline</h3>
+      <p class="mc-desc">Pass-and-play. Player 1 sets the word, Player 2 guesses.</p>
+      <button class="btn btn-primary btn-full mt-16">Play Offline</button>
     </div>
-  </div>
-  <div class="cur-item">
-    <span class="cur-icon">⭐</span>
-    <div>
-      <div class="cur-val" id="bar-score">—</div>
-      <div class="cur-lbl">Score</div>
+    <div class="mode-card" onclick="selectMode('online')">
+      <div class="mc-icon">🌐</div>
+      <h3 class="mc-title">Online</h3>
+      <p class="mc-desc">Challenge real players with score bets. Real-time multiplayer.</p>
+      <button class="btn btn-primary btn-full mt-16">Play Online</button>
     </div>
-  </div>
-  <div class="cur-item">
-    <span class="cur-icon">🏆</span>
-    <div>
-      <div class="cur-val" id="bar-wins">—</div>
-      <div class="cur-lbl">Wins</div>
+    <div class="mode-card" onclick="selectMode('daily')">
+      <div class="mc-icon">📅</div>
+      <h3 class="mc-title">Daily</h3>
+      <p class="mc-desc">One word per day. 60-second timer. Earn money and score.</p>
+      <button class="btn btn-gold btn-full mt-16">Daily Challenge</button>
     </div>
   </div>
 </div>
 
-<!-- Mode selector -->
-<div class="mode-grid">
-  <div class="mode-card offline" onclick="selectMode('offline')">
-    <span class="mode-icon">🤝</span>
-    <h3>Offline Mode</h3>
-    <p>Pass-and-play on one device. One player sets the word, the other guesses.</p>
-    <span class="mode-pill pill-green">Free to play</span>
+<!-- Stats -->
+<div class="section-wrap page-enter" id="stats-section">
+  <h2 class="section-title">Your Stats</h2>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="st-games">0</div><div class="stat-lbl">Games</div></div>
+    <div class="stat-card"><div class="stat-val" id="st-wins">0</div><div class="stat-lbl">Wins</div></div>
+    <div class="stat-card"><div class="stat-val" id="st-losses">0</div><div class="stat-lbl">Losses</div></div>
+    <div class="stat-card"><div class="stat-val" id="st-winrate">0%</div><div class="stat-lbl">Win Rate</div></div>
+    <div class="stat-card"><div class="stat-val" id="st-score">0</div><div class="stat-lbl">Score</div></div>
+    <div class="stat-card"><div class="stat-val" id="st-level">1</div><div class="stat-lbl">Level</div></div>
   </div>
-
-  <div class="mode-card online" onclick="selectMode('online')">
-    <span class="mode-icon">🌐</span>
-    <h3>Online Multiplayer</h3>
-    <p>Create or join a room, set a bet, and battle a real opponent in real-time.</p>
-    <span class="mode-pill pill-purple">Score Betting</span>
-  </div>
-
-  <div class="mode-card daily" onclick="selectMode('daily')">
-    <span class="mode-icon">📅</span>
-    <h3>Daily Challenge</h3>
-    <p>One mystery word per day. 60 seconds. Win exclusive money & score rewards.</p>
-    <span class="mode-pill pill-gold">Daily Rewards</span>
+  <div class="level-bar-wrap" style="margin-top:18px;">
+    <div class="flex justify-between text-xs text-muted mb-4">
+      <span>Level <span id="lv-cur">1</span></span>
+      <span><span id="lv-xp">0</span> / 500 XP</span>
+    </div>
+    <div class="level-bar"><div class="level-fill" id="lv-fill" style="width:0%"></div></div>
   </div>
 </div>
 
-<!-- Quick stats -->
-<div class="stats-section">
-  <div class="card">
-    <div class="flex items-center justify-between mb-16">
-      <h3>Your Stats</h3>
-      <a href="profile.html" class="btn btn-ghost btn-sm">Full Profile →</a>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-card">
-        <span class="stat-val text-green"  id="qs-wins">—</span>
-        <span class="stat-lbl">Wins</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val text-red"    id="qs-losses">—</span>
-        <span class="stat-lbl">Losses</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val"             id="qs-total">—</span>
-        <span class="stat-lbl">Games</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val text-accent" id="qs-score">—</span>
-        <span class="stat-lbl">Score</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val text-gold"   id="qs-money">—</span>
-        <span class="stat-lbl">Money</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-val text-accent2" id="qs-level">—</span>
-        <span class="stat-lbl">Level</span>
-      </div>
-    </div>
-
-    <div class="lv-wrap">
-      <div class="lv-info">
-        <span id="lbl-level">Level 1</span>
-        <span id="lbl-progress" class="text-faint">0% to next level</span>
-      </div>
-      <div class="lv-track">
-        <div class="lv-fill" id="level-fill" style="width:0%"></div>
-      </div>
-    </div>
-  </div>
+<div class="ad-banner">
+  <iframe id="ad-frame" scrolling="no" title="Ad" style="border:none;width:320px;height:50px;display:block;"></iframe>
 </div>
 
-<script type="module">
-import { requireAuth, logoutUser, db, ref, onValue } from './firebase-config.js';
-import { showToast, getLevel, getLevelProgress, avatarUrl, fmtNum } from './main.js';
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
 
-const user = requireAuth('login.html');
-if (!user) throw new Error('Not authenticated');
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
 
-document.getElementById('nav-username').textContent = user.username;
-document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+var user=loadSession();
+if(!user){location.href='login.html';}
 
-onValue(ref(db, 'users/' + user.uid), snap => {
-  if (!snap.exists()) return;
-  const d = snap.val();
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function avatarUrl(url,name){
+  if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
+  var i=encodeURIComponent((name||'?').substring(0,2).toUpperCase());
+  return'https://ui-avatars.com/api/?name='+i+'&background=6d51f5&color=fff&bold=true&size=80';
+}
 
-  document.getElementById('bar-money').textContent = fmtNum(d.money);
-  document.getElementById('bar-score').textContent = fmtNum(d.score);
-  document.getElementById('bar-wins').textContent  = fmtNum(d.wins);
+function fillUI(u){
+  document.getElementById('nav-username').textContent=u.username||'…';
+  document.getElementById('nav-avatar').src=avatarUrl(u.photoURL,u.username);
+  document.getElementById('bar-money').textContent=fmtNum(u.money||0);
+  document.getElementById('bar-score').textContent=fmtNum(u.score||0);
+  document.getElementById('bar-wins').textContent=fmtNum(u.wins||0);
+  document.getElementById('st-games').textContent=u.totalGames||0;
+  document.getElementById('st-wins').textContent=u.wins||0;
+  document.getElementById('st-losses').textContent=u.losses||0;
+  var wr=u.totalGames>0?Math.round((u.wins||0)*100/u.totalGames)+'%':'0%';
+  document.getElementById('st-winrate').textContent=wr;
+  document.getElementById('st-score').textContent=fmtNum(u.score||0);
+  var lvl=Math.floor((u.score||0)/500)+1;
+  var xp=(u.score||0)%500;
+  document.getElementById('st-level').textContent=lvl;
+  document.getElementById('lv-cur').textContent=lvl;
+  document.getElementById('lv-xp').textContent=xp;
+  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
+}
 
-  document.getElementById('qs-wins').textContent   = fmtNum(d.wins);
-  document.getElementById('qs-losses').textContent = fmtNum(d.losses);
-  document.getElementById('qs-total').textContent  = fmtNum(d.totalGames);
-  document.getElementById('qs-score').textContent  = fmtNum(d.score);
-  document.getElementById('qs-money').textContent  = fmtNum(d.money);
+if(user){
+  fillUI(user);
+  db.ref('users/'+user.uid).get().then(function(snap){
+    if(snap.exists()){
+      var fresh=Object.assign({uid:user.uid},snap.val());
+      saveSession(fresh);
+      fillUI(fresh);
+      // global rank
+      db.ref('users').get().then(function(all){
+        if(!all.exists())return;
+        var arr=Object.values(all.val()).filter(function(x){return x.username;}).sort(function(a,b){return(b.score||0)-(a.score||0);});
+        var idx=arr.findIndex(function(x){return x.username===fresh.username;});
+        document.getElementById('bar-rank').textContent=idx>=0?'#'+(idx+1):'—';
+      });
+    }
+  }).catch(function(){});
+}
 
-  const lvl = getLevel(d.score);
-  const pct = getLevelProgress(d.score);
-  document.getElementById('qs-level').textContent     = lvl;
-  document.getElementById('lbl-level').textContent    = `Level ${lvl}`;
-  document.getElementById('lbl-progress').textContent = `${Math.round(pct)}% to next level`;
-  document.getElementById('level-fill').style.width   = pct + '%';
-});
-
-window.selectMode = function(mode) {
-  sessionStorage.setItem('ww_mode', mode);
-  window.location.href = 'game.html';
+window.selectMode=function(mode){
+  sessionStorage.setItem('ww_mode',mode);
+  location.href='game.html';
 };
 
-window.doLogout = async function() {
-  await logoutUser(user.uid);
-  window.location.href = 'login.html';
+window.doLogout=async function(){
+  if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}
+  localStorage.removeItem('ww_user'); sessionStorage.removeItem('ww_mode');
+  location.href='login.html';
 };
+
+/* ad */
+(function(){
+  var f=document.getElementById('ad-frame');
+  if(!f)return;
+  var close='<'+'/script>';
+  var html='<!DOCTYPE html><html><head><style>*{margin:0;padding:0;}body{background:#0e0e1e;display:flex;align-items:center;justify-content:center;height:50px;overflow:hidden;}</style></head><body>'
+    +'<script>var __jscp=function(){for(var b=0,a=window;a!=a.parent;)++b,a=a.parent;if(a=window.parent==window?document.URL:document.referrer){var c=a.indexOf("://");0<=c&&(a=a.substring(c+3));c=a.indexOf("/");0<=c&&(a=a.substring(0,c))}var b={pu:a,"if":b,rn:new Number(Math.floor(99999999*Math.random())+1)},a=[],d;for(d in b)a.push(d+"="+encodeURIComponent(b[d]));return encodeURIComponent(a.join("&"))};document.write(\'<sc\'+\'ript src="//cpm.ezmob.com/tag?zone_id=338024&size=320x50&subid=&j=\'+__jscp()+\'"><\\/sc\'+\'ript>\');'
+    +close+'</body></html>';
+  if('srcdoc'in f){f.srcdoc=html;}else{var b=new Blob([html],{type:'text/html'});f.src=URL.createObjectURL(b);}
+})();
 </script>
 </body>
 </html>

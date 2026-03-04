@@ -19,61 +19,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- EZMob outstream video ad -->
-<script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
+<!-- Qualiclicks video ad -->
 <script>
-var pbjs = pbjs || {};
-pbjs.que = pbjs.que || [];
-
-pbjs.que.push(function() {
-	var adUnits = [{
-		code: 'container-1',
-		mediaTypes: {
-			video: {
-				context: 'outstream',
-				playerSize: [300, 250],
-				renderer: {
-					url: 'https://docdn.ezmob.com/outstream_pb.js',
-					render: renderOutstream
-				}
-			}
-		},
-		bids: [{
-			bidder: 'adkernel',
-			params: {
-			  zoneId: 338517,
-			  host: 'cpm.ezmob.com'
-			}
-		}]
-	}];
-	pbjs.addAdUnits(adUnits);
-	pbjs.requestBids({
-		bidsBackHandler: function(bidResponses) {
-			process('container-1');
-		}
-	});
-});
-
-function process(adUnit) {
-	var bidResponses = pbjs.getHighestCpmBids(adUnit);
-	if (bidResponses.length == 0) {
-		return;
-	}
-	var bid = bidResponses[0];
-	pbjs.renderAd(document, bid.adId);
-	/* Ad rendered — reward user after 15s watch time */
-	setTimeout(function(){ rewardUser(); }, 15000);
-	return true;
-}
-
-function renderOutstream(bid) {
-	OutstreamPlayerPB(bid, {
-		displayMode: 'floating',
-		transitions: true,
-		vpaidMode: 2
-	});
-}
+window.adk_pdisp = {'h' : 'xml.qualiclicks.com',
+  'f' : ,
+  'a' : '',
+  'ps' : [5],
+  'cin' : 4,
+  's' : '',
+  'q' : [],
+  't' : 6};
 </script>
+<script src='//static.qualiclicks.com/tabu/display.js'></script>
 
 <script>
 firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
@@ -187,37 +144,13 @@ window.startRewardedAd=function(){
   if(_adPlaying){return;}
   _adPlaying=true;
   var btn=document.getElementById('watchAdBtn');
-  if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  if(btn){btn.disabled=true;btn.textContent='Watching…';}
 
-  /* Wait for pbjs SDK (async script) then request a fresh bid */
-  var polls=0;
-  function waitAndRequest(){
-    if(typeof pbjs==='undefined'||typeof pbjs.requestBids!=='function'){
-      if(++polls<20){ setTimeout(waitAndRequest,300); }
-      else{
-        _adPlaying=false;
-        if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
-        toast('Ad SDK failed to load.','warn');
-      }
-      return;
-    }
-    /* Use provider's exact pattern — process() handles render + reward */
-    pbjs.que.push(function(){
-      pbjs.requestBids({
-        bidsBackHandler: function(){
-          var filled = process('container-1');
-          if(!filled){
-            _adPlaying=false;
-            if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
-            toast('No ad available right now. Try again later.','warn');
-          } else {
-            if(btn) btn.textContent='Watching…';
-          }
-        }
-      });
-    });
-  }
-  waitAndRequest();
+  /* Qualiclicks ad is already loaded via head script and renders automatically.
+     Reward the user after 15 seconds of watch time. */
+  setTimeout(function(){
+    rewardUser();
+  }, 15000);
 };
 
 async function rewardUser(){

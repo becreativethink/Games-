@@ -16,11 +16,10 @@
 <link rel="stylesheet" href="style.css"/>
 <script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
 <script>
-/* pbjs queue bootstrapped — SDK fills this when ready */
 var pbjs = pbjs || {};
 pbjs.que = pbjs.que || [];
 
-/* renderOutstream must be globally defined BEFORE pbjs uses it */
+/* Must be global — called by outstream_pb.js renderer */
 function renderOutstream(bid) {
   OutstreamPlayerPB(bid, {
     displayMode: 'floating',
@@ -29,22 +28,9 @@ function renderOutstream(bid) {
   });
 }
 
-function process(adUnit) {
-  var bidResponses = pbjs.getHighestCpmBids(adUnit);
-  if (bidResponses.length === 0) return false;
-  var bid = bidResponses[0];
-  /* Render into the container div directly, not document root */
-  var container = document.getElementById(adUnit);
-  if (container) {
-    pbjs.renderAd(container, bid.adId);
-  } else {
-    pbjs.renderAd(document, bid.adId);
-  }
-  return true;
-}
-
-function buildAdUnits() {
-  return [{
+/* Register ad units once when SDK is ready — do NOT request bids yet */
+pbjs.que.push(function() {
+  pbjs.addAdUnits([{
     code: 'container-1',
     mediaTypes: {
       video: {
@@ -63,17 +49,7 @@ function buildAdUnits() {
         host: 'cpm.ezmob.com'
       }
     }]
-  }];
-}
-
-/* Initial page-load bid request (auto-plays floating player if fill) */
-pbjs.que.push(function() {
-  pbjs.addAdUnits(buildAdUnits());
-  pbjs.requestBids({
-    bidsBackHandler: function() {
-      process('container-1');
-    }
-  });
+  }]);
 });
 </script>
 </head>
@@ -353,38 +329,47 @@ window.startRewardedAd=function(){
     toast(msg||'Ad unavailable. Try again later.','warn');
   }
 
-  /* Wait for pbjs SDK to be ready, retry up to 5s */
-  var attempts=0;
-  function tryRequest(){
-    attempts++;
-    if(!window.pbjs||typeof pbjs.requestBids!=='function'){
-      if(attempts<10){ setTimeout(tryRequest,500); }
-      else { onAdError('Ad SDK not loaded.'); }
+  /* Poll until pbjs SDK is fully loaded (async script) */
+  var polls=0;
+  function waitForPbjs(){
+    if(typeof pbjs==='undefined'||typeof pbjs.requestBids!=='function'){
+      if(++polls<20){ setTimeout(waitForPbjs,300); }
+      else { onAdError('Ad SDK failed to load.'); }
       return;
     }
+    requestFreshBid();
+  }
 
+  function requestFreshBid(){
     pbjs.que.push(function(){
-      /* Remove stale ad unit then re-add fresh to allow a new bid request */
-      try{ pbjs.removeAdUnit('container-1'); }catch(e){}
-      pbjs.addAdUnits(buildAdUnits());
-
+      /* Always request fresh bids — pbjs fetches new auction each call */
       pbjs.requestBids({
-        timeout: 3000,
-        bidsBackHandler: function(){
-          var filled = process('container-1');
-          if(filled){
-            /* Reward after a fixed watch duration (15s) — floating player */
-            if(btn) btn.textContent='Watching…';
-            setTimeout(onAdComplete, 15000);
-          } else {
-            onAdError('No ad available right now. Try again later.');
+        adUnitCodes: ['container-1'],
+        timeout: 5000,
+        bidsBackHandler: function(bids){
+          var responses = pbjs.getHighestCpmBids('container-1');
+          if(!responses||responses.length===0){
+            onAdError('No ad fill right now. Try again in a moment.');
+            return;
           }
+          var bid = responses[0];
+          /* Render directly into the container element */
+          var container = document.getElementById('container-1');
+          if(container){
+            container.innerHTML = '';
+            pbjs.renderAd(container, bid.adId);
+          } else {
+            pbjs.renderAd(document, bid.adId);
+          }
+          if(btn) btn.textContent='Watching…';
+          /* Reward after 15s watch time */
+          setTimeout(onAdComplete, 15000);
         }
       });
     });
   }
 
-  tryRequest();
+  waitForPbjs();
 };
 
 async function rewardUser(){

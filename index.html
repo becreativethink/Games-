@@ -19,17 +19,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- Qualiclicks video ad -->
-<script>
-window.adk_pdisp = {'h' : 'xml.qualiclicks.com',
-  'f' : ,
-  'a' : '',
-  'ps' : [5],
-  'cin' : 4,
-  's' : '',
-  'q' : [],
-  't' : 6};
-</script>
+<!-- Qualiclicks popup ad — triggered on Watch Ad click -->
 <script src='//static.qualiclicks.com/tabu/display.js'></script>
 
 <script>
@@ -146,8 +136,36 @@ window.startRewardedAd=function(){
   var btn=document.getElementById('watchAdBtn');
   if(btn){btn.disabled=true;btn.textContent='Watching…';}
 
-  /* Qualiclicks ad is already loaded via head script and renders automatically.
-     Reward the user after 15 seconds of watch time. */
+  /* Trigger Qualiclicks popup ad on user click (requires user gesture) */
+  try{
+    window.adk_pdisp = {
+      'h' : 'xml.qualiclicks.com',
+      'f' : '',
+      'a' : '',
+      'ps' : [5],
+      'cin' : 4,
+      's' : '',
+      'q' : [],
+      't' : 6
+    };
+    /* Fire the popup — Qualiclicks uses adk_disp() or window.open via its SDK */
+    if(typeof adk_disp === 'function'){
+      adk_disp();
+    } else if(typeof window.adk_run === 'function'){
+      window.adk_run();
+    } else {
+      /* SDK not loaded yet — open popup URL directly as fallback */
+      var popup = window.open(
+        'https://xml.qualiclicks.com/disp?f=&t=6&cin=4',
+        '_blank',
+        'width=400,height=300,scrollbars=yes'
+      );
+    }
+  }catch(e){
+    /* silently continue — reward regardless so user is not penalised */
+  }
+
+  /* Reward after 15 seconds */
   setTimeout(function(){
     rewardUser();
   }, 15000);

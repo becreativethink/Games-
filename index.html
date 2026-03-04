@@ -14,42 +14,248 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png"/>
 <title>WordWar — Home</title>
 <link rel="stylesheet" href="style.css"/>
+
+<!-- Firebase — loaded synchronously so firebase is defined before any onclick fires -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- EZMob outstream video ad -->
 <script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
 <script>
 var pbjs = pbjs || {};
 pbjs.que = pbjs.que || [];
 
-/* Must be global — called by outstream_pb.js renderer */
-function renderOutstream(bid) {
-  OutstreamPlayerPB(bid, {
-    displayMode: 'floating',
-    transitions: true,
-    vpaidMode: 2
-  });
+pbjs.que.push(function() {
+	var adUnits = [{
+		code: 'container-1',
+		mediaTypes: {
+			video: {
+				context: 'outstream',
+				playerSize: [300, 250],
+				renderer: {
+					url: 'https://docdn.ezmob.com/outstream_pb.js',
+					render: renderOutstream
+				}
+			}
+		},
+		bids: [{
+			bidder: 'adkernel',
+			params: {
+			  zoneId: 338517,
+			  host: 'cpm.ezmob.com'
+			}
+		}]
+	}];
+	pbjs.addAdUnits(adUnits);
+	pbjs.requestBids({
+		bidsBackHandler: function(bidResponses) {
+			process('container-1');
+		}
+	});
+});
+
+function process(adUnit) {
+	var bidResponses = pbjs.getHighestCpmBids(adUnit);
+	if (bidResponses.length == 0) {
+		return;
+	}
+	var bid = bidResponses[0];
+	pbjs.renderAd(document, bid.adId);
+	/* Ad rendered — reward user after 15s watch time */
+	setTimeout(function(){ rewardUser(); }, 15000);
+	return true;
 }
 
-/* Register ad units once when SDK is ready — do NOT request bids yet */
-pbjs.que.push(function() {
-  pbjs.addAdUnits([{
-    code: 'container-1',
-    mediaTypes: {
-      video: {
-        context: 'outstream',
-        playerSize: [300, 250],
-        renderer: {
-          url: 'https://docdn.ezmob.com/outstream_pb.js',
-          render: renderOutstream
+function renderOutstream(bid) {
+	OutstreamPlayerPB(bid, {
+		displayMode: 'floating',
+		transitions: true,
+		vpaidMode: 2
+	});
+}
+</script>
+
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+
+/* ── Session ── */
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+
+/* ── Helpers ── */
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function avatarUrl(url,name){
+  if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
+  return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
+}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+';">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
+}
+
+/* ── Navigation (window.* so onclick= attributes can call them) ── */
+window.selectMode=function(mode){
+  if(!loadSession()){location.href='login.html';return;}
+  sessionStorage.setItem('ww_mode',mode);
+  location.href='game.html';
+};
+window.bnNav=function(page){
+  if(!loadSession()){location.href='login.html';return;}
+  location.href=page;
+};
+window.doLogout=async function(){
+  if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}
+  localStorage.removeItem('ww_user');sessionStorage.removeItem('ww_mode');
+  location.href='login.html';
+};
+
+/* ── UI fill (DOM must exist — called from DOMContentLoaded) ── */
+function fillUI(u){
+  document.getElementById('nav-username').textContent=u.username||'…';
+  document.getElementById('nav-avatar').src=avatarUrl(u.photoURL,u.username);
+  document.getElementById('bar-money').textContent=fmtNum(u.money||0);
+  document.getElementById('bar-score').textContent=fmtNum(u.score||0);
+  document.getElementById('bar-wins').textContent=fmtNum(u.wins||0);
+  document.getElementById('st-games').textContent=u.totalGames||0;
+  document.getElementById('st-wins').textContent=u.wins||0;
+  document.getElementById('st-losses').textContent=u.losses||0;
+  var wr=u.totalGames>0?Math.round((u.wins||0)*100/u.totalGames)+'%':'0%';
+  document.getElementById('st-winrate').textContent=wr;
+  document.getElementById('st-score').textContent=fmtNum(u.score||0);
+  var lvl=Math.floor((u.score||0)/500)+1;
+  var xp=(u.score||0)%500;
+  document.getElementById('st-level').textContent=lvl;
+  document.getElementById('lv-cur').textContent=lvl;
+  document.getElementById('lv-xp').textContent=xp;
+  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
+}
+
+/* ══════════════════════════════════════════════
+   REWARDED VIDEO AD — 5-min cooldown via Firebase
+══════════════════════════════════════════════ */
+var AD_COOLDOWN = 5*60*1000;
+var AD_REWARD   = 10;
+var _adPlaying  = false;
+var _cooldownIv = null;
+
+function checkAdCooldown(){
+  if(!user||!user.uid)return;
+  db.ref('users/'+user.uid+'/lastAdWatch').get().then(function(snap){
+    var last=snap.exists()?snap.val():0;
+    var elapsed=Date.now()-last;
+    if(elapsed>=AD_COOLDOWN){ enableAdBtn(); }
+    else{ startCooldownUI(AD_COOLDOWN-elapsed); }
+  }).catch(function(){enableAdBtn();});
+}
+function enableAdBtn(){
+  var btn=document.getElementById('watchAdBtn');
+  if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
+  var t=document.getElementById('rad-timer');
+  if(t)t.classList.add('hidden');
+  if(_cooldownIv){clearInterval(_cooldownIv);_cooldownIv=null;}
+}
+function startCooldownUI(ms){
+  var btn=document.getElementById('watchAdBtn');
+  var timerEl=document.getElementById('rad-timer');
+  var cd=document.getElementById('rad-countdown');
+  if(btn){btn.disabled=true;btn.textContent='On Cooldown';}
+  if(timerEl)timerEl.classList.remove('hidden');
+  var end=Date.now()+ms;
+  function tick(){
+    var left=Math.max(0,end-Date.now());
+    var m=Math.floor(left/60000), s=Math.floor((left%60000)/1000);
+    if(cd)cd.textContent=m+':'+(s<10?'0':'')+s;
+    if(left<=0){clearInterval(_cooldownIv);_cooldownIv=null;enableAdBtn();}
+  }
+  tick();
+  _cooldownIv=setInterval(tick,1000);
+}
+
+window.startRewardedAd=function(){
+  if(!user){toast('Log in to earn rewards.','warn');return;}
+  if(_adPlaying){return;}
+  _adPlaying=true;
+  var btn=document.getElementById('watchAdBtn');
+  if(btn){btn.disabled=true;btn.textContent='Loading…';}
+
+  /* Wait for pbjs SDK (async script) then request a fresh bid */
+  var polls=0;
+  function waitAndRequest(){
+    if(typeof pbjs==='undefined'||typeof pbjs.requestBids!=='function'){
+      if(++polls<20){ setTimeout(waitAndRequest,300); }
+      else{
+        _adPlaying=false;
+        if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
+        toast('Ad SDK failed to load.','warn');
+      }
+      return;
+    }
+    /* Use provider's exact pattern — process() handles render + reward */
+    pbjs.que.push(function(){
+      pbjs.requestBids({
+        bidsBackHandler: function(){
+          var filled = process('container-1');
+          if(!filled){
+            _adPlaying=false;
+            if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
+            toast('No ad available right now. Try again later.','warn');
+          } else {
+            if(btn) btn.textContent='Watching…';
+          }
         }
+      });
+    });
+  }
+  waitAndRequest();
+};
+
+async function rewardUser(){
+  if(!user||!user.uid)return;
+  try{
+    var snap=await db.ref('users/'+user.uid).get();
+    if(!snap.exists())return;
+    var ud=snap.val();
+    var newMoney=(ud.money||0)+AD_REWARD;
+    await db.ref('users/'+user.uid).update({money:newMoney,lastAdWatch:Date.now()});
+    user.money=newMoney; saveSession(user);
+    document.getElementById('bar-money').textContent=fmtNum(newMoney);
+    toast('+'+AD_REWARD+' 💰 Reward added!','success');
+    _adPlaying=false;
+    startCooldownUI(AD_COOLDOWN);
+  }catch(e){
+    toast('Could not save reward. Check connection.','error');
+  }
+}
+
+/* ── Boot after DOM is ready ── */
+document.addEventListener('DOMContentLoaded', function(){
+  if(user){
+    fillUI(user);
+    db.ref('users/'+user.uid).get().then(function(snap){
+      if(snap.exists()){
+        var fresh=Object.assign({uid:user.uid},snap.val());
+        saveSession(fresh); user=fresh; fillUI(fresh);
+        db.ref('users').get().then(function(all){
+          if(!all.exists())return;
+          var arr=Object.values(all.val()).filter(function(x){return x.username;}).sort(function(a,b){return(b.score||0)-(a.score||0);});
+          var idx=arr.findIndex(function(x){return x.username===fresh.username;});
+          document.getElementById('bar-rank').textContent=idx>=0?'#'+(idx+1):'—';
+        });
       }
-    },
-    bids: [{
-      bidder: 'adkernel',
-      params: {
-        zoneId: 338517,
-        host: 'cpm.ezmob.com'
-      }
-    }]
-  }]);
+    }).catch(function(){});
+    checkAdCooldown();
+  }
 });
 </script>
 </head>
@@ -188,207 +394,6 @@ pbjs.que.push(function() {
   </button>
 </nav>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script>
-firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
-var db=firebase.database();
-
-function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
-function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
-var user=loadSession();
-if(!user){location.href='login.html';}
-
-function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
-function avatarUrl(url,name){
-  if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
-  return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
-}
-function toast(msg,type){
-  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
-  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
-  var z=document.getElementById('_tz');
-  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
-  var t=document.createElement('div');
-  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
-  t.innerHTML='<span style="color:'+(c[type]||c.info)+';">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
-  z.appendChild(t);
-  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
-  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
-}
-
-function fillUI(u){
-  document.getElementById('nav-username').textContent=u.username||'…';
-  document.getElementById('nav-avatar').src=avatarUrl(u.photoURL,u.username);
-  document.getElementById('bar-money').textContent=fmtNum(u.money||0);
-  document.getElementById('bar-score').textContent=fmtNum(u.score||0);
-  document.getElementById('bar-wins').textContent=fmtNum(u.wins||0);
-  document.getElementById('st-games').textContent=u.totalGames||0;
-  document.getElementById('st-wins').textContent=u.wins||0;
-  document.getElementById('st-losses').textContent=u.losses||0;
-  var wr=u.totalGames>0?Math.round((u.wins||0)*100/u.totalGames)+'%':'0%';
-  document.getElementById('st-winrate').textContent=wr;
-  document.getElementById('st-score').textContent=fmtNum(u.score||0);
-  var lvl=Math.floor((u.score||0)/500)+1;
-  var xp=(u.score||0)%500;
-  document.getElementById('st-level').textContent=lvl;
-  document.getElementById('lv-cur').textContent=lvl;
-  document.getElementById('lv-xp').textContent=xp;
-  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
-}
-
-if(user){
-  fillUI(user);
-  db.ref('users/'+user.uid).get().then(function(snap){
-    if(snap.exists()){
-      var fresh=Object.assign({uid:user.uid},snap.val());
-      saveSession(fresh); user=fresh; fillUI(fresh);
-      db.ref('users').get().then(function(all){
-        if(!all.exists())return;
-        var arr=Object.values(all.val()).filter(function(x){return x.username;}).sort(function(a,b){return(b.score||0)-(a.score||0);});
-        var idx=arr.findIndex(function(x){return x.username===fresh.username;});
-        document.getElementById('bar-rank').textContent=idx>=0?'#'+(idx+1):'—';
-      });
-    }
-  }).catch(function(){});
-  checkAdCooldown();
-}
-
-/* ── Navigation ── */
-window.selectMode=function(mode){
-  if(!loadSession()){location.href='login.html';return;}
-  sessionStorage.setItem('ww_mode',mode);
-  location.href='game.html';
-};
-window.bnNav=function(page){
-  if(!loadSession()){location.href='login.html';return;}
-  location.href=page;
-};
-window.doLogout=async function(){
-  if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}
-  localStorage.removeItem('ww_user');sessionStorage.removeItem('ww_mode');
-  location.href='login.html';
-};
-
-/* ══════════════════════════════════════════════
-   REWARDED VIDEO AD — 5-min cooldown via Firebase
-══════════════════════════════════════════════ */
-var AD_COOLDOWN = 5*60*1000;
-var AD_REWARD   = 10;
-var _adPlaying  = false;
-var _cooldownIv = null;
-
-function checkAdCooldown(){
-  if(!user||!user.uid)return;
-  db.ref('users/'+user.uid+'/lastAdWatch').get().then(function(snap){
-    var last=snap.exists()?snap.val():0;
-    var elapsed=Date.now()-last;
-    if(elapsed>=AD_COOLDOWN){ enableAdBtn(); }
-    else{ startCooldownUI(AD_COOLDOWN-elapsed); }
-  }).catch(function(){enableAdBtn();});
-}
-
-function enableAdBtn(){
-  var btn=document.getElementById('watchAdBtn');
-  if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
-  document.getElementById('rad-timer').classList.add('hidden');
-  if(_cooldownIv){clearInterval(_cooldownIv);_cooldownIv=null;}
-}
-
-function startCooldownUI(ms){
-  var btn=document.getElementById('watchAdBtn');
-  var timerEl=document.getElementById('rad-timer');
-  var cd=document.getElementById('rad-countdown');
-  if(btn){btn.disabled=true;btn.textContent='On Cooldown';}
-  timerEl.classList.remove('hidden');
-  var end=Date.now()+ms;
-  function tick(){
-    var left=Math.max(0,end-Date.now());
-    var m=Math.floor(left/60000), s=Math.floor((left%60000)/1000);
-    if(cd)cd.textContent=m+':'+(s<10?'0':'')+s;
-    if(left<=0){clearInterval(_cooldownIv);_cooldownIv=null;enableAdBtn();}
-  }
-  tick();
-  _cooldownIv=setInterval(tick,1000);
-}
-
-window.startRewardedAd=function(){
-  if(!user){toast('Log in to earn rewards.','warn');return;}
-  if(_adPlaying){return;}
-  _adPlaying=true;
-  var btn=document.getElementById('watchAdBtn');
-  if(btn){btn.disabled=true;btn.textContent='Loading…';}
-
-  function onAdComplete(){
-    _adPlaying=false;
-    rewardUser();
-  }
-  function onAdError(msg){
-    _adPlaying=false;
-    if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
-    toast(msg||'Ad unavailable. Try again later.','warn');
-  }
-
-  /* Poll until pbjs SDK is fully loaded (async script) */
-  var polls=0;
-  function waitForPbjs(){
-    if(typeof pbjs==='undefined'||typeof pbjs.requestBids!=='function'){
-      if(++polls<20){ setTimeout(waitForPbjs,300); }
-      else { onAdError('Ad SDK failed to load.'); }
-      return;
-    }
-    requestFreshBid();
-  }
-
-  function requestFreshBid(){
-    pbjs.que.push(function(){
-      /* Always request fresh bids — pbjs fetches new auction each call */
-      pbjs.requestBids({
-        adUnitCodes: ['container-1'],
-        timeout: 5000,
-        bidsBackHandler: function(bids){
-          var responses = pbjs.getHighestCpmBids('container-1');
-          if(!responses||responses.length===0){
-            onAdError('No ad fill right now. Try again in a moment.');
-            return;
-          }
-          var bid = responses[0];
-          /* Render directly into the container element */
-          var container = document.getElementById('container-1');
-          if(container){
-            container.innerHTML = '';
-            pbjs.renderAd(container, bid.adId);
-          } else {
-            pbjs.renderAd(document, bid.adId);
-          }
-          if(btn) btn.textContent='Watching…';
-          /* Reward after 15s watch time */
-          setTimeout(onAdComplete, 15000);
-        }
-      });
-    });
-  }
-
-  waitForPbjs();
-};
-
-async function rewardUser(){
-  if(!user||!user.uid)return;
-  try{
-    var snap=await db.ref('users/'+user.uid).get();
-    if(!snap.exists())return;
-    var ud=snap.val();
-    var newMoney=(ud.money||0)+AD_REWARD;
-    await db.ref('users/'+user.uid).update({money:newMoney,lastAdWatch:Date.now()});
-    user.money=newMoney; saveSession(user);
-    document.getElementById('bar-money').textContent=fmtNum(newMoney);
-    toast('+'+AD_REWARD+' 💰 Reward added!','success');
-    startCooldownUI(AD_COOLDOWN);
-  }catch(e){
-    toast('Could not save reward. Check connection.','error');
-  }
-}
-</script>
 <script src="/pwa.js"></script>
 </body>
 </html>

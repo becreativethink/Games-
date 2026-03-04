@@ -16,11 +16,35 @@
 <link rel="stylesheet" href="style.css"/>
 <script type="text/javascript" src="https://docdn.ezmob.com/prebid.js" async></script>
 <script>
+/* pbjs queue bootstrapped — SDK fills this when ready */
 var pbjs = pbjs || {};
 pbjs.que = pbjs.que || [];
 
-pbjs.que.push(function() {
-  var adUnits = [{
+/* renderOutstream must be globally defined BEFORE pbjs uses it */
+function renderOutstream(bid) {
+  OutstreamPlayerPB(bid, {
+    displayMode: 'floating',
+    transitions: true,
+    vpaidMode: 2
+  });
+}
+
+function process(adUnit) {
+  var bidResponses = pbjs.getHighestCpmBids(adUnit);
+  if (bidResponses.length === 0) return false;
+  var bid = bidResponses[0];
+  /* Render into the container div directly, not document root */
+  var container = document.getElementById(adUnit);
+  if (container) {
+    pbjs.renderAd(container, bid.adId);
+  } else {
+    pbjs.renderAd(document, bid.adId);
+  }
+  return true;
+}
+
+function buildAdUnits() {
+  return [{
     code: 'container-1',
     mediaTypes: {
       video: {
@@ -40,28 +64,17 @@ pbjs.que.push(function() {
       }
     }]
   }];
-  pbjs.addAdUnits(adUnits);
+}
+
+/* Initial page-load bid request (auto-plays floating player if fill) */
+pbjs.que.push(function() {
+  pbjs.addAdUnits(buildAdUnits());
   pbjs.requestBids({
-    bidsBackHandler: function(bidResponses) {
+    bidsBackHandler: function() {
       process('container-1');
     }
   });
 });
-
-function process(adUnit) {
-  var bidResponses = pbjs.getHighestCpmBids(adUnit);
-  if (bidResponses.length == 0) { return; }
-  var bid = bidResponses[0];
-  pbjs.renderAd(document, bid.adId);
-}
-
-function renderOutstream(bid) {
-  OutstreamPlayerPB(bid, {
-    displayMode: 'floating',
-    transitions: true,
-    vpaidMode: 2
-  });
-}
 </script>
 </head>
 <body>
@@ -330,46 +343,48 @@ window.startRewardedAd=function(){
   var btn=document.getElementById('watchAdBtn');
   if(btn){btn.disabled=true;btn.textContent='Loading…';}
 
-  /* pbjs outstream — bidsBackHandler fires when bid completes.
-     We hook into it to detect ad completion and reward the user. */
-  var completed=false;
   function onAdComplete(){
-    if(completed)return; completed=true;
     _adPlaying=false;
     rewardUser();
   }
-  function onAdError(){
-    if(completed)return; completed=true;
+  function onAdError(msg){
     _adPlaying=false;
     if(btn){btn.disabled=false;btn.textContent='Watch Ad';}
-    toast('Ad unavailable. Try again later.','warn');
+    toast(msg||'Ad unavailable. Try again later.','warn');
   }
 
-  try{
-    if(window.pbjs){
-      /* Re-request a fresh bid for this session */
-      pbjs.que.push(function(){
-        pbjs.requestBids({
-          bidsBackHandler: function(){
-            var bids=pbjs.getHighestCpmBids('container-1');
-            if(bids.length===0){ onAdError(); return; }
-            var bid=bids[0];
-            pbjs.renderAd(document, bid.adId);
-            /* Reward after video completes — use bid duration or 15s fallback */
-            var duration=Math.max(5000,(bid.video&&bid.video.minduration?bid.video.minduration*1000:15000));
-            setTimeout(onAdComplete, duration);
-          }
-        });
-      });
-    } else {
-      /* SDK not yet loaded — retry once after 2s */
-      setTimeout(function(){
-        if(window.pbjs){ window.startRewardedAd(); }
-        else { onAdError(); }
-        _adPlaying=false;
-      },2000);
+  /* Wait for pbjs SDK to be ready, retry up to 5s */
+  var attempts=0;
+  function tryRequest(){
+    attempts++;
+    if(!window.pbjs||typeof pbjs.requestBids!=='function'){
+      if(attempts<10){ setTimeout(tryRequest,500); }
+      else { onAdError('Ad SDK not loaded.'); }
+      return;
     }
-  }catch(e){ onAdError(); }
+
+    pbjs.que.push(function(){
+      /* Remove stale ad unit then re-add fresh to allow a new bid request */
+      try{ pbjs.removeAdUnit('container-1'); }catch(e){}
+      pbjs.addAdUnits(buildAdUnits());
+
+      pbjs.requestBids({
+        timeout: 3000,
+        bidsBackHandler: function(){
+          var filled = process('container-1');
+          if(filled){
+            /* Reward after a fixed watch duration (15s) — floating player */
+            if(btn) btn.textContent='Watching…';
+            setTimeout(onAdComplete, 15000);
+          } else {
+            onAdError('No ad available right now. Try again later.');
+          }
+        }
+      });
+    });
+  }
+
+  tryRequest();
 };
 
 async function rewardUser(){

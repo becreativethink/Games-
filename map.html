@@ -425,6 +425,7 @@
     letter-spacing: 0.5px;
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
 </head>
 <body>
 
@@ -524,6 +525,33 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+// === Z.AI JWT TOKEN GENERATOR ===
+function generateZaiToken(apiKey) {
+  try {
+    const parts = apiKey.split('.');
+    if (parts.length < 2) throw new Error('Invalid API key format');
+    const id = parts[0];
+    const secret = parts.slice(1).join('.');
+    const now = Math.round(new Date().getTime());
+    const header = { alg: 'HS256', sign_type: 'SIGN' };
+    const payload = {
+      api_key: id,
+      exp: now + 3600 * 1000,
+      timestamp: now
+    };
+    const token = KJUR.jws.JWS.sign(
+      'HS256',
+      JSON.stringify(header),
+      JSON.stringify(payload),
+      { utf8: secret }
+    );
+    return token;
+  } catch(e) {
+    console.error('JWT generation error:', e);
+    throw new Error('Failed to generate auth token: ' + e.message);
+  }
+}
+
 // === MAP INIT ===
 const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -694,14 +722,15 @@ ${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technic
 Return ONLY valid JSON, no markdown, no preamble.`;
 
   const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
+  const jwtToken = generateZaiToken(ZAI_KEY);
   const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + ZAI_KEY
+      'Authorization': 'Bearer ' + jwtToken
     },
     body: JSON.stringify({
-      model: 'glm-4.5',
+      model: 'glm-4.5-flash',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
       max_tokens: 3000
@@ -897,14 +926,15 @@ Answer concisely in 2-4 sentences with academic accuracy. Be direct and informat
   tempDiv.scrollIntoView({ behavior: 'smooth' });
 
   try {
+    const jwtToken2 = generateZaiToken(ZAI_KEY);
     const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ZAI_KEY
+        'Authorization': 'Bearer ' + jwtToken2
       },
       body: JSON.stringify({
-        model: 'glm-4.5',
+        model: 'glm-4.5-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
         max_tokens: 1000

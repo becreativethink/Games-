@@ -1,431 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GeoMind &mdash; AI Educational Geo-Intelligence</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
 <style>
-  :root {
-    --bg: #0a0c10;
-    --surface: #111318;
-    --card: #161a22;
-    --border: #252a35;
-    --accent: #00e5a0;
-    --accent2: #4f9eff;
-    --accent3: #ff6b6b;
-    --accent4: #ffd166;
-    --text: #e8eaf0;
-    --muted: #6b7280;
-    --glow: 0 0 30px rgba(0,229,160,0.15);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+:root{
+  --bg:#0a0c10;--surface:#111318;--card:#161a22;--border:#252a35;
+  --accent:#00e5a0;--accent2:#4f9eff;--accent3:#ff6b6b;--accent4:#ffd166;
+  --text:#e8eaf0;--muted:#6b7280;--glow:0 0 24px rgba(0,229,160,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;}
 
-  /* HEADER */
-  header {
-    background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 18px 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0; z-index: 1000;
-    backdrop-filter: blur(12px);
-  }
-  .logo {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .logo-icon {
-    width: 38px; height: 38px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .logo-text {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800; font-size: 20px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-top: -2px; }
+/* HEADER */
+header{
+  flex-shrink:0;height:60px;
+  background:linear-gradient(135deg,#0d1117,#111827);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+  position:relative;z-index:999;
+}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-size:8px;color:var(--muted);letter-spacing:2px;}
+.hcontrols{display:flex;gap:7px;align-items:flex-end;flex-wrap:nowrap;}
+.hg{display:flex;flex-direction:column;gap:2px;}
+.hg label{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;outline:none;transition:border-color 0.2s;}
+select:hover,select:focus{border-color:var(--accent);}
+.hright{margin-left:auto;display:flex;gap:7px;align-items:center;flex-shrink:0;}
+button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 11px;border-radius:7px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s;outline:none;}
+button:hover{border-color:var(--accent);color:var(--accent);}
+.btn-p{background:linear-gradient(135deg,var(--accent),#00b87a);color:#000!important;font-weight:700;border:none!important;}
+.btn-p:hover{opacity:0.85;color:#000!important;}
+.sbadge{font-size:9px;padding:3px 9px;border-radius:20px;border:1px solid rgba(0,229,160,0.3);background:rgba(0,229,160,0.08);color:var(--accent);}
 
-  .header-controls {
-    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  }
-  select, button {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 14px;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    outline: none;
-  }
-  select:hover, select:focus { border-color: var(--accent); }
-  button:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #00b87a);
-    color: #000 !important;
-    font-weight: 600;
-    border: none !important;
-  }
-  .btn-primary:hover { opacity: 0.85; color: #000 !important; }
+/* MAIN: always 2 columns, fills remaining space */
+.main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;overflow:hidden;}
 
-  /* LAYOUT */
-  .app-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: calc(100vh - 67px);
-  }
+/* LEFT: MAP */
+.map-panel{position:relative;border-right:1px solid var(--border);overflow:hidden;}
+#map{width:100%;height:100%;}
+.map-hint{position:absolute;top:11px;left:11px;z-index:500;background:rgba(10,12,16,0.88);border:1px solid var(--border);border-radius:9px;padding:9px 13px;font-size:11px;color:var(--muted);backdrop-filter:blur(10px);max-width:195px;pointer-events:none;}
+.map-hint strong{color:var(--accent);display:block;margin-bottom:2px;font-family:'Syne',sans-serif;font-size:11px;}
+.coord-pill{position:absolute;bottom:11px;left:11px;z-index:500;background:rgba(10,12,16,0.92);border:1px solid var(--accent);border-radius:7px;padding:6px 12px;font-size:11px;color:var(--accent);box-shadow:var(--glow);display:none;pointer-events:none;}
 
-  /* MAP PANEL */
-  .map-panel {
-    position: relative;
-    border-right: 1px solid var(--border);
-  }
-  #map { width: 100%; height: 100%; }
-  .map-overlay {
-    position: absolute;
-    top: 14px; left: 14px; z-index: 500;
-    background: rgba(10,12,16,0.85);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    font-size: 11px;
-    color: var(--muted);
-    backdrop-filter: blur(8px);
-    max-width: 220px;
-  }
-  .map-overlay strong { color: var(--accent); display: block; margin-bottom: 4px; font-family: 'Syne', sans-serif; }
-  .coord-display {
-    position: absolute;
-    bottom: 14px; left: 14px; z-index: 500;
-    background: rgba(10,12,16,0.9);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    color: var(--accent);
-    box-shadow: var(--glow);
-    display: none;
-  }
+/* RIGHT: TABS + CONTENT */
+.right-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+.tabs{display:flex;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);}
+.tabbtn{flex:1;padding:10px 0;font-size:11px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;border-radius:0;}
+.tabbtn:hover{color:var(--text);}
+.tabbtn.act{color:var(--accent);border-bottom-color:var(--accent);}
+.tabbtn.h-tab.act{color:var(--accent2);border-bottom-color:var(--accent2);}
+.tabbtn.c-tab.act{color:var(--accent4);border-bottom-color:var(--accent4);}
 
-  /* RIGHT PANEL */
-  .right-panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+.tabpanel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;}
+.tabpanel.act{display:flex;}
 
-  /* CONTROLS BAR */
-  .controls-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 18px;
-    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-  }
-  .controls-bar label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
-  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+/* SCROLL AREA */
+.scroll{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.scroll::-webkit-scrollbar{width:4px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
 
-  /* OUTPUT AREA */
-  .output-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-  .output-area::-webkit-scrollbar { width: 5px; }
-  .output-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+/* IDLE */
+.idle{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;opacity:0.45;}
+.idle .bi{font-size:52px;}
+.idle h3{font-family:'Syne',sans-serif;font-size:17px;}
+.idle p{font-size:11px;color:var(--muted);max-width:250px;line-height:1.6;}
 
-  /* IDLE STATE */
-  .idle-state {
-    height: 100%;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    gap: 16px;
-    opacity: 0.5;
-  }
-  .idle-state .big-icon { font-size: 60px; }
-  .idle-state h3 { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--text); }
-  .idle-state p { font-size: 12px; color: var(--muted); max-width: 280px; line-height: 1.6; }
+/* SPINNER */
+.loading{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;}
+.spinner{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.lstep{font-size:11px;color:var(--accent);margin-top:3px;}
+.pbar{width:190px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:9px;}
+.pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.4s;}
 
-  /* LOADING */
-  .loading-state {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 20px;
-  }
-  .spinner {
-    width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 13px; color: var(--muted); }
-  .loading-steps { font-size: 11px; color: var(--accent); margin-top: 4px; }
+/* RESULT */
+.result{display:none;animation:fi 0.4s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
 
-  /* RESULT CONTENT */
-  .result-content { display: none; animation: fadeIn 0.5s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* LOC BADGE */
+.loc-badge{background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(79,158,255,0.06));border:1px solid rgba(0,229,160,0.22);border-radius:11px;padding:13px 15px;margin-bottom:13px;display:flex;justify-content:space-between;align-items:flex-start;gap:9px;}
+.loc-name{font-family:'Playfair Display',serif;font-size:19px;color:var(--text);line-height:1.2;}
+.loc-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.cbadge{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:10px;color:var(--accent);text-align:right;flex-shrink:0;}
 
-  /* LOCATION BADGE */
-  .location-badge {
-    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(79,158,255,0.08));
-    border: 1px solid rgba(0,229,160,0.3);
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 18px;
-    display: flex; justify-content: space-between; align-items: flex-start;
-  }
-  .location-badge .place-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    color: var(--text);
-    line-height: 1.2;
-  }
-  .location-badge .place-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .location-badge .coords-badge {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 10px;
-    color: var(--accent);
-    text-align: right;
-    flex-shrink: 0;
-  }
+/* WIKI */
+.wiki{background:rgba(79,158,255,0.05);border:1px solid rgba(79,158,255,0.14);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.7;font-style:italic;margin-bottom:11px;}
 
-  /* SECTION CARDS */
-  .section-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 14px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .section-card:hover { border-color: rgba(0,229,160,0.3); }
-  .section-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px;
-    background: rgba(255,255,255,0.02);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-  .section-header .sec-icon { font-size: 16px; }
-  .section-header .sec-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 1px; text-transform: uppercase;
-    color: var(--text);
-  }
-  .section-header .sec-num {
-    margin-left: auto;
-    font-size: 10px; color: var(--muted);
-    background: var(--bg);
-    padding: 2px 8px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-  }
-  .section-body {
-    padding: 14px 16px;
-    font-size: 12px;
-    line-height: 1.7;
-    color: var(--text);
-  }
-  .section-body strong { color: var(--accent); font-weight: 500; }
+/* SECTION */
+.scard{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:11px;overflow:hidden;transition:border-color 0.2s;}
+.scard:hover{border-color:rgba(0,229,160,0.22);}
+.shdr{display:flex;align-items:center;gap:8px;padding:10px 13px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.snum{font-size:11px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;min-width:22px;}
+.stitle{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);}
+.chev{margin-left:auto;font-size:11px;color:var(--muted);transition:transform 0.2s;}
+.chev.o{transform:rotate(180deg);}
+.sbody{padding:11px 13px;font-size:12px;line-height:1.7;}
+.sbody.hidden{display:none;}
 
-  /* FORMATTED CONTENT */
-  .sec-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
-  .sec-row .label {
-    color: var(--muted); min-width: 120px; font-size: 11px;
-    padding-top: 1px; flex-shrink: 0;
-  }
-  .sec-row .val { color: var(--text); }
-  .tag {
-    display: inline-block;
-    background: rgba(0,229,160,0.1);
-    border: 1px solid rgba(0,229,160,0.2);
-    color: var(--accent);
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    margin: 2px;
-  }
-  .tag.blue {
-    background: rgba(79,158,255,0.1);
-    border-color: rgba(79,158,255,0.2);
-    color: var(--accent2);
-  }
-  .tag.red {
-    background: rgba(255,107,107,0.1);
-    border-color: rgba(255,107,107,0.2);
-    color: var(--accent3);
-  }
-  .tag.yellow {
-    background: rgba(255,209,102,0.1);
-    border-color: rgba(255,209,102,0.2);
-    color: var(--accent4);
-  }
+/* ROW */
+.srow{display:flex;gap:7px;margin-bottom:5px;align-items:flex-start;}
+.slbl{color:var(--muted);min-width:105px;font-size:10px;padding-top:1px;flex-shrink:0;}
+.sval{color:var(--text);font-size:11px;}
+.tag{display:inline-block;background:rgba(0,229,160,0.09);border:1px solid rgba(0,229,160,0.2);color:var(--accent);padding:2px 7px;border-radius:20px;font-size:10px;margin:2px;}
+.tag.bl{background:rgba(79,158,255,0.09);border-color:rgba(79,158,255,0.2);color:var(--accent2);}
+.tag.yl{background:rgba(255,209,102,0.09);border-color:rgba(255,209,102,0.2);color:var(--accent4);}
+.tag.rd{background:rgba(255,107,107,0.09);border-color:rgba(255,107,107,0.2);color:var(--accent3);}
 
-  /* MCQ STYLES */
-  .mcq-item {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
-  }
-  .mcq-q { font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
-  .mcq-opt {
-    display: block;
-    padding: 6px 10px;
-    margin: 3px 0;
-    border-radius: 6px;
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .mcq-opt:hover { background: rgba(0,229,160,0.05); border-color: rgba(0,229,160,0.2); color: var(--text); }
-  .mcq-opt.correct { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
-  .mcq-opt.wrong { background: rgba(255,107,107,0.1); border-color: var(--accent3); color: var(--accent3); }
+/* MCQ */
+.mcqi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:9px;}
+.mcqq{font-size:12px;font-weight:500;margin-bottom:7px;color:var(--text);}
+.mcqo{display:block;padding:5px 9px;margin:3px 0;border-radius:6px;font-size:11px;color:var(--muted);border:1px solid transparent;cursor:pointer;transition:all 0.15s;}
+.mcqo:hover{background:rgba(0,229,160,0.05);border-color:rgba(0,229,160,0.2);color:var(--text);}
+.mcqo.ok{background:rgba(0,229,160,0.1);border-color:var(--accent);color:var(--accent);}
+.mcqo.no{background:rgba(255,107,107,0.1);border-color:var(--accent3);color:var(--accent3);}
 
-  /* TIMELINE */
-  .timeline { position: relative; padding-left: 20px; }
-  .timeline::before {
-    content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
-    width: 1px; background: linear-gradient(to bottom, var(--accent), transparent);
-  }
-  .tl-item { position: relative; margin-bottom: 14px; }
-  .tl-dot {
-    position: absolute; left: -18px; top: 4px;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 2px solid var(--bg);
-    box-shadow: 0 0 8px var(--accent);
-  }
-  .tl-year { font-size: 10px; color: var(--accent); margin-bottom: 2px; letter-spacing: 1px; }
-  .tl-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+/* TIMELINE */
+.tl{position:relative;padding-left:19px;}
+.tl::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--accent),transparent);}
+.tli{position:relative;margin-bottom:12px;}
+.tldot{position:absolute;left:-17px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 6px var(--accent);}
+.tlyear{font-size:10px;color:var(--accent);margin-bottom:2px;letter-spacing:1px;}
+.tltext{font-size:11px;color:var(--text);line-height:1.6;}
 
-  /* EXAM FOCUS */
-  .exam-pill {
-    background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(255,107,107,0.1));
-    border: 1px solid rgba(255,209,102,0.25);
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    font-size: 11px;
-    color: var(--accent4);
-    line-height: 1.6;
-  }
+/* EXAM */
+.epill{background:linear-gradient(135deg,rgba(255,209,102,0.07),rgba(255,107,107,0.07));border:1px solid rgba(255,209,102,0.2);border-radius:7px;padding:8px 12px;margin-bottom:7px;font-size:11px;color:var(--accent4);line-height:1.6;}
 
-  /* CHAT BOX */
-  .chat-box {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex; gap: 10px;
-  }
-  .chat-box input {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .chat-box input:focus { border-color: var(--accent); }
-  .chat-box input::placeholder { color: var(--muted); }
+/* ERROR */
+.ebox{background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.27);border-radius:9px;padding:13px;color:var(--accent3);font-size:12px;line-height:1.6;}
 
-  /* COLLAPSIBLE */
-  .section-body.collapsed { display: none; }
-  .chevron { margin-left: auto; transition: transform 0.2s; font-size: 12px; }
-  .chevron.open { transform: rotate(180deg); }
+/* HISTORY */
+.hempty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:11px;opacity:0.42;}
+.hempty p{font-size:11px;color:var(--muted);max-width:210px;line-height:1.6;}
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:border-color 0.2s;}
+.hitem:hover{border-color:rgba(79,158,255,0.38);}
+.hitem .hname{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
+.hitem .hmeta{font-size:10px;color:var(--muted);}
+.hitem .hcoord{font-size:10px;color:var(--accent2);margin-top:4px;}
+.hclr{width:100%;margin-bottom:11px;background:rgba(255,107,107,0.07);border-color:rgba(255,107,107,0.23);color:var(--accent3);font-size:11px;}
+.hclr:hover{background:rgba(255,107,107,0.14);color:var(--accent3);}
 
-  /* WIKI SUMMARY */
-  .wiki-box {
-    background: rgba(79,158,255,0.05);
-    border: 1px solid rgba(79,158,255,0.15);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.7;
-    font-style: italic;
-    margin-bottom: 10px;
-  }
+/* CHAT */
+.cmsgs{flex:1;overflow-y:auto;padding:13px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.cmsgs::-webkit-scrollbar{width:4px;}
+.cmsgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
+.cmsg{margin-bottom:11px;}
+.cmq{background:rgba(79,158,255,0.07);border:1px solid rgba(79,158,255,0.17);border-radius:9px;padding:8px 11px;font-size:12px;color:var(--accent2);margin-bottom:4px;}
+.cma{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 11px;font-size:12px;color:var(--text);line-height:1.7;}
+.cmts{font-size:9px;color:var(--muted);margin-top:3px;text-align:right;}
+.cnoloc{display:flex;align-items:center;justify-content:center;height:100%;text-align:center;opacity:0.45;padding:20px;font-size:12px;color:var(--muted);}
+.cinput{display:flex;gap:7px;padding:10px 13px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.cinput input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:7px;font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.cinput input:focus{border-color:var(--accent4);}
+.cinput input::placeholder{color:var(--muted);}
 
-  /* COUNTRY FLAGS */
-  .flag-img { font-size: 28px; }
-
-  /* PROGRESS STEPS */
-  .progress-bar {
-    width: 220px; height: 3px;
-    background: var(--border); border-radius: 2px; overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-
-  /* ERROR */
-  .error-box {
-    background: rgba(255,107,107,0.08);
-    border: 1px solid rgba(255,107,107,0.3);
-    border-radius: 10px;
-    padding: 16px;
-    color: var(--accent3);
-    font-size: 12px;
-    margin-bottom: 14px;
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .app-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: auto; }
-    .map-panel { height: 45vh; border-right: none; border-bottom: 1px solid var(--border); }
-    header { flex-wrap: wrap; gap: 8px; }
-    .header-controls { width: 100%; }
-  }
-
-  .api-note {
-    font-size: 10px; color: var(--muted);
-    padding: 6px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-    letter-spacing: 0.5px;
-  }
+/* FOOTER */
+footer{flex-shrink:0;height:24px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 13px;font-size:9px;color:var(--muted);letter-spacing:0.5px;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
 </head>
 <body>
 
@@ -434,21 +173,19 @@
     <div class="logo-icon">&#127757;</div>
     <div>
       <div class="logo-text">GeoMind</div>
-      <div class="logo-sub">AI EDUCATIONAL GEO-INTELLIGENCE</div>
+      <div class="logo-sub">AI GEO-INTELLIGENCE</div>
     </div>
   </div>
-  <div class="header-controls">
-    <div class="ctrl-group">
-      <label>CLASS LEVEL</label>
+  <div class="hcontrols">
+    <div class="hg"><label>Class</label>
       <select id="classLevel">
-        <option value="6-8">Class 6&ndash;8</option>
-        <option value="9-10">Class 9&ndash;10</option>
-        <option value="11-12">Class 11&ndash;12</option>
+        <option value="6-8">6-8</option>
+        <option value="9-10">9-10</option>
+        <option value="11-12">11-12</option>
         <option value="Competitive" selected>Competitive</option>
       </select>
     </div>
-    <div class="ctrl-group">
-      <label>EXAM TYPE</label>
+    <div class="hg"><label>Exam</label>
       <select id="examType">
         <option value="School">School</option>
         <option value="Board">Board</option>
@@ -458,8 +195,7 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <div class="ctrl-group">
-      <label>LEARNING MODE</label>
+    <div class="hg"><label>Mode</label>
       <select id="learningMode">
         <option value="Full Analysis" selected>Full Analysis</option>
         <option value="Quiz Mode">Quiz Mode</option>
@@ -469,881 +205,571 @@
       </select>
     </div>
   </div>
+  <div class="hright">
+    <span class="sbadge" id="sbadge">READY</span>
+    <button onclick="clearAll()">&times; Clear</button>
+  </div>
 </header>
 
-<div class="app-layout">
-  <!-- MAP PANEL -->
+<div class="main">
+
+  <!-- MAP -->
   <div class="map-panel">
-    <div class="map-overlay">
-      <strong>&#128205; Click anywhere on the map</strong>
-      Select a location to generate your educational geo-intelligence report.
+    <div class="map-hint">
+      <strong>&#128205; Click the map</strong>
+      Select any location to generate a full educational report.
     </div>
-    <div class="coord-display" id="coordDisplay"></div>
+    <div class="coord-pill" id="cpill"></div>
     <div id="map"></div>
   </div>
 
   <!-- RIGHT PANEL -->
   <div class="right-panel">
-    <div class="controls-bar">
-      <span style="font-size:11px; color: var(--muted);">&#128300; Z.AI GLM ANALYSIS ENGINE</span>
-      <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
-      <div style="margin-left:auto; display:flex; gap:8px;">
-        <button onclick="clearResult()">&times; Clear</button>
+    <div class="tabs">
+      <button class="tabbtn act" id="t-analysis" onclick="goTab('analysis',this)">&#128300; Analysis</button>
+      <button class="tabbtn h-tab" id="t-history" onclick="goTab('history',this)">&#128200; History</button>
+      <button class="tabbtn c-tab" id="t-chat" onclick="goTab('chat',this)">&#128172; Chat</button>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div class="tabpanel act" id="tp-analysis">
+      <div class="scroll" id="ascroll">
+        <div class="idle" id="idle">
+          <div class="bi">&#128506;</div>
+          <h3>Click a location on the map</h3>
+          <p>GeoMind generates a structured exam-ready report: geography, history, agriculture, economy, quiz and more.</p>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:5px;">
+            <span class="tag">Geography</span>
+            <span class="tag bl">History</span>
+            <span class="tag yl">Agriculture</span>
+            <span class="tag rd">Quiz</span>
+          </div>
+        </div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <div style="text-align:center;">
+            <div style="font-size:12px;color:var(--muted);">Generating report&hellip;</div>
+            <div class="lstep" id="lstep">Starting&hellip;</div>
+            <div class="pbar"><div class="pfill" id="pfill"></div></div>
+          </div>
+        </div>
+        <div class="result" id="result"></div>
       </div>
     </div>
 
-    <div class="output-area" id="outputArea">
-      <div class="idle-state" id="idleState">
-        <div class="big-icon">&#128506;</div>
-        <h3>Click a location on the map</h3>
-        <p>GeoMind will generate a structured educational report with geography, history, agriculture, economics, and exam-ready content powered by Gemini AI.</p>
-        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
-          <span class="tag">Geography</span>
-          <span class="tag blue">History</span>
-          <span class="tag yellow">Agriculture</span>
-          <span class="tag red">Quiz Mode</span>
+    <!-- HISTORY -->
+    <div class="tabpanel" id="tp-history">
+      <div class="scroll" id="hscroll">
+        <div id="hcontent">
+          <div class="hempty" id="hempty">
+            <div style="font-size:46px;">&#128200;</div>
+            <p>No history yet. Click locations on the map to build your search history.</p>
+          </div>
         </div>
       </div>
-      <div class="loading-state" id="loadingState">
-        <div class="spinner"></div>
-        <div style="text-align:center;">
-          <div class="loading-text">Generating educational report&hellip;</div>
-          <div class="loading-steps" id="loadingStep">Fetching location data&hellip;</div>
-          <div style="margin-top:12px;"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
-        </div>
-      </div>
-      <div class="result-content" id="resultContent"></div>
     </div>
 
-    <div class="chat-box" id="chatBox" style="display:none;">
-      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location&hellip;" />
-      <button class="btn-primary" onclick="sendFollowUp()">Ask &rarr;</button>
+    <!-- CHAT -->
+    <div class="tabpanel" id="tp-chat">
+      <div class="cmsgs" id="cmsgs">
+        <div class="cnoloc" id="cnoloc">&#128172; Click a location on the map first, then ask questions here.</div>
+      </div>
+      <div class="cinput">
+        <input type="text" id="cinput" placeholder="Ask about the selected location&hellip;"/>
+        <button class="btn-p" onclick="sendChat()">Send</button>
+      </div>
     </div>
-    <div class="api-note">Powered by Z.ai GLM &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
   </div>
 </div>
 
+<footer>
+  Powered by Z.ai GLM-4.5-Flash &middot; OpenStreetMap + Leaflet &middot; Nominatim &middot; REST Countries &middot; Wikipedia &middot; Firebase Realtime DB
+</footer>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-// === JSON REPAIR UTILITY ===
-function repairAndParseJSON(str) {
-  let s = str;
-  // Close any open strings by counting quotes
-  let inString = false, escaped = false;
-  for (let i = 0; i < s.length; i++) {
-    if (escaped) { escaped = false; continue; }
-    if (s[i] === '\\') { escaped = true; continue; }
-    if (s[i] === '"') inString = !inString;
-  }
-  if (inString) s += '"'; // close open string
+// ── CONFIG ─────────────────────────────────────────────
+const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
+const FB      = 'https://geogide-7d25e-default-rtdb.firebaseio.com';
 
-  // Balance brackets and braces
-  let opens = 0, aopens = 0;
-  inString = false; escaped = false;
-  for (let i = 0; i < s.length; i++) {
-    if (escaped) { escaped = false; continue; }
-    if (s[i] === '\\') { escaped = true; continue; }
-    if (s[i] === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (s[i] === '{') opens++;
-    else if (s[i] === '}') opens--;
-    else if (s[i] === '[') aopens++;
-    else if (s[i] === ']') aopens--;
-  }
-  // Remove trailing comma before closing
-  s = s.replace(/,\s*([}\]])/g, '$1');
-  while (aopens > 0) { s += ']'; aopens--; }
-  while (opens > 0) { s += '}'; opens--; }
-  try {
-    return JSON.parse(s);
-  } catch(e2) {
-    console.error('JSON repair failed:', e2, s.substring(0, 200));
-    throw new Error('Could not parse AI response. Please try again.');
-  }
+// ── STATE ──────────────────────────────────────────────
+let curData = {};
+let mapMarker = null;
+
+// ── TABS ───────────────────────────────────────────────
+function goTab(name, btn) {
+  document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('act'));
+  document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('act'));
+  document.getElementById('tp-' + name).classList.add('act');
+  btn.classList.add('act');
+  if (name === 'history') loadHistory();
 }
 
-// === Z.AI JWT TOKEN GENERATOR ===
-function generateZaiToken(apiKey) {
-  try {
-    const parts = apiKey.split('.');
-    if (parts.length < 2) throw new Error('Invalid API key format');
-    const id = parts[0];
-    const secret = parts.slice(1).join('.');
-    const now = Math.round(new Date().getTime());
-    const header = { alg: 'HS256', sign_type: 'SIGN' };
-    const payload = {
-      api_key: id,
-      exp: now + 3600 * 1000,
-      timestamp: now
-    };
-    const token = KJUR.jws.JWS.sign(
-      'HS256',
-      JSON.stringify(header),
-      JSON.stringify(payload),
-      { utf8: secret }
-    );
-    return token;
-  } catch(e) {
-    console.error('JWT generation error:', e);
-    throw new Error('Failed to generate auth token: ' + e.message);
-  }
-}
-
-// === MAP INIT ===
-const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
+// ── MAP ────────────────────────────────────────────────
+const map = L.map('map', {zoomControl: true}).setView([20.59, 78.96], 4);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
 }).addTo(map);
 
-let marker = null;
-let currentLat = null, currentLon = null;
-let currentLocationData = {};
-
-const coordDisplay = document.getElementById('coordDisplay');
-
-map.on('click', async (e) => {
-  const { lat, lng } = e.latlng;
-  currentLat = lat.toFixed(5);
-  currentLon = lng.toFixed(5);
-
-  if (marker) map.removeLayer(marker);
-  marker = L.circleMarker([lat, lng], {
-    radius: 8, fillColor: '#00e5a0', color: '#fff',
-    weight: 2, opacity: 1, fillOpacity: 0.9
-  }).addTo(map);
-
-  coordDisplay.style.display = 'block';
-  coordDisplay.textContent = `&#128205; ${currentLat}&deg;N  ${currentLon}&deg;E`;
+map.on('click', async e => {
+  const {lat, lng} = e.latlng;
+  placeMarker(lat, lng, '#00e5a0');
+  document.getElementById('cpill').style.display = 'block';
+  document.getElementById('cpill').textContent = lat.toFixed(4) + '\u00b0   ' + lng.toFixed(4) + '\u00b0';
   await generateReport(lat, lng);
 });
 
-// === MAIN REPORT GENERATOR ===
+function placeMarker(lat, lng, color) {
+  if (mapMarker) map.removeLayer(mapMarker);
+  mapMarker = L.circleMarker([lat, lng], {
+    radius: 8, fillColor: color, color: '#fff', weight: 2, fillOpacity: 0.92
+  }).addTo(map);
+}
+
+// ── REPORT PIPELINE ────────────────────────────────────
 async function generateReport(lat, lon) {
   showLoading();
   try {
-    setStep('&#128225; Fetching reverse geocode&hellip;', 15);
-    const geoData = await fetchGeocode(lat, lon);
+    setStep('Reverse geocoding\u2026', 15);
+    const geo = await fetchGeocode(lat, lon);
 
-    setStep('&#127760; Loading country data&hellip;', 35);
-    const countryName = geoData.address?.country || 'India';
-    const countryData = await fetchCountryData(countryName);
+    setStep('Country data\u2026', 30);
+    const country = await fetchCountry(geo.address?.country || '');
 
-    setStep('&#128214; Loading Wikipedia summary&hellip;',t); line-height: 1.6; }
-
-  /* EXAM FOCUS */
-  .exam-pill {
-    background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(255,107,107,0.1));
-    border: 1px solid rgba(255,209,102,0.25);
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    font-size: 11px;
-    color: var(--accent4);
-    line-height: 1.6;
-  }
-
-  /* CHAT BOX */
-  .chat-box {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex; gap: 10px;
-  }
-  .chat-box input {
-    flex: 1;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .chat-box input:focus { border-color: var(--accent); }
-  .chat-box input::placeholder { color: var(--muted); }
-
-  /* COLLAPSIBLE */
-  .section-body.collapsed { display: none; }
-  .chevron { margin-left: auto; transition: transform 0.2s; font-size: 12px; }
-  .chevron.open { transform: rotate(180deg); }
-
-  /* WIKI SUMMARY */
-  .wiki-box {
-    background: rgba(79,158,255,0.05);
-    border: 1px solid rgba(79,158,255,0.15);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.7;
-    font-style: italic;
-    margin-bottom: 10px;
-  }
-
-  /* COUNTRY FLAGS */
-  .flag-img { font-size: 28px; }
-
-  /* PROGRESS STEPS */
-  .progress-bar {
-    width: 220px; height: 3px;
-    background: var(--border); border-radius: 2px; overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
-
-  /* ERROR */
-  .error-box {
-    background: rgba(255,107,107,0.08);
-    border: 1px solid rgba(255,107,107,0.3);
-    border-radius: 10px;
-    padding: 16px;
-    color: var(--accent3);
-    font-size: 12px;
-    margin-bottom: 14px;
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .app-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: auto; }
-    .map-panel { height: 45vh; border-right: none; border-bottom: 1px solid var(--border); }
-    header { flex-wrap: wrap; gap: 8px; }
-    .header-controls { width: 100%; }
-  }
-
-  .api-note {
-    font-size: 10px; color: var(--muted);
-    padding: 6px 16px;
-    border-top: 1px solid var(--border);
-    background: var(--surface);
-    letter-spacing: 0.5px;
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
-</head>
-<body>
-
-<header>
-  <div class="logo">
-    <div class="logo-icon">&#127757;</div>
-    <div>
-      <div class="logo-text">GeoMind</div>
-      <div class="logo-sub">AI EDUCATIONAL GEO-INTELLIGENCE</div>
-    </div>
-  </div>
-  <div class="header-controls">
-    <div class="ctrl-group">
-      <label>CLASS LEVEL</label>
-      <select id="classLevel">
-        <option value="6-8">Class 6&ndash;8</option>
-        <option value="9-10">Class 9&ndash;10</option>
-        <option value="11-12">Class 11&ndash;12</option>
-        <option value="Competitive" selected>Competitive</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <label>EXAM TYPE</label>
-      <select id="examType">
-        <option value="School">School</option>
-        <option value="Board">Board</option>
-        <option value="UPSC" selected>UPSC</option>
-        <option value="SSC">SSC</option>
-        <option value="State PCS">State PCS</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <label>LEARNING MODE</label>
-      <select id="learningMode">
-        <option value="Full Analysis" selected>Full Analysis</option>
-        <option value="Quiz Mode">Quiz Mode</option>
-        <option value="Timeline Mode">Timeline Mode</option>
-        <option value="Agriculture Mode">Agriculture Mode</option>
-        <option value="Normal">Normal</option>
-      </select>
-    </div>
-  </div>
-</header>
-
-<div class="app-layout">
-  <!-- MAP PANEL -->
-  <div class="map-panel">
-    <div class="map-overlay">
-      <strong>&#128205; Click anywhere on the map</strong>
-      Select a location to generate your educational geo-intelligence report.
-    </div>
-    <div class="coord-display" id="coordDisplay"></div>
-    <div id="map"></div>
-  </div>
-
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="controls-bar">
-      <span style="font-size:11px; color: var(--muted);">&#128300; Z.AI GLM ANALYSIS ENGINE</span>
-      <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
-      <div style="margin-left:auto; display:flex; gap:8px;">
-        <button onclick="clearResult()">&times; Clear</button>
-      </div>
-    </div>
-
-    <div class="output-area" id="outputArea">
-      <div class="idle-state" id="idleState">
-        <div class="big-icon">&#128506;</div>
-        <h3>Click a location on the map</h3>
-        <p>GeoMind will generate a structured educational report with geography, history, agriculture, economics, and exam-ready content powered by Gemini AI.</p>
-        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
-          <span class="tag">Geography</span>
-          <span class="tag blue">History</span>
-          <span class="tag yellow">Agriculture</span>
-          <span class="tag red">Quiz Mode</span>
-        </div>
-      </div>
-      <div class="loading-state" id="loadingState">
-        <div class="spinner"></div>
-        <div style="text-align:center;">
-          <div class="loading-text">Generating educational report&hellip;</div>
-          <div class="loading-steps" id="loadingStep">Fetching location data&hellip;</div>
-          <div style="margin-top:12px;"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
-        </div>
-      </div>
-      <div class="result-content" id="resultContent"></div>
-    </div>
-
-    <div class="chat-box" id="chatBox" style="display:none;">
-      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location&hellip;" />
-      <button class="btn-primary" onclick="sendFollowUp()">Ask &rarr;</button>
-    </div>
-    <div class="api-note">Powered by Z.ai GLM &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script>
-// === JSON REPAIR UTILITY ===
-function repairAndParseJSON(str) {
-  let s = str;
-  // Close any open strings by counting quotes
-  let inString = false, escaped = false;
-  for (let i = 0; i < s.length; i++) {
-    if (escaped) { escaped = false; continue; }
-    if (s[i] === '\\') { escaped = true; continue; }
-    if (s[i] === '"') inString = !inString;
-  }
-  if (inString) s += '"'; // close open string
-
-  // Balance brackets and braces
-  let opens = 0, aopens = 0;
-  inString = false; escaped = false;
-  for (let i = 0; i < s.length; i++) {
-    if (escaped) { escaped = false; continue; }
-    if (s[i] === '\\') { escaped = true; continue; }
-    if (s[i] === '"') { inString = !inString; continue; }
-    if (inString) continue;
-    if (s[i] === '{') opens++;
-    else if (s[i] === '}') opens--;
-    else if (s[i] === '[') aopens++;
-    else if (s[i] === ']') aopens--;
-  }
-  // Remove trailing comma before closing
-  s = s.replace(/,\s*([}\]])/g, '$1');
-  while (aopens > 0) { s += ']'; aopens--; }
-  while (opens > 0) { s += '}'; opens--; }
-  try {
-    return JSON.parse(s);
-  } catch(e2) {
-    console.error('JSON repair failed:', e2, s.substring(0, 200));
-    throw new Error('Could not parse AI response. Please try again.');
-  }
-}
-
-// === Z.AI JWT TOKEN GENERATOR ===
-function generateZaiToken(apiKey) {
-  try {
-    const parts = apiKey.split('.');
-    if (parts.length < 2) throw new Error('Invalid API key format');
-    const id = parts[0];
-    const secret = parts.slice(1).join('.');
-    const now = Math.round(new Date().getTime());
-    const header = { alg: 'HS256', sign_type: 'SIGN' };
-    const payload = {
-      api_key: id,
-      exp: now + 3600 * 1000,
-      timestamp: now
-    };
-    const token = KJUR.jws.JWS.sign(
-      'HS256',
-      JSON.stringify(header),
-      JSON.stringify(payload),
-      { utf8: secret }
+    setStep('Wikipedia\u2026', 48);
+    const wiki = await fetchWiki(
+      geo.address?.city || geo.address?.state || geo.address?.country || ''
     );
-    return token;
-  } catch(e) {
-    console.error('JWT generation error:', e);
-    throw new Error('Failed to generate auth token: ' + e.message);
-  }
-}
 
-// === MAP INIT ===
-const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
-}).addTo(map);
+    setStep('AI generating report\u2026', 68);
+    const ai = await callZai(lat, lon, geo, country, wiki);
 
-let marker = null;
-let currentLat = null, currentLon = null;
-let currentLocationData = {};
+    setStep('Saving to Firebase\u2026', 88);
+    await fbSave(lat, lon, geo, ai);
 
-const coordDisplay = document.getElementById('coordDisplay');
-
-map.on('click', async (e) => {
-  const { lat, lng } = e.latlng;
-  currentLat = lat.toFixed(5);
-  currentLon = lng.toFixed(5);
-
-  if (marker) map.removeLayer(marker);
-  marker = L.circleMarker([lat, lng], {
-    radius: 8, fillColor: '#00e5a0', color: '#fff',
-    weight: 2, opacity: 1, fillOpacity: 0.9
-  }).addTo(map);
-
-  coordDisplay.style.display = 'block';
-  coordDisplay.textContent = `&#128205; ${currentLat}&deg;N  ${currentLon}&deg;E`;
-  await generateReport(lat, lng);
-});
-
-// === MAIN REPORT GENERATOR ===
-async function generateReport(lat, lon) {
-  showLoading();
-  try {
-    setStep('&#128225; Fetching reverse geocode&hellip;', 15);
-    const geoData = await fetchGeocode(lat, lon);
-
-    setStep('&#127760; Loading country data&hellip;', 35);
-    const countryName = geoData.address?.country || 'India';
-    const countryData = await fetchCountryData(countryName);
-
-    setStep('&#128214; Loading Wikipedia summary&hellip;', 55);
-    const placeName = geoData.address?.city || geoData.address?.state || geoData.address?.country || 'India';
-    const wikiData = await fetchWikipedia(placeName);
-
-    setStep('&#129302; Generating AI analysis&hellip;', 75);
-    const aiResult = await generateWithGemini(lat, lon, geoData, countryData, wikiData);
-
-    setStep('&#9989; Rendering report&hellip;', 95);
-    currentLocationData = { geoData, countryData, wikiData, lat, lon };
-    renderResult(lat, lon, geoData, countryData, wikiData, aiResult);
-    setStep('Done', 100);
+    setStep('Done!', 100);
+    curData = {geo, country, wiki, lat, lon, ai};
+    renderReport(lat, lon, geo, country, wiki, ai);
 
   } catch (err) {
     showError(err.message);
   }
 }
 
-// === FETCH HELPERS ===
+// ── FETCH HELPERS ──────────────────────────────────────
 async function fetchGeocode(lat, lon) {
-  const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
-    headers: { 'Accept-Language': 'en' }
-  });
+  const r = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+    {headers: {'Accept-Language': 'en'}}
+  );
   return r.json();
 }
 
-async function fetchCountryData(country) {
+async function fetchCountry(name) {
+  if (!name) return null;
   try {
-    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(country)}?fullText=false`);
+    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);
     const d = await r.json();
     return Array.isArray(d) ? d[0] : null;
   } catch { return null; }
 }
 
-async function fetchWikipedia(place) {
+async function fetchWiki(place) {
+  if (!place) return null;
   try {
     const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
 
-async function generateWithGemini(lat, lon, geoData, countryData, wikiData) {
-  const classLevel = document.getElementById('classLevel').value;
-  const examType = document.getElementById('examType').value;
-  const learningMode = document.getElementById('learningMode').value;
-
-  const addr = geoData.address || {};
-  const locationStr = [addr.city, addr.state, addr.country].filter(Boolean).join(', ') || `${lat}, ${lon}`;
-
-  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
-
-LOCATION: ${locationStr}
-COORDINATES: ${lat}, ${lon}
-CLASS LEVEL: ${classLevel}
-EXAM TYPE: ${examType}
-LEARNING MODE: ${learningMode}
-COUNTRY: ${addr.country || 'Unknown'}
-STATE/REGION: ${addr.state || addr.region || 'Unknown'}
-DISTRICT: ${addr.county || addr.district || 'Unknown'}
-WIKIPEDIA EXTRACT: ${wikiData?.extract || 'Not available'}
-POPULATION: ${countryData?.population || 'Unknown'}
-CAPITAL: ${countryData?.capital?.[0] || 'Unknown'}
-
-Generate a comprehensive, exam-oriented educational geo-intelligence report in this EXACT JSON structure. All fields must be populated. Use academic tone. No hallucination &mdash; if data is genuinely unknown, say "Data not available".
-
-{
-  "locationId": {
-    "country": "...", "state": "...", "district": "...", "nearestCity": "...",
-    "coordinates": "${lat}, ${lon}"
-  },
-  "geography": {
-    "terrain": "...", "climate": "...", "soilType": "...",
-    "rivers": "...", "naturalResources": "..."
-  },
-  "agriculture": {
-    "majorCrops": ["...", "...", "..."],
-    "whyCropsGrow": "...",
-    "irrigationSources": "...",
-    "seasonalPattern": "..."
-  },
-  "history": {
-    "ancient": "...",
-    "medieval": "...",
-    "modern": "...",
-    "freedomMovement": "..."
-  },
-  "economy": {
-    "majorIndustries": ["...", "..."],
-    "gdpContribution": "...",
-    "employmentPattern": "..."
-  },
-  "currentRelevance": {
-    "environmentalIssues": "...",
-    "developmentProjects": "...",
-    "strategicImportance": "..."
-  },
-  "timeline": [
-    {"year": "...", "event": "..."},
-    {"year": "...", "event": "..."},
-    {"year": "...", "event": "..."},
-    {"year": "...", "event": "..."},
-    {"year": "...", "event": "..."}
-  ],
-  "quiz": {
-    "mcqs": [
-      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A"},
-      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "B"},
-      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "C"},
-      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "D"},
-      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A"}
-    ],
-    "assertionReason": [
-      {"assertion": "...", "reason": "...", "answer": "..."},
-      {"assertion": "...", "reason": "...", "answer": "..."}
-    ],
-    "mapQuestion": "..."
-  },
-  "examFocus": [
-    "Probable exam question 1 for ${examType}",
-    "Probable exam question 2 for ${examType}",
-    "Probable exam question 3 for ${examType}"
-  ]
+// ── JWT + Z.AI ─────────────────────────────────────────
+function makeJWT() {
+  const pts = ZAI_KEY.split('.');
+  const id  = pts[0];
+  const sec = pts.slice(1).join('.');
+  const now = Date.now();
+  return KJUR.jws.JWS.sign('HS256',
+    JSON.stringify({alg: 'HS256', sign_type: 'SIGN'}),
+    JSON.stringify({api_key: id, exp: now + 3600000, timestamp: now}),
+    {utf8: sec}
+  );
 }
 
-Adjust depth and complexity for CLASS LEVEL ${classLevel}.
-${learningMode === 'Quiz Mode' ? 'Emphasize quiz section heavily.' : ''}
-${learningMode === 'Timeline Mode' ? 'Add 8-10 timeline entries.' : ''}
-${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technical details.' : ''}
+async function callZai(lat, lon, geo, country, wiki) {
+  const cls  = document.getElementById('classLevel').value;
+  const exam = document.getElementById('examType').value;
+  const mode = document.getElementById('learningMode').value;
+  const addr = geo.address || {};
+  const loc  = [addr.city, addr.state, addr.country].filter(Boolean).join(', ') || `${lat},${lon}`;
 
-CRITICAL RULES:
-- Return ONLY raw valid JSON. No markdown. No backticks. No explanation.
-- Keep each field value concise (1-2 sentences max).
-- The JSON must be complete and properly closed.
-- Do not truncate any field.`;
+  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
+LOCATION: ${loc} | LAT: ${lat} | LON: ${lon}
+COUNTRY: ${addr.country||'?'} | STATE: ${addr.state||'?'} | DISTRICT: ${addr.county||addr.district||'?'}
+CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode}
+WIKI: ${wiki?.extract?.substring(0,350)||'N/A'}
+POP: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
 
-  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
-  const jwtToken = generateZaiToken(ZAI_KEY);
+Return ONLY compact valid JSON matching this EXACT structure (no markdown, no backticks):
+{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
+Rules: 1-2 sentences per field. All fields required. Complete valid JSON only. Adjust for CLASS ${cls}.`;
+
   const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + jwtToken
-    },
+    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + makeJWT()},
     body: JSON.stringify({
       model: 'glm-4.5-flash',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{role: 'user', content: prompt}],
       temperature: 0.3,
-      max_tokens: 6000
+      max_tokens: 4096
     })
   });
 
   if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error('Z.ai API error: ' + resp.status + ' - ' + errText);
+    const e = await resp.text(); throw new Error('Z.ai ' + resp.status + ': ' + e);
   }
-  const data = await resp.json();
-  const text = data.choices?.[0]?.message?.content || '';
-  let clean = text.replace(/```json|```/g, '').trim();
-  // Extract only the JSON object portion
-  const firstBrace = clean.indexOf('{');
-  const lastBrace = clean.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    clean = clean.substring(firstBrace, lastBrace + 1);
+  const d = await resp.json();
+  let raw = (d.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f !== -1 && l !== -1) raw = raw.substring(f, l + 1);
+  try { return JSON.parse(raw); }
+  catch { return fixJSON(raw); }
+}
+
+function fixJSON(s) {
+  let inStr = false, esc = false;
+  for (let i = 0; i < s.length; i++) {
+    if (esc) { esc = false; continue; }
+    if (s[i] === '\\') { esc = true; continue; }
+    if (s[i] === '"') inStr = !inStr;
   }
-  // Attempt to repair truncated JSON
+  if (inStr) s += '"';
+  let opens = 0, arr = 0;
+  inStr = false; esc = false;
+  for (let i = 0; i < s.length; i++) {
+    if (esc) { esc = false; continue; }
+    if (s[i] === '\\') { esc = true; continue; }
+    if (s[i] === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (s[i] === '{') opens++;
+    else if (s[i] === '}') opens--;
+    else if (s[i] === '[') arr++;
+    else if (s[i] === ']') arr--;
+  }
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  while (arr-- > 0) s += ']';
+  while (opens-- > 0) s += '}';
+  return JSON.parse(s);
+}
+
+// ── FIREBASE ───────────────────────────────────────────
+async function fbReq(path, method = 'GET', body = null) {
+  const opts = {method, headers: {'Content-Type': 'application/json'}};
+  if (body) opts.body = JSON.stringify(body);
   try {
-    return JSON.parse(clean);
-  } catch(e) {
-    return repairAndParseJSON(clean);
-  }
+    const r = await fetch(FB + path + '.json', opts);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
 }
 
-// === RENDER ===
-function renderResult(lat, lon, geoData, countryData, wikiData, ai) {
-  const addr = geoData.address || {};
-  const mode = document.getElementById('learningMode').value;
-  const flag = countryData?.flag || '';
-  const placeName = ai.locationId?.nearestCity || addr.city || addr.state || addr.country || 'Unknown';
-
-  let html = `
-  <div class="location-badge">
-    <div>
-      <div class="place-name">${flag} ${placeName}</div>
-      <div class="place-sub">${[ai.locationId?.state, ai.locationId?.country].filter(Boolean).join(' &middot; ')}</div>
-    </div>
-    <div class="coords-badge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;</div>
-  </div>`;
-
-  if (wikiData?.extract) {
-    html += `<div class="wiki-box">&#128214; ${wikiData.extract.substring(0, 320)}&hellip;</div>`;
-  }
-
-  // 1 - Location
-  html += makeSection('#1', 'Location Identification', `
-    ${row('Country', ai.locationId?.country)}
-    ${row('State / Region', ai.locationId?.state)}
-    ${row('District', ai.locationId?.district)}
-    ${row('Nearest City', ai.locationId?.nearestCity)}
-    ${row('Coordinates', ai.locationId?.coordinates)}
-  `, true);
-
-  // 2 - Geography
-  if (mode !== 'Quiz Mode') {
-    html += makeSection('#2', 'Geography Analysis', `
-      ${row('Terrain', ai.geography?.terrain)}
-      ${row('Climate', ai.geography?.climate)}
-      ${row('Soil Type', ai.geography?.soilType)}
-      ${row('Rivers', ai.geography?.rivers)}
-      ${row('Natural Resources', ai.geography?.naturalResources)}
-    `);
-  }
-
-  // 3 - Agriculture
-  html += makeSection('#3', 'Agriculture Intelligence', `
-    <div class="sec-row"><span class="label">Major Crops</span><span class="val">${(ai.agriculture?.majorCrops || []).map(c => `<span class="tag yellow">${c}</span>`).join('')}</span></div>
-    ${row('Why These Crops', ai.agriculture?.whyCropsGrow)}
-    ${row('Irrigation Sources', ai.agriculture?.irrigationSources)}
-    ${row('Seasonal Pattern', ai.agriculture?.seasonalPattern)}
-  `);
-
-  // 4 - History
-  if (mode !== 'Agriculture Mode') {
-    html += makeSection('#4', 'Historical Significance', `
-      ${row('Ancient Period', ai.history?.ancient)}
-      ${row('Medieval Period', ai.history?.medieval)}
-      ${row('Modern Period', ai.history?.modern)}
-      ${row('Freedom Movement', ai.history?.freedomMovement)}
-    `);
-  }
-
-  // 5 - Economy
-  html += makeSection('#5', 'Economic Profile', `
-    <div class="sec-row"><span class="label">Major Industries</span><span class="val">${(ai.economy?.majorIndustries || []).map(i => `<span class="tag blue">${i}</span>`).join('')}</span></div>
-    ${row('GDP Contribution', ai.economy?.gdpContribution)}
-    ${row('Employment Pattern', ai.economy?.employmentPattern)}
-  `);
-
-  // 6 - Current Relevance
-  html += makeSection('#6', 'Current Relevance', `
-    ${row('Environmental Issues', ai.currentRelevance?.environmentalIssues)}
-    ${row('Development Projects', ai.currentRelevance?.developmentProjects)}
-    ${row('Strategic Importance', ai.currentRelevance?.strategicImportance)}
-  `);
-
-  // 7 - Timeline
-  if (mode === 'Timeline Mode' || mode === 'Full Analysis') {
-    const tlItems = (ai.timeline || []).map(t => `
-      <div class="tl-item">
-        <div class="tl-dot"></div>
-        <div class="tl-year">${t.year}</div>
-        <div class="tl-text">${t.event}</div>
-      </div>`).join('');
-    html += makeSection('#7', 'Historical Timeline', `<div class="timeline">${tlItems}</div>`);
-  }
-
-  // 8 - Quiz Mode
-  if (mode === 'Quiz Mode' || mode === 'Full Analysis') {
-    let quizHtml = '<div style="margin-bottom:10px; font-size:11px; color:var(--muted);">Click options to check your answers.</div>';
-    (ai.quiz?.mcqs || []).forEach((q, i) => {
-      quizHtml += `<div class="mcq-item">
-        <div class="mcq-q">Q${i+1}. ${q.q}</div>
-        ${(q.options || []).map((opt, oi) => {
-          const letter = ['A','B','C','D'][oi];
-          return `<span class="mcq-opt" onclick="checkMCQ(this,'${letter}','${q.answer}')">${opt}</span>`;
-        }).join('')}
-      </div>`;
-    });
-    if (ai.quiz?.assertionReason?.length) {
-      quizHtml += `<div style="margin:10px 0 6px; font-size:11px; color:var(--accent); letter-spacing:1px;">ASSERTION-REASON</div>`;
-      ai.quiz.assertionReason.forEach((ar, i) => {
-        quizHtml += `<div class="mcq-item">
-          <div class="mcq-q">AR${i+1}. <strong>Assertion:</strong> ${ar.assertion}<br><strong>Reason:</strong> ${ar.reason}</div>
-          <div style="font-size:10px; color:var(--muted); margin-top:6px;">Answer: <span style="color:var(--accent)">${ar.answer}</span></div>
-        </div>`;
-      });
-    }
-    if (ai.quiz?.mapQuestion) {
-      quizHtml += `<div style="margin:10px 0 6px; font-size:11px; color:var(--accent2); letter-spacing:1px;">MAP-BASED QUESTION</div>
-        <div class="mcq-item"><div class="mcq-q">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
-    }
-    html += makeSection('#8', 'Quiz Mode', quizHtml);
-  }
-
-  // 9 - Exam Focus
-  const examFocusItems = (ai.examFocus || []).map(q => `<div class="exam-pill">&#9889; ${q}</div>`).join('');
-  html += makeSection('#9', `Exam Focus &mdash; ${document.getElementById('examType').value}`, examFocusItems);
-
-  document.getElementById('resultContent').innerHTML = html;
-  showResult();
-  document.getElementById('chatBox').style.display = 'flex';
-}
-
-function makeSection(num, title, content, open = false) {
-  const id = 'sec_' + Math.random().toString(36).substr(2, 6);
-  return `
-  <div class="section-card">
-    <div class="section-header" onclick="toggleSection('${id}', this)">
-      <span class="sec-icon">${num}</span>
-      <span class="sec-title">${title}</span>
-      <span class="chevron ${open ? 'open' : ''}">&#9662;</span>
-    </div>
-    <div class="section-body ${open ? '' : 'collapsed'}" id="${id}">${content}</div>
-  </div>`;
-}
-
-function row(label, val) {
-  return `<div class="sec-row"><span class="label">${label}</span><span class="val">${val || '<span style="color:var(--muted)">Data not available</span>'}</span></div>`;
-}
-
-function toggleSection(id, header) {
-  const body = document.getElementById(id);
-  const chev = header.querySelector('.chevron');
-  body.classList.toggle('collapsed');
-  chev.classList.toggle('open');
-}
-
-function checkMCQ(el, selected, correct) {
-  const parent = el.closest('.mcq-item');
-  parent.querySelectorAll('.mcq-opt').forEach(o => {
-    o.style.pointerEvents = 'none';
-    const letter = o.textContent.trim()[0];
-    if (letter === correct) o.classList.add('correct');
-    else if (letter === selected && selected !== correct) o.classList.add('wrong');
+async function fbSave(lat, lon, geo, ai) {
+  const addr = geo.address || {};
+  await fbReq('/searches', 'POST', {
+    timestamp: new Date().toISOString(),
+    lat: parseFloat(lat), lon: parseFloat(lon),
+    country: addr.country || '',
+    state: addr.state || '',
+    city: addr.city || addr.town || addr.village || '',
+    nearestCity: ai.locationId?.nearestCity || '',
+    classLevel: document.getElementById('classLevel').value,
+    examType: document.getElementById('examType').value,
+    mode: document.getElementById('learningMode').value,
+    ai
   });
 }
 
-// === FOLLOW-UP CHAT ===
-async function sendFollowUp() {
-  const input = document.getElementById('chatInput');
-  const query = input.value.trim();
-  if (!query) return;
-  input.value = '';
+async function loadHistory() {
+  const hc = document.getElementById('hcontent');
+  hc.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;">Loading&hellip;</div>';
+  const data = await fbReq('/searches');
+  if (!data || !Object.keys(data).length) {
+    hc.innerHTML = '';
+    const empty = document.createElement('div');
+    empty.className = 'hempty';
+    empty.innerHTML = '<div style="font-size:46px">&#128200;</div><p>No history yet. Click locations on the map to build your history.</p>';
+    hc.appendChild(empty);
+    return;
+  }
+  const entries = Object.entries(data).sort((a,b) => b[1].timestamp?.localeCompare(a[1].timestamp||'')||0);
+  let html = `<button class="hclr" onclick="clearHistory()">&#128465; Clear All History</button>`;
+  entries.forEach(([key, rec]) => {
+    const d = new Date(rec.timestamp);
+    const ds = isNaN(d) ? rec.timestamp : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const name = rec.nearestCity || rec.city || rec.state || rec.country || 'Unknown Location';
+    const enc = JSON.stringify(rec).replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
+    html += `<div class="hitem" onclick='reloadHist(${JSON.stringify(rec)})'>
+      <div class="hname">&#128205; ${name}</div>
+      <div class="hmeta">${[rec.state,rec.country].filter(Boolean).join(', ')} &bull; ${rec.classLevel||''} &bull; ${rec.examType||''}</div>
+      <div class="hcoord">${(rec.lat||0).toFixed(4)}&deg; , ${(rec.lon||0).toFixed(4)}&deg; &mdash; ${ds}</div>
+    </div>`;
+  });
+  hc.innerHTML = html;
+}
 
-  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
-  const { geoData, wikiData } = currentLocationData;
-  const addr = geoData?.address || {};
-  const location = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+async function clearHistory() {
+  if (!confirm('Delete all search history from Firebase?')) return;
+  await fbReq('/searches', 'DELETE');
+  loadHistory();
+}
 
-  const prompt = `You are an expert geography and history tutor. The student is studying: ${location}. 
-Wikipedia context: ${wikiData?.extract || ''}
-Student question: ${query}
-Answer concisely in 2-4 sentences with academic accuracy. Be direct and informative.`;
+function reloadHist(rec) {
+  if (!rec || !rec.ai) return;
+  curData = {
+    geo: {address: {country: rec.country, state: rec.state, city: rec.city}},
+    lat: rec.lat, lon: rec.lon, ai: rec.ai
+  };
+  document.getElementById('classLevel').value = rec.classLevel || 'Competitive';
+  document.getElementById('examType').value = rec.examType || 'UPSC';
+  document.getElementById('learningMode').value = rec.mode || 'Full Analysis';
 
-  const chatArea = document.getElementById('resultContent');
-  const tempDiv = document.createElement('div');
-  tempDiv.className = 'mcq-item';
-  tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--muted); font-size:11px; margin-top:6px;">Thinking&hellip;</div>`;
-  chatArea.appendChild(tempDiv);
-  tempDiv.scrollIntoView({ behavior: 'smooth' });
+  placeMarker(rec.lat, rec.lon, '#4f9eff');
+  map.setView([rec.lat, rec.lon], 8);
+  const cp = document.getElementById('cpill');
+  cp.style.display = 'block';
+  cp.textContent = rec.lat.toFixed(4)+'\u00b0   '+rec.lon.toFixed(4)+'\u00b0';
 
+  renderReport(rec.lat, rec.lon,
+    {address: {country:rec.country, state:rec.state, city:rec.city}},
+    null, null, rec.ai
+  );
+  goTab('analysis', document.getElementById('t-analysis'));
+}
+
+// ── CHAT ───────────────────────────────────────────────
+async function sendChat() {
+  const inp = document.getElementById('cinput');
+  const q = inp.value.trim();
+  if (!q) return;
+  if (!curData.lat) { alert('Click a location on the map first.'); return; }
+  inp.value = '';
+
+  const addr = curData.geo?.address || {};
+  const loc = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+
+  const msgs = document.getElementById('cmsgs');
+  document.getElementById('cnoloc')?.remove();
+
+  const div = document.createElement('div');
+  div.className = 'cmsg';
+  const ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = `<div class="cmq">&#128172; ${q}</div><div class="cma">&#9711; Thinking&hellip;</div><div class="cmts">${ts}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const prompt = `You are a geography & history tutor. Location: ${loc}.
+Context: ${curData.wiki?.extract?.substring(0,250)||''}
+Q: ${q}
+Answer in 2-4 clear, academic sentences only.`;
+
+  let answer = 'Could not get a response. Please try again.';
   try {
-    const jwtToken2 = generateZaiToken(ZAI_KEY);
     const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + jwtToken2
-      },
-      body: JSON.stringify({
-        model: 'glm-4.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5,
-        max_tokens: 1000
-      })
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+makeJWT()},
+      body: JSON.stringify({model:'glm-4.5-flash', messages:[{role:'user',content:prompt}], temperature:0.5, max_tokens:600})
     });
-    const data = await resp.json();
-    const answer = data.choices?.[0]?.message?.content || 'Unable to generate answer.';
-    tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--text); font-size:12px; margin-top:8px; line-height:1.7;">${answer}</div>`;
-  } catch {
-    tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--accent3); font-size:11px; margin-top:6px;">Error getting answer.</div>`;
+    const d = await resp.json();
+    answer = d.choices?.[0]?.message?.content || 'No response received.';
+  } catch(e) { answer = 'Error: ' + e.message; }
+
+  div.querySelector('.cma').textContent = answer;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  await fbReq('/chats', 'POST', {
+    timestamp: new Date().toISOString(),
+    location: loc, lat: curData.lat, lon: curData.lon,
+    question: q, answer
+  });
+}
+
+document.getElementById('cinput').addEventListener('keydown', e => { if(e.key==='Enter') sendChat(); });
+
+// ── RENDER ─────────────────────────────────────────────
+function renderReport(lat, lon, geo, country, wiki, ai) {
+  const addr = geo?.address || {};
+  const mode = document.getElementById('learningMode').value;
+  const flag = country?.flag || '';
+  const name = ai.locationId?.nearestCity || addr.city || addr.state || addr.country || 'Unknown';
+
+  let h = `<div class="loc-badge">
+    <div>
+      <div class="loc-name">${flag} ${name}</div>
+      <div class="loc-sub">${[ai.locationId?.state, ai.locationId?.country].filter(Boolean).join(' &middot; ')}</div>
+    </div>
+    <div class="cbadge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;</div>
+  </div>`;
+
+  if (wiki?.extract) {
+    h += `<div class="wiki">&#128214; ${wiki.extract.substring(0,280)}&hellip;</div>`;
   }
+
+  h += S('01','Location Identification',`
+    ${R('Country',ai.locationId?.country)}
+    ${R('State',ai.locationId?.state)}
+    ${R('District',ai.locationId?.district)}
+    ${R('Nearest City',ai.locationId?.nearestCity)}
+    ${R('Coordinates',ai.locationId?.coordinates)}
+  `, true);
+
+  if (mode !== 'Quiz Mode') {
+    h += S('02','Geography Analysis',`
+      ${R('Terrain',ai.geography?.terrain)}
+      ${R('Climate',ai.geography?.climate)}
+      ${R('Soil Type',ai.geography?.soilType)}
+      ${R('Rivers',ai.geography?.rivers)}
+      ${R('Natural Resources',ai.geography?.naturalResources)}
+    `);
+  }
+
+  h += S('03','Agriculture Intelligence',`
+    <div class="srow"><span class="slbl">Major Crops</span><span class="sval">${(ai.agriculture?.majorCrops||[]).map(c=>`<span class="tag yl">${c}</span>`).join('')}</span></div>
+    ${R('Why Grow Here',ai.agriculture?.whyCropsGrow)}
+    ${R('Irrigation',ai.agriculture?.irrigationSources)}
+    ${R('Seasons',ai.agriculture?.seasonalPattern)}
+  `);
+
+  h += S('04','Historical Significance',`
+    ${R('Ancient',ai.history?.ancient)}
+    ${R('Medieval',ai.history?.medieval)}
+    ${R('Modern',ai.history?.modern)}
+    ${R('Freedom Movement',ai.history?.freedomMovement)}
+  `);
+
+  h += S('05','Economic Profile',`
+    <div class="srow"><span class="slbl">Industries</span><span class="sval">${(ai.economy?.majorIndustries||[]).map(i=>`<span class="tag bl">${i}</span>`).join('')}</span></div>
+    ${R('GDP',ai.economy?.gdpContribution)}
+    ${R('Employment',ai.economy?.employmentPattern)}
+  `);
+
+  h += S('06','Current Relevance',`
+    ${R('Environment',ai.currentRelevance?.environmentalIssues)}
+    ${R('Projects',ai.currentRelevance?.developmentProjects)}
+    ${R('Strategic',ai.currentRelevance?.strategicImportance)}
+  `);
+
+  if (mode === 'Timeline Mode' || mode === 'Full Analysis') {
+    const tl = (ai.timeline||[]).map(t=>`
+      <div class="tli"><div class="tldot"></div>
+        <div class="tlyear">${t.year}</div>
+        <div class="tltext">${t.event}</div>
+      </div>`).join('');
+    h += S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
+  }
+
+  if (mode === 'Quiz Mode' || mode === 'Full Analysis') {
+    let qh = '<div style="margin-bottom:7px;font-size:10px;color:var(--muted);">Click options to check answers.</div>';
+    (ai.quiz?.mcqs||[]).forEach((q,i)=>{
+      qh += `<div class="mcqi"><div class="mcqq">Q${i+1}. ${q.q}</div>
+        ${(q.options||[]).map((opt,oi)=>{
+          const L=['A','B','C','D'][oi];
+          return `<span class="mcqo" onclick="chkMCQ(this,'${L}','${q.answer}')">${opt}</span>`;
+        }).join('')}</div>`;
+    });
+    if (ai.quiz?.assertionReason?.length) {
+      qh += `<div style="margin:8px 0 5px;font-size:10px;color:var(--accent);letter-spacing:1px;">ASSERTION-REASON</div>`;
+      ai.quiz.assertionReason.forEach((ar,i)=>{
+        qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px;">Ans: <span style="color:var(--accent)">${ar.answer}</span></div></div>`;
+      });
+    }
+    if (ai.quiz?.mapQuestion) {
+      qh += `<div style="margin:8px 0 5px;font-size:10px;color:var(--accent2);letter-spacing:1px;">MAP QUESTION</div>
+        <div class="mcqi"><div class="mcqq">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
+    }
+    h += S('08','Quiz Mode', qh);
+  }
+
+  const ef = (ai.examFocus||[]).map(q=>`<div class="epill">&#9889; ${q}</div>`).join('');
+  h += S('09',`Exam Focus &mdash; ${document.getElementById('examType').value}`, ef);
+
+  const res = document.getElementById('result');
+  res.innerHTML = h;
+  res.style.display = 'block';
+  document.getElementById('idle').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  setBadge('READY','accent');
 }
 
-document.getElementById('chatInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendFollowUp();
-});
+function S(num, title, content, open=false) {
+  const id = 'sc_' + Math.random().toString(36).substr(2,6);
+  return `<div class="scard">
+    <div class="shdr" onclick="togSec('${id}',this)">
+      <span class="snum">${num}</span>
+      <span class="stitle">${title}</span>
+      <span class="chev ${open?'o':''}">&#9662;</span>
+    </div>
+    <div class="sbody ${open?'':'hidden'}" id="${id}">${content}</div>
+  </div>`;
+}
 
-// === UI STATE ===
+function R(label, val) {
+  return `<div class="srow"><span class="slbl">${label}</span><span class="sval">${val||'<span style="color:var(--muted)">N/A</span>'}</span></div>`;
+}
+
+function togSec(id, hdr) {
+  document.getElementById(id).classList.toggle('hidden');
+  hdr.querySelector('.chev').classList.toggle('o');
+}
+
+function chkMCQ(el, sel, correct) {
+  el.closest('.mcqi').querySelectorAll('.mcqo').forEach(o=>{
+    o.style.pointerEvents='none';
+    const L=o.textContent.trim()[0];
+    if(L===correct) o.classList.add('ok');
+    else if(L===sel&&sel!==correct) o.classList.add('no');
+  });
+}
+
+// ── UI STATE ───────────────────────────────────────────
 function showLoading() {
-  document.getElementById('idleState').style.display = 'none';
-  document.getElementById('resultContent').style.display = 'none';
-  document.getElementById('loadingState').style.display = 'flex';
-  document.getElementById('chatBox').style.display = 'none';
-  document.getElementById('statusBadge').textContent = 'LOADING';
-  document.getElementById('statusBadge').style.color = 'var(--accent4)';
-  document.getElementById('statusBadge').style.borderColor = 'rgba(255,209,102,0.3)';
-  document.getElementById('statusBadge').style.background = 'rgba(255,209,102,0.1)';
-}
-
-function showResult() {
-  document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('resultContent').style.display = 'block';
-  document.getElementById('statusBadge').textContent = 'READY';
-  document.getElementById('statusBadge').style.color = 'var(--accent)';
-  document.getElementById('statusBadge').style.borderColor = 'rgba(0,229,160,0.2)';
-  document.getElementById('statusBadge').style.background = 'rgba(0,229,160,0.1)';
+  document.getElementById('idle').style.display='none';
+  document.getElementById('result').style.display='none';
+  document.getElementById('loading').style.display='flex';
+  setBadge('LOADING','accent4');
+  goTab('analysis', document.getElementById('t-analysis'));
 }
 
 function showError(msg) {
-  document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('resultContent').style.display = 'block';
-  document.getElementById('resultContent').innerHTML = `<div class="error-box">&#9888; Error generating report: ${msg}<br><br>Please check your API key or try another location.</div>`;
-  document.getElementById('statusBadge').textContent = 'ERROR';
+  document.getElementById('loading').style.display='none';
+  const r=document.getElementById('result');
+  r.innerHTML=`<div class="ebox">&#9888; ${msg}<br><br>Please check your key or try another location.</div>`;
+  r.style.display='block';
+  setBadge('ERROR','accent3');
 }
 
-function clearResult() {
-  document.getElementById('resultContent').style.display = 'none';
-  document.getElementById('resultContent').innerHTML = '';
-  document.getElementById('idleState').style.display = 'flex';
-  document.getElementById('chatBox').style.display = 'none';
-  document.getElementById('coordDisplay').style.display = 'none';
-  if (marker) { map.removeLayer(marker); marker = null; }
-  document.getElementById('statusBadge').textContent = 'READY';
+function clearAll() {
+  document.getElementById('idle').style.display='flex';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('result').style.display='none';
+  document.getElementById('result').innerHTML='';
+  document.getElementById('cpill').style.display='none';
+  if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}
+  curData={};
+  setBadge('READY','accent');
 }
 
 function setStep(msg, pct) {
-  document.getElementById('loadingStep').textContent = msg;
-  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('lstep').textContent=msg;
+  document.getElementById('pfill').style.width=pct+'%';
+}
+
+function setBadge(text, color) {
+  const b=document.getElementById('sbadge');
+  b.textContent=text;
+  const colors={accent:'rgba(0,229,160',accent2:'rgba(79,158,255',accent3:'rgba(255,107,107',accent4:'rgba(255,209,102'};
+  const c=colors[color]||colors.accent;
+  b.style.color=`${c}, 1)`;
+  b.style.borderColor=`${c}, 0.3)`;
+  b.style.background=`${c}, 0.08)`;
 }
 </script>
 </body>

@@ -701,7 +701,7 @@ Return ONLY valid JSON, no markdown, no preamble.`;
       'Authorization': 'Bearer ' + ZAI_KEY
     },
     body: JSON.stringify({
-      model: 'glm-4',
+      model: 'glm-4.5',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
       max_tokens: 3000
@@ -904,7 +904,7 @@ Answer concisely in 2-4 sentences with academic accuracy. Be direct and informat
         'Authorization': 'Bearer ' + ZAI_KEY
       },
       body: JSON.stringify({
-        model: 'glm-4',
+        model: 'glm-4.5',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5,
         max_tokens: 1000

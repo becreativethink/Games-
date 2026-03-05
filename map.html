@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GeoMind \u2014 AI Educational Geo-Intelligence</title>
+<title>GeoMind &mdash; AI Educational Geo-Intelligence</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
 <style>
@@ -430,7 +430,7 @@
 
 <header>
   <div class="logo">
-    <div class="logo-icon">\ud83c\udf0d</div>
+    <div class="logo-icon">&#127757;</div>
     <div>
       <div class="logo-text">GeoMind</div>
       <div class="logo-sub">AI EDUCATIONAL GEO-INTELLIGENCE</div>
@@ -440,9 +440,9 @@
     <div class="ctrl-group">
       <label>CLASS LEVEL</label>
       <select id="classLevel">
-        <option value="6-8">Class 6\u20138</option>
-        <option value="9-10">Class 9\u201310</option>
-        <option value="11-12">Class 11\u201312</option>
+        <option value="6-8">Class 6&ndash;8</option>
+        <option value="9-10">Class 9&ndash;10</option>
+        <option value="11-12">Class 11&ndash;12</option>
         <option value="Competitive" selected>Competitive</option>
       </select>
     </div>
@@ -474,7 +474,7 @@
   <!-- MAP PANEL -->
   <div class="map-panel">
     <div class="map-overlay">
-      <strong>\ud83d\udccd Click anywhere on the map</strong>
+      <strong>&#128205; Click anywhere on the map</strong>
       Select a location to generate your educational geo-intelligence report.
     </div>
     <div class="coord-display" id="coordDisplay"></div>
@@ -484,16 +484,16 @@
   <!-- RIGHT PANEL -->
   <div class="right-panel">
     <div class="controls-bar">
-      <span style="font-size:11px; color: var(--muted);">\ud83d\udd2c GEMINI AI ANALYSIS ENGINE</span>
+      <span style="font-size:11px; color: var(--muted);">&#128300; GEMINI AI ANALYSIS ENGINE</span>
       <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
       <div style="margin-left:auto; display:flex; gap:8px;">
-        <button onclick="clearResult()">\u2715 Clear</button>
+        <button onclick="clearResult()">&times; Clear</button>
       </div>
     </div>
 
     <div class="output-area" id="outputArea">
       <div class="idle-state" id="idleState">
-        <div class="big-icon">\ud83d\uddfa\ufe0f</div>
+        <div class="big-icon">&#128506;</div>
         <h3>Click a location on the map</h3>
         <p>GeoMind will generate a structured educational report with geography, history, agriculture, economics, and exam-ready content powered by Gemini AI.</p>
         <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
@@ -506,8 +506,8 @@
       <div class="loading-state" id="loadingState">
         <div class="spinner"></div>
         <div style="text-align:center;">
-          <div class="loading-text">Generating educational report\u2026</div>
-          <div class="loading-steps" id="loadingStep">Fetching location data\u2026</div>
+          <div class="loading-text">Generating educational report&hellip;</div>
+          <div class="loading-steps" id="loadingStep">Fetching location data&hellip;</div>
           <div style="margin-top:12px;"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
         </div>
       </div>
@@ -515,10 +515,10 @@
     </div>
 
     <div class="chat-box" id="chatBox" style="display:none;">
-      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location\u2026" />
-      <button class="btn-primary" onclick="sendFollowUp()">Ask \u2192</button>
+      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location&hellip;" />
+      <button class="btn-primary" onclick="sendFollowUp()">Ask &rarr;</button>
     </div>
-    <div class="api-note">Powered by Gemini AI \u00b7 OpenStreetMap \u00b7 Nominatim \u00b7 REST Countries \u00b7 Wikipedia</div>
+    <div class="api-note">Powered by Gemini AI &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
   </div>
 </div>
 
@@ -527,7 +527,7 @@
 // === MAP INIT ===
 const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '\u00a9 OpenStreetMap \u00a9 CARTO', maxZoom: 19
+  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
 }).addTo(map);
 
 let marker = null;
@@ -548,7 +548,7 @@ map.on('click', async (e) => {
   }).addTo(map);
 
   coordDisplay.style.display = 'block';
-  coordDisplay.textContent = `\ud83d\udccd ${currentLat}\u00b0N  ${currentLon}\u00b0E`;
+  coordDisplay.textContent = `&#128205; ${currentLat}&deg;N  ${currentLon}&deg;E`;
   await generateReport(lat, lng);
 });
 
@@ -556,21 +556,21 @@ map.on('click', async (e) => {
 async function generateReport(lat, lon) {
   showLoading();
   try {
-    setStep('\ud83d\udce1 Fetching reverse geocode\u2026', 15);
+    setStep('&#128225; Fetching reverse geocode&hellip;', 15);
     const geoData = await fetchGeocode(lat, lon);
 
-    setStep('\ud83c\udf10 Loading country data\u2026', 35);
+    setStep('&#127760; Loading country data&hellip;', 35);
     const countryName = geoData.address?.country || 'India';
     const countryData = await fetchCountryData(countryName);
 
-    setStep('\ud83d\udcd6 Loading Wikipedia summary\u2026', 55);
+    setStep('&#128214; Loading Wikipedia summary&hellip;', 55);
     const placeName = geoData.address?.city || geoData.address?.state || geoData.address?.country || 'India';
     const wikiData = await fetchWikipedia(placeName);
 
-    setStep('\ud83e\udd16 Generating AI analysis\u2026', 75);
+    setStep('&#129302; Generating AI analysis&hellip;', 75);
     const aiResult = await generateWithGemini(lat, lon, geoData, countryData, wikiData);
 
-    setStep('\u2705 Rendering report\u2026', 95);
+    setStep('&#9989; Rendering report&hellip;', 95);
     currentLocationData = { geoData, countryData, wikiData, lat, lon };
     renderResult(lat, lon, geoData, countryData, wikiData, aiResult);
     setStep('Done', 100);
@@ -620,4 +620,334 @@ EXAM TYPE: ${examType}
 LEARNING MODE: ${learningMode}
 COUNTRY: ${addr.country || 'Unknown'}
 STATE/REGION: ${addr.state || addr.region || 'Unknown'}
-DISTRICT: ${addr.county || addr.distr
+DISTRICT: ${addr.county || addr.district || 'Unknown'}
+WIKIPEDIA EXTRACT: ${wikiData?.extract || 'Not available'}
+POPULATION: ${countryData?.population || 'Unknown'}
+CAPITAL: ${countryData?.capital?.[0] || 'Unknown'}
+
+Generate a comprehensive, exam-oriented educational geo-intelligence report in this EXACT JSON structure. All fields must be populated. Use academic tone. No hallucination &mdash; if data is genuinely unknown, say "Data not available".
+
+{
+  "locationId": {
+    "country": "...", "state": "...", "district": "...", "nearestCity": "...",
+    "coordinates": "${lat}, ${lon}"
+  },
+  "geography": {
+    "terrain": "...", "climate": "...", "soilType": "...",
+    "rivers": "...", "naturalResources": "..."
+  },
+  "agriculture": {
+    "majorCrops": ["...", "...", "..."],
+    "whyCropsGrow": "...",
+    "irrigationSources": "...",
+    "seasonalPattern": "..."
+  },
+  "history": {
+    "ancient": "...",
+    "medieval": "...",
+    "modern": "...",
+    "freedomMovement": "..."
+  },
+  "economy": {
+    "majorIndustries": ["...", "..."],
+    "gdpContribution": "...",
+    "employmentPattern": "..."
+  },
+  "currentRelevance": {
+    "environmentalIssues": "...",
+    "developmentProjects": "...",
+    "strategicImportance": "..."
+  },
+  "timeline": [
+    {"year": "...", "event": "..."},
+    {"year": "...", "event": "..."},
+    {"year": "...", "event": "..."},
+    {"year": "...", "event": "..."},
+    {"year": "...", "event": "..."}
+  ],
+  "quiz": {
+    "mcqs": [
+      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A"},
+      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "B"},
+      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "C"},
+      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "D"},
+      {"q": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A"}
+    ],
+    "assertionReason": [
+      {"assertion": "...", "reason": "...", "answer": "..."},
+      {"assertion": "...", "reason": "...", "answer": "..."}
+    ],
+    "mapQuestion": "..."
+  },
+  "examFocus": [
+    "Probable exam question 1 for ${examType}",
+    "Probable exam question 2 for ${examType}",
+    "Probable exam question 3 for ${examType}"
+  ]
+}
+
+Adjust depth and complexity for CLASS LEVEL ${classLevel}.
+${learningMode === 'Quiz Mode' ? 'Emphasize quiz section heavily.' : ''}
+${learningMode === 'Timeline Mode' ? 'Add 8-10 timeline entries.' : ''}
+${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technical details.' : ''}
+
+Return ONLY valid JSON, no markdown, no preamble.`;
+
+  const GEMINI_KEY = "AIzaSyA1BgE9Wwwbf54ywjApXZNE43KOz4r6bkY";
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 3000 }
+    })
+  });
+
+  if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+  const data = await resp.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// === RENDER ===
+function renderResult(lat, lon, geoData, countryData, wikiData, ai) {
+  const addr = geoData.address || {};
+  const mode = document.getElementById('learningMode').value;
+  const flag = countryData?.flag || '';
+  const placeName = ai.locationId?.nearestCity || addr.city || addr.state || addr.country || 'Unknown';
+
+  let html = `
+  <div class="location-badge">
+    <div>
+      <div class="place-name">${flag} ${placeName}</div>
+      <div class="place-sub">${[ai.locationId?.state, ai.locationId?.country].filter(Boolean).join(' &middot; ')}</div>
+    </div>
+    <div class="coords-badge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;</div>
+  </div>`;
+
+  if (wikiData?.extract) {
+    html += `<div class="wiki-box">&#128214; ${wikiData.extract.substring(0, 320)}&hellip;</div>`;
+  }
+
+  // 1 - Location
+  html += makeSection('#1', 'Location Identification', `
+    ${row('Country', ai.locationId?.country)}
+    ${row('State / Region', ai.locationId?.state)}
+    ${row('District', ai.locationId?.district)}
+    ${row('Nearest City', ai.locationId?.nearestCity)}
+    ${row('Coordinates', ai.locationId?.coordinates)}
+  `, true);
+
+  // 2 - Geography
+  if (mode !== 'Quiz Mode') {
+    html += makeSection('#2', 'Geography Analysis', `
+      ${row('Terrain', ai.geography?.terrain)}
+      ${row('Climate', ai.geography?.climate)}
+      ${row('Soil Type', ai.geography?.soilType)}
+      ${row('Rivers', ai.geography?.rivers)}
+      ${row('Natural Resources', ai.geography?.naturalResources)}
+    `);
+  }
+
+  // 3 - Agriculture
+  html += makeSection('#3', 'Agriculture Intelligence', `
+    <div class="sec-row"><span class="label">Major Crops</span><span class="val">${(ai.agriculture?.majorCrops || []).map(c => `<span class="tag yellow">${c}</span>`).join('')}</span></div>
+    ${row('Why These Crops', ai.agriculture?.whyCropsGrow)}
+    ${row('Irrigation Sources', ai.agriculture?.irrigationSources)}
+    ${row('Seasonal Pattern', ai.agriculture?.seasonalPattern)}
+  `);
+
+  // 4 - History
+  if (mode !== 'Agriculture Mode') {
+    html += makeSection('#4', 'Historical Significance', `
+      ${row('Ancient Period', ai.history?.ancient)}
+      ${row('Medieval Period', ai.history?.medieval)}
+      ${row('Modern Period', ai.history?.modern)}
+      ${row('Freedom Movement', ai.history?.freedomMovement)}
+    `);
+  }
+
+  // 5 - Economy
+  html += makeSection('#5', 'Economic Profile', `
+    <div class="sec-row"><span class="label">Major Industries</span><span class="val">${(ai.economy?.majorIndustries || []).map(i => `<span class="tag blue">${i}</span>`).join('')}</span></div>
+    ${row('GDP Contribution', ai.economy?.gdpContribution)}
+    ${row('Employment Pattern', ai.economy?.employmentPattern)}
+  `);
+
+  // 6 - Current Relevance
+  html += makeSection('#6', 'Current Relevance', `
+    ${row('Environmental Issues', ai.currentRelevance?.environmentalIssues)}
+    ${row('Development Projects', ai.currentRelevance?.developmentProjects)}
+    ${row('Strategic Importance', ai.currentRelevance?.strategicImportance)}
+  `);
+
+  // 7 - Timeline
+  if (mode === 'Timeline Mode' || mode === 'Full Analysis') {
+    const tlItems = (ai.timeline || []).map(t => `
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-year">${t.year}</div>
+        <div class="tl-text">${t.event}</div>
+      </div>`).join('');
+    html += makeSection('#7', 'Historical Timeline', `<div class="timeline">${tlItems}</div>`);
+  }
+
+  // 8 - Quiz Mode
+  if (mode === 'Quiz Mode' || mode === 'Full Analysis') {
+    let quizHtml = '<div style="margin-bottom:10px; font-size:11px; color:var(--muted);">Click options to check your answers.</div>';
+    (ai.quiz?.mcqs || []).forEach((q, i) => {
+      quizHtml += `<div class="mcq-item">
+        <div class="mcq-q">Q${i+1}. ${q.q}</div>
+        ${(q.options || []).map((opt, oi) => {
+          const letter = ['A','B','C','D'][oi];
+          return `<span class="mcq-opt" onclick="checkMCQ(this,'${letter}','${q.answer}')">${opt}</span>`;
+        }).join('')}
+      </div>`;
+    });
+    if (ai.quiz?.assertionReason?.length) {
+      quizHtml += `<div style="margin:10px 0 6px; font-size:11px; color:var(--accent); letter-spacing:1px;">ASSERTION-REASON</div>`;
+      ai.quiz.assertionReason.forEach((ar, i) => {
+        quizHtml += `<div class="mcq-item">
+          <div class="mcq-q">AR${i+1}. <strong>Assertion:</strong> ${ar.assertion}<br><strong>Reason:</strong> ${ar.reason}</div>
+          <div style="font-size:10px; color:var(--muted); margin-top:6px;">Answer: <span style="color:var(--accent)">${ar.answer}</span></div>
+        </div>`;
+      });
+    }
+    if (ai.quiz?.mapQuestion) {
+      quizHtml += `<div style="margin:10px 0 6px; font-size:11px; color:var(--accent2); letter-spacing:1px;">MAP-BASED QUESTION</div>
+        <div class="mcq-item"><div class="mcq-q">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
+    }
+    html += makeSection('#8', 'Quiz Mode', quizHtml);
+  }
+
+  // 9 - Exam Focus
+  const examFocusItems = (ai.examFocus || []).map(q => `<div class="exam-pill">&#9889; ${q}</div>`).join('');
+  html += makeSection('#9', `Exam Focus &mdash; ${document.getElementById('examType').value}`, examFocusItems);
+
+  document.getElementById('resultContent').innerHTML = html;
+  showResult();
+  document.getElementById('chatBox').style.display = 'flex';
+}
+
+function makeSection(num, title, content, open = false) {
+  const id = 'sec_' + Math.random().toString(36).substr(2, 6);
+  return `
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('${id}', this)">
+      <span class="sec-icon">${num}</span>
+      <span class="sec-title">${title}</span>
+      <span class="chevron ${open ? 'open' : ''}">&#9662;</span>
+    </div>
+    <div class="section-body ${open ? '' : 'collapsed'}" id="${id}">${content}</div>
+  </div>`;
+}
+
+function row(label, val) {
+  return `<div class="sec-row"><span class="label">${label}</span><span class="val">${val || '<span style="color:var(--muted)">Data not available</span>'}</span></div>`;
+}
+
+function toggleSection(id, header) {
+  const body = document.getElementById(id);
+  const chev = header.querySelector('.chevron');
+  body.classList.toggle('collapsed');
+  chev.classList.toggle('open');
+}
+
+function checkMCQ(el, selected, correct) {
+  const parent = el.closest('.mcq-item');
+  parent.querySelectorAll('.mcq-opt').forEach(o => {
+    o.style.pointerEvents = 'none';
+    const letter = o.textContent.trim()[0];
+    if (letter === correct) o.classList.add('correct');
+    else if (letter === selected && selected !== correct) o.classList.add('wrong');
+  });
+}
+
+// === FOLLOW-UP CHAT ===
+async function sendFollowUp() {
+  const input = document.getElementById('chatInput');
+  const query = input.value.trim();
+  if (!query) return;
+  input.value = '';
+
+  const GEMINI_KEY = "AIzaSyA1BgE9Wwwbf54ywjApXZNE43KOz4r6bkY";
+  const { geoData, wikiData } = currentLocationData;
+  const addr = geoData?.address || {};
+  const location = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+
+  const prompt = `You are an expert geography and history tutor. The student is studying: ${location}. 
+Wikipedia context: ${wikiData?.extract || ''}
+Student question: ${query}
+Answer concisely in 2-4 sentences with academic accuracy. Be direct and informative.`;
+
+  const chatArea = document.getElementById('resultContent');
+  const tempDiv = document.createElement('div');
+  tempDiv.className = 'mcq-item';
+  tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--muted); font-size:11px; margin-top:6px;">Thinking&hellip;</div>`;
+  chatArea.appendChild(tempDiv);
+  tempDiv.scrollIntoView({ behavior: 'smooth' });
+
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const data = await resp.json();
+    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate answer.';
+    tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--text); font-size:12px; margin-top:8px; line-height:1.7;">${answer}</div>`;
+  } catch {
+    tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--accent3); font-size:11px; margin-top:6px;">Error getting answer.</div>`;
+  }
+}
+
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendFollowUp();
+});
+
+// === UI STATE ===
+function showLoading() {
+  document.getElementById('idleState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('chatBox').style.display = 'none';
+  document.getElementById('statusBadge').textContent = 'LOADING';
+  document.getElementById('statusBadge').style.color = 'var(--accent4)';
+  document.getElementById('statusBadge').style.borderColor = 'rgba(255,209,102,0.3)';
+  document.getElementById('statusBadge').style.background = 'rgba(255,209,102,0.1)';
+}
+
+function showResult() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+  document.getElementById('statusBadge').textContent = 'READY';
+  document.getElementById('statusBadge').style.color = 'var(--accent)';
+  document.getElementById('statusBadge').style.borderColor = 'rgba(0,229,160,0.2)';
+  document.getElementById('statusBadge').style.background = 'rgba(0,229,160,0.1)';
+}
+
+function showError(msg) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+  document.getElementById('resultContent').innerHTML = `<div class="error-box">&#9888; Error generating report: ${msg}<br><br>Please check your API key or try another location.</div>`;
+  document.getElementById('statusBadge').textContent = 'ERROR';
+}
+
+function clearResult() {
+  document.getElementById('resultContent').style.display = 'none';
+  document.getElementById('resultContent').innerHTML = '';
+  document.getElementById('idleState').style.display = 'flex';
+  document.getElementById('chatBox').style.display = 'none';
+  document.getElementById('coordDisplay').style.display = 'none';
+  if (marker) { map.removeLayer(marker); marker = null; }
+  document.getElementById('statusBadge').textContent = 'READY';
+}
+
+function setStep(msg, pct) {
+  document.getElementById('loadingStep').textContent = msg;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+</script>
+</body>
+</html>

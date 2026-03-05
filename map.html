@@ -693,7 +693,7 @@ ${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technic
 
 Return ONLY valid JSON, no markdown, no preamble.`;
 
-  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a';
+  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
   const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
     method: 'POST',
     headers: {
@@ -879,7 +879,7 @@ async function sendFollowUp() {
   if (!query) return;
   input.value = '';
 
-  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a';
+  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
   const { geoData, wikiData } = currentLocationData;
   const addr = geoData?.address || {};
   const location = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');

@@ -484,7 +484,7 @@
   <!-- RIGHT PANEL -->
   <div class="right-panel">
     <div class="controls-bar">
-      <span style="font-size:11px; color: var(--muted);">&#128300; GEMINI AI ANALYSIS ENGINE</span>
+      <span style="font-size:11px; color: var(--muted);">&#128300; Z.AI GLM ANALYSIS ENGINE</span>
       <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
       <div style="margin-left:auto; display:flex; gap:8px;">
         <button onclick="clearResult()">&times; Clear</button>
@@ -518,7 +518,7 @@
       <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location&hellip;" />
       <button class="btn-primary" onclick="sendFollowUp()">Ask &rarr;</button>
     </div>
-    <div class="api-note">Powered by Gemini AI &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
+    <div class="api-note">Powered by Z.ai GLM &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
   </div>
 </div>
 
@@ -693,19 +693,27 @@ ${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technic
 
 Return ONLY valid JSON, no markdown, no preamble.`;
 
-  const GEMINI_KEY = "dc287b265efc48bca81f5e4c69f2ff7a";
-  const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
+  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a';
+  const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + ZAI_KEY
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 3000 }
+      model: 'glm-4',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 3000
     })
   });
 
-  if (!resp.ok) throw new Error(`Gemini API error: ${resp.status}`);
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error('Z.ai API error: ' + resp.status + ' - ' + errText);
+  }
   const data = await resp.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const text = data.choices?.[0]?.message?.content || '';
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
@@ -871,7 +879,7 @@ async function sendFollowUp() {
   if (!query) return;
   input.value = '';
 
-  const GEMINI_KEY = "dc287b265efc48bca81f5e4c69f2ff7a";
+  const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a';
   const { geoData, wikiData } = currentLocationData;
   const addr = geoData?.address || {};
   const location = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');
@@ -889,13 +897,21 @@ Answer concisely in 2-4 sentences with academic accuracy. Be direct and informat
   tempDiv.scrollIntoView({ behavior: 'smooth' });
 
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
+    const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + ZAI_KEY
+      },
+      body: JSON.stringify({
+        model: 'glm-4',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+        max_tokens: 1000
+      })
     });
     const data = await resp.json();
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate answer.';
+    const answer = data.choices?.[0]?.message?.content || 'Unable to generate answer.';
     tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--text); font-size:12px; margin-top:8px; line-height:1.7;">${answer}</div>`;
   } catch {
     tempDiv.innerHTML = `<div class="mcq-q">&#128172; ${query}</div><div style="color:var(--accent3); font-size:11px; margin-top:6px;">Error getting answer.</div>`;

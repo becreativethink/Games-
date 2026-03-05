@@ -693,7 +693,7 @@ ${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technic
 
 Return ONLY valid JSON, no markdown, no preamble.`;
 
-  const GEMINI_KEY = "AIzaSyA1BgE9Wwwbf54ywjApXZNE43KOz4r6bkY";
+  const GEMINI_KEY = "dc287b265efc48bca81f5e4c69f2ff7a";
   const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -871,7 +871,7 @@ async function sendFollowUp() {
   if (!query) return;
   input.value = '';
 
-  const GEMINI_KEY = "AIzaSyA1BgE9Wwwbf54ywjApXZNE43KOz4r6bkY";
+  const GEMINI_KEY = "dc287b265efc48bca81f5e4c69f2ff7a";
   const { geoData, wikiData } = currentLocationData;
   const addr = geoData?.address || {};
   const location = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');

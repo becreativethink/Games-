@@ -5,156 +5,166 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>GeoMind &mdash; AI Educational Geo-Intelligence</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
 <style>
-/* ═══════════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   TOKENS
+══════════════════════════════════════ */
 :root{
-  --bg:#090c12;--surface:#111520;--card:#171c28;--border:#222840;
-  --accent:#00e5a0;--a2:#4f9eff;--a3:#ff6b6b;--a4:#ffd166;--a5:#c084fc;
-  --text:#e8eaf0;--muted:#6b7280;--sub:#9ca3af;
-  --radius:12px;--radius-sm:8px;
-  --shadow:0 4px 24px rgba(0,0,0,0.4);
-  --glow-g:0 0 24px rgba(0,229,160,0.18);
+  --bg:#090c12; --surface:#111520; --card:#171c28; --border:#222840;
+  --accent:#00e5a0; --a2:#4f9eff; --a3:#ff6b6b; --a4:#ffd166; --a5:#c084fc;
+  --text:#e8eaf0; --muted:#6b7280; --sub:#9ca3af;
+  --r:12px; --rs:8px; --shadow:0 4px 24px rgba(0,0,0,0.4);
 }
-
-/* ═══════════════════════════════════════════════════
-   RESET + BASE
-═══════════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;}
 button{cursor:pointer;font-family:'DM Sans',sans-serif;outline:none;}
 input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
 
-/* ═══════════════════════════════════════════════════
-   AUTH GATE
-═══════════════════════════════════════════════════ */
-#authGate{
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;z-index:9999;
+/* ══════════════════════════════════════
+   AUTH SCREENS  (login / signup)
+══════════════════════════════════════ */
+#authScreen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#090c12 0%,#0d1b2a 60%,#0a1628 100%);
+  display:flex;align-items:center;justify-content:center;overflow:auto;
 }
-.auth-spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+#authScreen::before,#authScreen::after{
+  content:'';position:fixed;border-radius:50%;filter:blur(90px);opacity:0.1;pointer-events:none;
+  animation:blob 9s infinite alternate;
+}
+#authScreen::before{width:520px;height:520px;background:radial-gradient(circle,var(--accent),transparent);top:-120px;left:-120px;}
+#authScreen::after{width:440px;height:440px;background:radial-gradient(circle,var(--a2),transparent);bottom:-100px;right:-100px;animation-delay:3s;}
+@keyframes blob{0%{transform:scale(1) translate(0,0);}100%{transform:scale(1.15) translate(30px,25px);}}
 
-/* ═══════════════════════════════════════════════════
-   TOP NAV BAR
-═══════════════════════════════════════════════════ */
+.auth-card{
+  background:rgba(17,21,32,0.94);border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;padding:44px 40px;width:100%;max-width:430px;
+  box-shadow:0 28px 80px rgba(0,0,0,0.55);backdrop-filter:blur(20px);
+  position:relative;z-index:10;animation:slideUp 0.45s ease;margin:20px;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+
+.auth-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:30px;}
+.auth-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(0,229,160,0.3);}
+.auth-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.auth-h2{font-family:'Syne',sans-serif;font-size:20px;color:var(--text);text-align:center;margin-bottom:5px;}
+.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:26px;}
+
+.afield{margin-bottom:15px;}
+.afield label{display:block;font-size:11px;color:var(--sub);margin-bottom:6px;letter-spacing:0.8px;text-transform:uppercase;}
+.afield input,.afield select{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;color:var(--text);font-size:14px;transition:all 0.2s;
+}
+.afield input:focus,.afield select:focus{border-color:var(--accent);background:rgba(0,229,160,0.04);box-shadow:0 0 0 3px rgba(0,229,160,0.1);}
+.afield input::placeholder{color:#4b5563;}
+.afield select option{background:#111318;color:var(--text);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.abtn{
+  width:100%;padding:13px;border:none;border-radius:10px;font-family:'Syne',sans-serif;
+  font-size:15px;font-weight:700;transition:all 0.2s;margin-top:6px;
+}
+.abtn-g{background:linear-gradient(135deg,var(--accent),#00b87a);color:#000;box-shadow:0 8px 24px rgba(0,229,160,0.3);}
+.abtn-g:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(0,229,160,0.4);}
+.abtn-b{background:linear-gradient(135deg,var(--a2),#2563eb);color:#fff;box-shadow:0 8px 24px rgba(79,158,255,0.3);}
+.abtn-b:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(79,158,255,0.4);}
+.abtn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+.adiv{display:flex;align-items:center;gap:12px;margin:18px 0;}
+.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08);}
+.adiv span{font-size:12px;color:#4b5563;}
+
+.alink{
+  width:100%;padding:12px;background:transparent;border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;color:var(--sub);font-size:14px;transition:all 0.2s;
+}
+.alink-g:hover{border-color:rgba(0,229,160,0.4);color:var(--accent);background:rgba(0,229,160,0.05);}
+.alink-b:hover{border-color:rgba(79,158,255,0.4);color:var(--a2);background:rgba(79,158,255,0.05);}
+
+.aerr{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;color:var(--a3);font-size:13px;margin-bottom:14px;display:none;line-height:1.5;}
+.aok{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:10px 14px;color:var(--accent);font-size:13px;margin-bottom:14px;display:none;}
+.pwd-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);transition:all 0.3s;}
+.pwd-bar.w{background:linear-gradient(90deg,var(--a3) 33%,var(--border) 33%);}
+.pwd-bar.m{background:linear-gradient(90deg,var(--a4) 66%,var(--border) 66%);}
+.pwd-bar.s{background:var(--accent);}
+.afooter{text-align:center;margin-top:18px;font-size:12px;color:#4b5563;}
+.smsm{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,0.3);border-top-color:rgba(0,0,0,0.8);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:5px;}
+.smsm-w{border-color:rgba(255,255,255,0.3);border-top-color:#fff;}
+
+/* ══════════════════════════════════════
+   MAIN APP
+══════════════════════════════════════ */
+#appScreen{display:none;flex-direction:column;height:100%;}
+
+/* TOP NAV */
 #topNav{
   flex-shrink:0;height:56px;
-  background:rgba(17,21,32,0.95);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:10px;
-  position:relative;z-index:500;
+  background:rgba(17,21,32,0.97);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:10px;z-index:500;
   backdrop-filter:blur(16px);
 }
-.nav-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;text-decoration:none;}
+.nav-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(0,229,160,0.25);}
 .nav-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-
-/* nav controls */
-.nav-selects{display:flex;gap:6px;align-items:center;}
+.nav-sels{display:flex;gap:6px;align-items:flex-end;}
 .nsg{display:flex;flex-direction:column;gap:2px;}
 .nsg label{font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;}
-select.nsel{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:11px;transition:border-color 0.2s;}
-select.nsel:hover,select.nsel:focus{border-color:var(--accent);}
-
-/* language picker */
-#langPicker{background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.3);color:var(--a5);font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid rgba(192,132,252,0.3);}
-#langPicker:focus{border-color:var(--a5);}
-
-/* user info */
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.user-chip{
-  display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,0.04);border:1px solid var(--border);
-  border-radius:20px;padding:5px 12px 5px 6px;
-}
-.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;font-family:'Syne',sans-serif;}
-.user-name{font-size:12px;color:var(--sub);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
+.nsel{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:11px;transition:border-color 0.2s;}
+.nsel:hover,.nsel:focus{border-color:var(--accent);}
+#langPick{background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.28);color:var(--a5);padding:5px 8px;border-radius:7px;font-size:11px;}
+#langPick:focus{border-color:var(--a5);}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.user-chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 11px 4px 5px;}
+.uav{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;font-family:'Syne',sans-serif;flex-shrink:0;}
+.uname{font-size:12px;color:var(--sub);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sbadge{font-size:9px;padding:3px 9px;border-radius:20px;border:1px solid rgba(0,229,160,0.3);background:rgba(0,229,160,0.07);color:var(--accent);font-family:'DM Mono',monospace;letter-spacing:0.5px;}
+.nvbtn{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--sub);padding:6px 11px;border-radius:7px;font-size:11px;transition:all 0.2s;}
+.nvbtn:hover{border-color:var(--a3);color:var(--a3);}
 
-.nav-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--sub);padding:6px 12px;border-radius:7px;font-size:11px;transition:all 0.2s;}
-.nav-btn:hover{border-color:var(--a3);color:var(--a3);}
-.nav-btn-clear{border-color:rgba(255,107,107,0.2);}
-
-/* ═══════════════════════════════════════════════════
-   MAIN 2-PANEL LAYOUT
-═══════════════════════════════════════════════════ */
+/* MAIN 2-PANEL */
 #mainWrap{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;overflow:hidden;}
 
-/* ═══════════════════════════════════════════════════
-   MAP PANEL
-═══════════════════════════════════════════════════ */
+/* MAP */
 #mapPanel{position:relative;border-right:1px solid var(--border);overflow:hidden;}
 #map{width:100%;height:100%;}
-
-.map-hint{
-  position:absolute;top:12px;left:12px;z-index:400;
-  background:rgba(9,12,18,0.9);border:1px solid var(--border);
-  border-radius:10px;padding:10px 14px;font-size:11px;color:var(--muted);
-  backdrop-filter:blur(12px);max-width:190px;pointer-events:none;
-  font-family:'DM Mono',monospace;
-}
+.map-hint{position:absolute;top:12px;left:12px;z-index:400;background:rgba(9,12,18,0.9);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:11px;color:var(--muted);backdrop-filter:blur(12px);max-width:185px;pointer-events:none;font-family:'DM Mono',monospace;}
 .map-hint strong{color:var(--accent);display:block;margin-bottom:2px;font-size:11px;}
+.coord-pill{position:absolute;bottom:12px;left:12px;z-index:400;background:rgba(9,12,18,0.93);border:1px solid var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--accent);box-shadow:0 0 20px rgba(0,229,160,0.15);display:none;pointer-events:none;font-family:'DM Mono',monospace;}
+.ptip{position:absolute;top:12px;right:12px;z-index:400;background:rgba(9,12,18,0.93);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:11px;backdrop-filter:blur(12px);max-width:200px;display:none;}
+.ptip-name{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
+.ptip-lang{color:var(--a5);font-size:10px;}
+.ptip-loc{color:var(--muted);font-size:10px;margin-top:2px;}
+.famous-bar{display:none;position:absolute;bottom:0;left:0;right:0;z-index:400;background:rgba(9,12,18,0.93);border-top:1px solid var(--border);padding:7px 13px;font-size:11px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;}
+.famous-bar::-webkit-scrollbar{display:none;}
+.fi{display:inline-block;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:20px;padding:2px 9px;margin-right:6px;font-size:10px;color:var(--sub);}
 
-.coord-pill{
-  position:absolute;bottom:12px;left:12px;z-index:400;
-  background:rgba(9,12,18,0.92);border:1px solid var(--accent);
-  border-radius:8px;padding:6px 12px;font-size:11px;color:var(--accent);
-  box-shadow:var(--glow-g);display:none;pointer-events:none;
-  font-family:'DM Mono',monospace;letter-spacing:0.5px;
-}
-
-/* place info tooltip on map */
-.place-tooltip{
-  position:absolute;top:12px;right:12px;z-index:400;
-  background:rgba(9,12,18,0.93);border:1px solid var(--border);
-  border-radius:10px;padding:10px 14px;font-size:11px;
-  backdrop-filter:blur(12px);max-width:200px;display:none;
-}
-.place-tooltip .pt-name{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:4px;}
-.place-tooltip .pt-lang{color:var(--a5);font-size:10px;}
-.place-tooltip .pt-country{color:var(--muted);font-size:10px;margin-top:2px;}
-
-/* ═══════════════════════════════════════════════════
-   RIGHT PANEL - TABS
-═══════════════════════════════════════════════════ */
+/* RIGHT PANEL */
 #rightPanel{display:flex;flex-direction:column;min-height:0;overflow:hidden;}
-
 .tabs{display:flex;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);}
-.tab{
-  flex:1;padding:10px 0;font-size:11px;background:none;border:none;
-  color:var(--muted);border-bottom:2px solid transparent;
-  transition:all 0.2s;font-family:'Syne',sans-serif;font-weight:700;
-  letter-spacing:0.8px;text-transform:uppercase;
-}
+.tab{flex:1;padding:10px 0;font-size:11px;background:none;border:none;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
 .tab:hover{color:var(--text);}
 .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
-.tab.on.ht{color:var(--a2);border-bottom-color:var(--a2);}
-.tab.on.ct{color:var(--a4);border-bottom-color:var(--a4);}
-
+.tab.ht.on{color:var(--a2);border-bottom-color:var(--a2);}
+.tab.ct.on{color:var(--a4);border-bottom-color:var(--a4);}
 .tpanel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;}
 .tpanel.on{display:flex;}
-
 .scroll{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .scroll::-webkit-scrollbar{width:4px;}
 .scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 
-/* ═══════════════════════════════════════════════════
-   IDLE / LOADING
-═══════════════════════════════════════════════════ */
-.idle{
-  height:100%;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;gap:14px;
-}
-.idle .bi{font-size:54px;opacity:0.35;}
-.idle h3{font-family:'Syne',sans-serif;font-size:18px;color:var(--text);opacity:0.5;}
-.idle p{font-size:12px;color:var(--muted);max-width:250px;line-height:1.6;opacity:0.7;}
-.tag-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;opacity:0.6;}
+/* IDLE */
+.idle{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:13px;}
+.idle .bi{font-size:52px;opacity:0.3;}
+.idle h3{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);opacity:0.5;}
+.idle p{font-size:12px;color:var(--muted);max-width:240px;line-height:1.6;opacity:0.65;}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;opacity:0.55;}
 
+/* LOADING */
 .loadbox{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;}
 .spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -162,26 +172,17 @@ select.nsel:hover,select.nsel:focus{border-color:var(--accent);}
 .pbar{width:200px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px;}
 .pfill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--a2));transition:width 0.4s;}
 
-/* ═══════════════════════════════════════════════════
-   RESULT CARDS
-═══════════════════════════════════════════════════ */
+/* RESULT */
 .result-wrap{display:none;animation:fi 0.4s ease;}
-@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-
-.loc-badge{
-  background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(79,158,255,0.06));
-  border:1px solid rgba(0,229,160,0.2);border-radius:12px;
-  padding:14px 16px;margin-bottom:12px;
-  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
-}
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.loc-badge{background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(79,158,255,0.06));border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:13px 15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:9px;}
 .loc-name{font-family:'Syne',sans-serif;font-size:19px;color:var(--text);line-height:1.2;}
-.loc-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.loc-sub{font-size:10px;color:var(--muted);margin-top:2px;}
 .loc-lang{font-size:10px;color:var(--a5);margin-top:2px;}
-.cbadge{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:10px;color:var(--accent);text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
+.cbadge{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:10px;color:var(--accent);text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
+.wiki-box{background:rgba(79,158,255,0.05);border:1px solid rgba(79,158,255,0.14);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.7;font-style:italic;margin-bottom:11px;}
 
-.wiki-box{background:rgba(79,158,255,0.05);border:1px solid rgba(79,158,255,0.14);border-radius:8px;padding:9px 13px;font-size:11px;color:var(--muted);line-height:1.7;font-style:italic;margin-bottom:12px;}
-
-/* section accordion */
+/* SECTIONS */
 .scard{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color 0.2s;}
 .scard:hover{border-color:rgba(0,229,160,0.2);}
 .shdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.015);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
@@ -191,12 +192,10 @@ select.nsel:hover,select.nsel:focus{border-color:var(--accent);}
 .chev.o{transform:rotate(180deg);}
 .sbody{padding:12px 14px;font-size:12px;line-height:1.7;}
 .sbody.hid{display:none;}
-
-.srow{display:flex;gap:8px;margin-bottom:5px;align-items:flex-start;}
-.slbl{color:var(--muted);min-width:108px;font-size:10px;padding-top:1px;flex-shrink:0;font-family:'DM Mono',monospace;}
+.srow{display:flex;gap:7px;margin-bottom:5px;align-items:flex-start;}
+.slbl{color:var(--muted);min-width:110px;font-size:10px;padding-top:1px;flex-shrink:0;font-family:'DM Mono',monospace;}
 .sval{color:var(--text);font-size:11px;line-height:1.6;}
-
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;margin:2px;border:1px solid;}
+.tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;margin:2px;border:1px solid;}
 .tg{background:rgba(0,229,160,0.08);border-color:rgba(0,229,160,0.2);color:var(--accent);}
 .tb{background:rgba(79,158,255,0.08);border-color:rgba(79,158,255,0.2);color:var(--a2);}
 .ty{background:rgba(255,209,102,0.08);border-color:rgba(255,209,102,0.2);color:var(--a4);}
@@ -204,291 +203,293 @@ select.nsel:hover,select.nsel:focus{border-color:var(--accent);}
 .tp{background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.2);color:var(--a5);}
 
 /* MCQ */
-.mcqi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:9px;}
-.mcqq{font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text);}
-.mcqo{display:block;padding:6px 10px;margin:3px 0;border-radius:6px;font-size:11px;color:var(--muted);border:1px solid transparent;transition:all 0.15s;}
+.mcqi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:9px;}
+.mcqq{font-size:12px;font-weight:500;margin-bottom:7px;color:var(--text);}
+.mcqo{display:block;padding:5px 9px;margin:3px 0;border-radius:6px;font-size:11px;color:var(--muted);border:1px solid transparent;transition:all 0.15s;}
 .mcqo:hover{background:rgba(0,229,160,0.05);border-color:rgba(0,229,160,0.2);color:var(--text);cursor:pointer;}
 .mcqo.ok{background:rgba(0,229,160,0.1);border-color:var(--accent);color:var(--accent);}
 .mcqo.no{background:rgba(255,107,107,0.1);border-color:var(--a3);color:var(--a3);}
 
-/* timeline */
+/* TIMELINE */
 .tl{position:relative;padding-left:20px;}
 .tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--accent),transparent);}
-.tli{position:relative;margin-bottom:13px;}
+.tli{position:relative;margin-bottom:12px;}
 .tldot{position:absolute;left:-17px;top:4px;width:7px;height:7px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 0 6px var(--accent);}
 .tlyear{font-size:10px;color:var(--accent);margin-bottom:2px;letter-spacing:1px;font-family:'DM Mono',monospace;}
 .tltext{font-size:11px;color:var(--text);line-height:1.6;}
 
-/* exam focus */
-.epill{background:linear-gradient(135deg,rgba(255,209,102,0.06),rgba(192,132,252,0.06));border:1px solid rgba(255,209,102,0.18);border-radius:8px;padding:9px 13px;margin-bottom:7px;font-size:11px;color:var(--a4);line-height:1.6;}
+/* EXAM PILLS */
+.epill{background:linear-gradient(135deg,rgba(255,209,102,0.06),rgba(192,132,252,0.06));border:1px solid rgba(255,209,102,0.18);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:11px;color:var(--a4);line-height:1.6;}
+.ebox{background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.25);border-radius:9px;padding:13px;color:var(--a3);font-size:12px;line-height:1.6;}
 
-/* error */
-.ebox{background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.25);border-radius:9px;padding:14px;color:var(--a3);font-size:12px;line-height:1.6;}
-
-/* ═══════════════════════════════════════════════════
-   HISTORY TAB
-═══════════════════════════════════════════════════ */
+/* HISTORY */
 .hempty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px;opacity:0.4;}
 .hempty p{font-size:11px;color:var(--muted);max-width:200px;line-height:1.6;}
-.hclr{width:100%;margin-bottom:11px;background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.2);color:var(--a3);font-size:11px;padding:8px;border-radius:8px;transition:all 0.2s;}
+.hclr{width:100%;margin-bottom:11px;background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.2);color:var(--a3);font-size:11px;padding:8px;border-radius:8px;transition:background 0.2s;}
 .hclr:hover{background:rgba(255,107,107,0.12);}
-.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:9px;transition:border-color 0.2s;}
-.hitem:hover{border-color:rgba(79,158,255,0.35);cursor:pointer;}
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:9px;transition:border-color 0.2s;cursor:pointer;}
+.hitem:hover{border-color:rgba(79,158,255,0.35);}
 .hname{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
 .hmeta{font-size:10px;color:var(--muted);margin-bottom:2px;}
 .hcoord{font-size:10px;color:var(--a2);font-family:'DM Mono',monospace;}
 .hts{font-size:9px;color:var(--muted);margin-top:3px;}
 
-/* ═══════════════════════════════════════════════════
-   CHAT TAB
-═══════════════════════════════════════════════════ */
+/* CHAT */
 .cmsgs{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .cmsgs::-webkit-scrollbar{width:4px;}
 .cmsgs::-webkit-scrollbar-thumb{background:var(--border);}
 .cnoloc{display:flex;align-items:center;justify-content:center;height:100%;text-align:center;opacity:0.4;padding:20px;font-size:12px;color:var(--muted);}
-.cmsg{margin-bottom:13px;}
+.cmsg{margin-bottom:12px;}
 .cmq{background:rgba(79,158,255,0.07);border:1px solid rgba(79,158,255,0.16);border-radius:10px 10px 2px 10px;padding:9px 12px;font-size:12px;color:var(--a2);margin-bottom:5px;}
 .cma{background:var(--card);border:1px solid var(--border);border-radius:2px 10px 10px 10px;padding:9px 12px;font-size:12px;color:var(--text);line-height:1.7;}
 .cmts{font-size:9px;color:var(--muted);margin-top:3px;text-align:right;font-family:'DM Mono',monospace;}
-.cbar{
-  display:flex;gap:8px;padding:10px 14px;
-  border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;
-}
-.cbar input{
-  flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);
-  color:var(--text);padding:9px 13px;border-radius:8px;font-size:12px;
-  transition:border-color 0.2s;
-}
+.cbar{display:flex;gap:8px;padding:10px 13px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.cbar input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12px;transition:border-color 0.2s;}
 .cbar input:focus{border-color:var(--a4);background:rgba(255,209,102,0.03);}
 .cbar input::placeholder{color:var(--muted);}
-.send-btn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;transition:opacity 0.2s;}
-.send-btn:hover{opacity:0.85;}
+.sbtn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;transition:opacity 0.2s;}
+.sbtn:hover{opacity:0.85;}
 
-/* ═══════════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════════ */
+/* FOOTER */
 #footer{flex-shrink:0;height:24px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px;font-size:9px;color:var(--muted);letter-spacing:0.5px;font-family:'DM Mono',monospace;}
 
-/* ═══════════════════════════════════════════════════
-   TOAST NOTIFICATIONS
-═══════════════════════════════════════════════════ */
-.toast{
-  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:10px 18px;font-size:12px;color:var(--text);
-  box-shadow:var(--shadow);z-index:9998;
-  animation:toastIn 0.3s ease;pointer-events:none;white-space:nowrap;
-}
+/* TOAST */
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:12px;color:var(--text);box-shadow:var(--shadow);z-index:9998;animation:toastIn 0.3s ease;pointer-events:none;white-space:nowrap;}
 .toast.ok{border-color:rgba(0,229,160,0.3);color:var(--accent);}
 .toast.err{border-color:rgba(255,107,107,0.3);color:var(--a3);}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
-/* ═══════════════════════════════════════════════════
-   RESPONSIVE MOBILE
-═══════════════════════════════════════════════════ */
+/* RESPONSIVE */
 @media(max-width:768px){
   #mainWrap{grid-template-columns:1fr;grid-template-rows:42vh 1fr;}
   #mapPanel{border-right:none;border-bottom:1px solid var(--border);}
-  .nav-selects{display:none;}
-  #mobileControls{display:flex;gap:6px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .nav-sels{display:none;}
+  #mobileBar{display:flex;}
 }
-@media(min-width:769px){#mobileControls{display:none;}}
-
-/* Place famous items banner */
-.famous-bar{
-  display:none;position:absolute;bottom:48px;left:0;right:0;z-index:400;
-  background:rgba(9,12,18,0.92);border-top:1px solid var(--border);
-  padding:8px 14px;font-size:11px;overflow-x:auto;white-space:nowrap;
-  scrollbar-width:none;
-}
-.famous-bar::-webkit-scrollbar{display:none;}
-.famous-item{display:inline-block;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:20px;padding:3px 10px;margin-right:6px;font-size:10px;color:var(--sub);}
+@media(min-width:769px){#mobileBar{display:none;}}
+#mobileBar{gap:6px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
 </style>
 </head>
 <body>
 
-<!-- AUTH GATE (shown while checking login state) -->
-<div id="authGate"><div class="auth-spinner"></div></div>
+<!-- ══════════════════════════════════════════════════
+     AUTH SCREEN  (Login + Signup in one div, toggled)
+══════════════════════════════════════════════════ -->
+<div id="authScreen">
 
-<!-- TOP NAV -->
-<nav id="topNav" style="display:none;">
-  <a class="nav-logo" href="#">
-    <div class="nav-logo-icon">&#127757;</div>
-    <div class="nav-logo-text">GeoMind</div>
-  </a>
-
-  <div class="nav-selects" id="navSelects">
-    <div class="nsg">
-      <label>Class</label>
-      <select class="nsel" id="classLevel">
-        <option value="6-8">6-8</option>
-        <option value="9-10">9-10</option>
-        <option value="11-12">11-12</option>
-        <option value="Competitive" selected>Competitive</option>
-      </select>
+  <!-- LOGIN CARD -->
+  <div class="auth-card" id="loginCard">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">&#127757;</div>
+      <div class="auth-logo-text">GeoMind</div>
     </div>
-    <div class="nsg">
-      <label>Exam</label>
-      <select class="nsel" id="examType">
-        <option value="School">School</option>
-        <option value="Board">Board</option>
-        <option value="UPSC" selected>UPSC</option>
-        <option value="SSC">SSC</option>
-        <option value="State PCS">State PCS</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="nsg">
-      <label>Mode</label>
-      <select class="nsel" id="learningMode">
-        <option value="Full Analysis" selected>Full Analysis</option>
-        <option value="Quiz Mode">Quiz Mode</option>
-        <option value="Timeline Mode">Timeline Mode</option>
-        <option value="Agriculture Mode">Agriculture Mode</option>
-        <option value="Normal">Normal</option>
-      </select>
-    </div>
-    <div class="nsg">
-      <label>Language</label>
-      <select id="langPicker" onchange="applyLang(this.value)">
-        <option value="en">&#127468;&#127463; English</option>
-        <option value="hi">&#127470;&#127475; Hindi</option>
-        <option value="bn">&#127463;&#127465; Bengali</option>
-        <option value="te">&#127470;&#127475; Telugu</option>
-        <option value="mr">&#127470;&#127475; Marathi</option>
-        <option value="ta">&#127470;&#127475; Tamil</option>
-        <option value="gu">&#127470;&#127475; Gujarati</option>
-        <option value="kn">&#127470;&#127475; Kannada</option>
-        <option value="ml">&#127470;&#127475; Malayalam</option>
-        <option value="pa">&#127470;&#127475; Punjabi</option>
-        <option value="ur">&#127472;&#127477; Urdu</option>
-        <option value="fr">&#127467;&#127479; French</option>
-        <option value="es">&#127466;&#127480; Spanish</option>
-        <option value="de">&#127465;&#127466; German</option>
-        <option value="zh">&#127464;&#127475; Chinese</option>
-        <option value="ar">&#127462;&#127466; Arabic</option>
-        <option value="ru">&#127479;&#127482; Russian</option>
-        <option value="pt">&#127463;&#127479; Portuguese</option>
-        <option value="ja">&#127471;&#127477; Japanese</option>
-        <option value="ko">&#127472;&#127479; Korean</option>
-        <option value="it">&#127470;&#127481; Italian</option>
-        <option value="tr">&#127481;&#127479; Turkish</option>
-        <option value="vi">&#127483;&#127475; Vietnamese</option>
-        <option value="sw">&#127472;&#127466; Swahili</option>
-      </select>
-    </div>
+    <div class="auth-h2">Welcome back</div>
+    <div class="auth-sub">Sign in to continue your geo-learning journey</div>
+    <div class="aerr" id="lerr"></div>
+    <div class="aok"  id="lok"></div>
+    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@example.com"/></div>
+    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="Your password"/></div>
+    <button class="abtn abtn-g" id="lbtn" onclick="doLogin()">Sign In</button>
+    <div class="adiv"><span>or</span></div>
+    <button class="alink alink-b" onclick="showCard('signup')">Create a new account &rarr;</button>
+    <div class="afooter">&copy; 2025 GeoMind &mdash; AI Educational Geo-Intelligence</div>
   </div>
 
-  <div class="nav-right">
-    <span class="sbadge" id="sbadge">READY</span>
-    <div class="user-chip" id="userChip">
-      <div class="user-avatar" id="userAvatar">?</div>
-      <span class="user-name" id="userName">Loading&hellip;</span>
+  <!-- SIGNUP CARD -->
+  <div class="auth-card" id="signupCard" style="display:none;">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">&#127757;</div>
+      <div class="auth-logo-text">GeoMind</div>
     </div>
-    <button class="nav-btn nav-btn-clear" onclick="clearAll()">&#10005; Clear</button>
-    <button class="nav-btn" onclick="doLogout()">&#8594; Logout</button>
-  </div>
-</nav>
-
-<!-- MOBILE CONTROLS (hidden on desktop) -->
-<div id="mobileControls">
-  <select class="nsel" id="classLevelM" style="flex:1">
-    <option value="6-8">6-8</option><option value="9-10">9-10</option>
-    <option value="11-12">11-12</option><option value="Competitive" selected>Competitive</option>
-  </select>
-  <select class="nsel" id="examTypeM" style="flex:1">
-    <option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option>
-    <option value="Board">Board</option><option value="School">School</option>
-  </select>
-  <select class="nsel" id="learningModeM" style="flex:1">
-    <option value="Full Analysis" selected>Full</option>
-    <option value="Quiz Mode">Quiz</option>
-    <option value="Timeline Mode">Timeline</option>
-  </select>
-</div>
-
-<!-- MAIN LAYOUT -->
-<div id="mainWrap" style="display:none;">
-
-  <!-- LEFT: MAP -->
-  <div id="mapPanel">
-    <div class="map-hint">
-      <strong>&#128205; Click the map</strong>
-      Select any location for an AI educational report.
-    </div>
-    <div class="coord-pill" id="cpill"></div>
-    <div class="place-tooltip" id="placeTooltip">
-      <div class="pt-name" id="ptName"></div>
-      <div class="pt-lang" id="ptLang"></div>
-      <div class="pt-country" id="ptCountry"></div>
-    </div>
-    <div class="famous-bar" id="famousBar"></div>
-    <div id="map"></div>
-  </div>
-
-  <!-- RIGHT: TABS -->
-  <div id="rightPanel">
-    <div class="tabs">
-      <button class="tab on"  id="t-a" onclick="goTab('a',this)">&#128300; Analysis</button>
-      <button class="tab ht"  id="t-h" onclick="goTab('h',this)">&#128200; History</button>
-      <button class="tab ct"  id="t-c" onclick="goTab('c',this)">&#128172; Chat</button>
-    </div>
-
-    <!-- ANALYSIS -->
-    <div class="tpanel on" id="tp-a">
-      <div class="scroll" id="ascroll">
-        <div class="idle" id="idleState">
-          <div class="bi">&#128506;</div>
-          <h3 id="i-title">Click a location</h3>
-          <p id="i-desc">GeoMind will generate a structured exam-ready educational report covering geography, history, agriculture, economy, famous places, local language, quiz and more.</p>
-          <div class="tag-row">
-            <span class="tag tg">Geography</span>
-            <span class="tag tb">History</span>
-            <span class="tag ty">Agriculture</span>
-            <span class="tag tr">Quiz</span>
-            <span class="tag tp">Language</span>
-          </div>
-        </div>
-        <div class="loadbox" id="loadbox">
-          <div class="spin"></div>
-          <div style="text-align:center">
-            <div style="font-size:12px;color:var(--muted)" id="loadtxt">Generating&hellip;</div>
-            <div class="lstep" id="lstep">Starting&hellip;</div>
-            <div class="pbar"><div class="pfill" id="pfill"></div></div>
-          </div>
-        </div>
-        <div class="result-wrap" id="resultWrap"></div>
+    <div class="auth-h2">Create your account</div>
+    <div class="auth-sub">Start your AI geo-learning journey today</div>
+    <div class="aerr" id="serr"></div>
+    <div class="aok"  id="sok"></div>
+    <div class="afield"><label>Full Name</label><input type="text" id="sname" placeholder="Your full name"/></div>
+    <div class="afield"><label>Email Address</label><input type="email" id="semail" placeholder="you@example.com"/></div>
+    <div class="row2">
+      <div class="afield">
+        <label>Class Level</label>
+        <select id="scls">
+          <option value="">Select</option>
+          <option value="6-8">Class 6-8</option>
+          <option value="9-10">Class 9-10</option>
+          <option value="11-12">Class 11-12</option>
+          <option value="Competitive" selected>Competitive</option>
+        </select>
+      </div>
+      <div class="afield">
+        <label>Exam Focus</label>
+        <select id="sexam">
+          <option value="">Select</option>
+          <option value="UPSC" selected>UPSC</option>
+          <option value="SSC">SSC</option>
+          <option value="Board">Board</option>
+          <option value="School">School</option>
+          <option value="State PCS">State PCS</option>
+        </select>
       </div>
     </div>
+    <div class="afield">
+      <label>Password</label>
+      <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)"/>
+      <div class="pwd-bar" id="pwdBar"></div>
+    </div>
+    <div class="afield"><label>Confirm Password</label><input type="password" id="scpwd" placeholder="Repeat password"/></div>
+    <button class="abtn abtn-b" id="sbtn" onclick="doSignup()">Create Account</button>
+    <div class="adiv"><span>or</span></div>
+    <button class="alink alink-g" onclick="showCard('login')">Already have an account? Sign in</button>
+    <div class="afooter">&copy; 2025 GeoMind &mdash; AI Educational Geo-Intelligence</div>
+  </div>
+</div>
 
-    <!-- HISTORY -->
-    <div class="tpanel" id="tp-h">
-      <div class="scroll" id="hscroll">
-        <div id="hcontent">
+<!-- ══════════════════════════════════════════════════
+     MAIN APP SCREEN
+══════════════════════════════════════════════════ -->
+<div id="appScreen">
+
+  <!-- TOP NAV -->
+  <nav id="topNav">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">&#127757;</div>
+      <div class="nav-logo-text">GeoMind</div>
+    </div>
+    <div class="nav-sels">
+      <div class="nsg"><label>Class</label>
+        <select class="nsel" id="classLevel">
+          <option value="6-8">6-8</option><option value="9-10">9-10</option>
+          <option value="11-12">11-12</option><option value="Competitive" selected>Competitive</option>
+        </select>
+      </div>
+      <div class="nsg"><label>Exam</label>
+        <select class="nsel" id="examType">
+          <option value="School">School</option><option value="Board">Board</option>
+          <option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option>
+          <option value="State PCS">State PCS</option><option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="nsg"><label>Mode</label>
+        <select class="nsel" id="learningMode">
+          <option value="Full Analysis" selected>Full Analysis</option>
+          <option value="Quiz Mode">Quiz Mode</option>
+          <option value="Timeline Mode">Timeline Mode</option>
+          <option value="Agriculture Mode">Agriculture Mode</option>
+          <option value="Normal">Normal</option>
+        </select>
+      </div>
+      <div class="nsg"><label>Language</label>
+        <select id="langPick" onchange="applyLang(this.value)">
+          <option value="en">&#127468;&#127463; English</option>
+          <option value="hi">&#127470;&#127475; Hindi</option>
+          <option value="bn">&#127463;&#127465; Bengali</option>
+          <option value="te">Telugu</option><option value="mr">Marathi</option>
+          <option value="ta">Tamil</option><option value="gu">Gujarati</option>
+          <option value="kn">Kannada</option><option value="ml">Malayalam</option>
+          <option value="pa">Punjabi</option><option value="ur">&#127472;&#127477; Urdu</option>
+          <option value="fr">&#127467;&#127479; French</option>
+          <option value="es">&#127466;&#127480; Spanish</option>
+          <option value="de">&#127465;&#127466; German</option>
+          <option value="zh">&#127464;&#127475; Chinese</option>
+          <option value="ar">&#127462;&#127466; Arabic</option>
+          <option value="ru">&#127479;&#127482; Russian</option>
+          <option value="pt">Portuguese</option><option value="ja">&#127471;&#127477; Japanese</option>
+          <option value="ko">&#127472;&#127479; Korean</option>
+          <option value="it">Italian</option><option value="tr">Turkish</option>
+          <option value="sw">Swahili</option>
+        </select>
+      </div>
+    </div>
+    <div class="nav-right">
+      <span class="sbadge" id="sbadge">READY</span>
+      <div class="user-chip">
+        <div class="uav" id="uav">?</div>
+        <span class="uname" id="uname">Loading&hellip;</span>
+      </div>
+      <button class="nvbtn" onclick="clearAll()">&#10005; Clear</button>
+      <button class="nvbtn" onclick="doLogout()">Logout &#8594;</button>
+    </div>
+  </nav>
+
+  <!-- MOBILE CONTROLS -->
+  <div id="mobileBar">
+    <select class="nsel" id="clsM" style="flex:1"><option value="Competitive" selected>Competitive</option><option value="6-8">6-8</option><option value="9-10">9-10</option><option value="11-12">11-12</option></select>
+    <select class="nsel" id="exM"  style="flex:1"><option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option><option value="Board">Board</option></select>
+    <select class="nsel" id="mdM"  style="flex:1"><option value="Full Analysis" selected>Full</option><option value="Quiz Mode">Quiz</option><option value="Timeline Mode">Timeline</option></select>
+  </div>
+
+  <!-- 2-PANEL -->
+  <div id="mainWrap">
+
+    <!-- MAP -->
+    <div id="mapPanel">
+      <div class="map-hint"><strong>&#128205; Click the map</strong>Select any location for an AI report.</div>
+      <div class="coord-pill" id="cpill"></div>
+      <div class="ptip" id="ptip">
+        <div class="ptip-name" id="ptName"></div>
+        <div class="ptip-lang" id="ptLang"></div>
+        <div class="ptip-loc"  id="ptLoc"></div>
+      </div>
+      <div class="famous-bar" id="famBar"></div>
+      <div id="map"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="rightPanel">
+      <div class="tabs">
+        <button class="tab on"  id="t-a" onclick="goTab('a',this)">&#128300; Analysis</button>
+        <button class="tab ht"  id="t-h" onclick="goTab('h',this)">&#128200; History</button>
+        <button class="tab ct"  id="t-c" onclick="goTab('c',this)">&#128172; Chat</button>
+      </div>
+
+      <!-- ANALYSIS TAB -->
+      <div class="tpanel on" id="tp-a">
+        <div class="scroll" id="ascroll">
+          <div class="idle" id="idleBox">
+            <div class="bi">&#128506;</div>
+            <h3 id="i-title">Click a location on the map</h3>
+            <p  id="i-desc">GeoMind generates a structured exam-ready report covering geography, history, agriculture, economy, local languages, famous places, quiz and more.</p>
+            <div class="tag-row">
+              <span class="tag tg">Geography</span><span class="tag tb">History</span>
+              <span class="tag ty">Agriculture</span><span class="tag tr">Quiz</span>
+              <span class="tag tp">Language</span>
+            </div>
+          </div>
+          <div class="loadbox" id="loadbox">
+            <div class="spin"></div>
+            <div style="text-align:center">
+              <div style="font-size:12px;color:var(--muted)" id="ltxt">Generating&hellip;</div>
+              <div class="lstep" id="lstep">Starting&hellip;</div>
+              <div class="pbar"><div class="pfill" id="pfill"></div></div>
+            </div>
+          </div>
+          <div class="result-wrap" id="resultWrap"></div>
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div class="tpanel" id="tp-h">
+        <div class="scroll"><div id="hcontent">
           <div class="hempty" id="hempty">
-            <div style="font-size:48px;opacity:0.3">&#128200;</div>
-            <p>No searches yet. Click locations on the map to build your learning history.</p>
+            <div style="font-size:46px;opacity:0.25">&#128200;</div>
+            <p>No searches yet. Click locations on the map to build your history.</p>
           </div>
+        </div></div>
+      </div>
+
+      <!-- CHAT TAB -->
+      <div class="tpanel" id="tp-c">
+        <div class="cmsgs" id="cmsgs">
+          <div class="cnoloc" id="cnoloc">&#128172; Click a map location first, then ask questions here.</div>
+        </div>
+        <div class="cbar">
+          <input type="text" id="cinput" placeholder="Ask about this location&hellip;"/>
+          <button class="sbtn" onclick="sendChat()">Send &#8594;</button>
         </div>
       </div>
     </div>
-
-    <!-- CHAT -->
-    <div class="tpanel" id="tp-c">
-      <div class="cmsgs" id="cmsgs">
-        <div class="cnoloc" id="cnoloc">&#128172; Click a map location first, then ask questions about it here.</div>
-      </div>
-      <div class="cbar">
-        <input type="text" id="cinput" placeholder="Ask a follow-up question about this location&hellip;"/>
-        <button class="send-btn" onclick="sendChat()">Send &#8594;</button>
-      </div>
-    </div>
   </div>
-</div>
 
-<!-- FOOTER -->
-<div id="footer" style="display:none;">
-  Powered by Z.ai GLM-4.5-Flash &middot; OpenStreetMap + Leaflet &middot; Nominatim &middot; REST Countries &middot; Wikipedia &middot; Firebase Auth + Realtime DB
+  <div id="footer">Powered by Z.ai GLM-4.5-Flash &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia &middot; Firebase Auth + Realtime DB</div>
 </div>
 
 <!-- Firebase SDKs -->
@@ -499,9 +500,9 @@ select.nsel:hover,select.nsel:focus{border-color:var(--accent);}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <script>
-// ╔══════════════════════════════════════════════════╗
-// ║  FIREBASE INIT                                   ║
-// ╚══════════════════════════════════════════════════╝
+/* ════════════════════════════════════════════════
+   FIREBASE INIT
+════════════════════════════════════════════════ */
 const firebaseConfig = {
   apiKey: "AIzaSyD10aCUKg1YRao4bzCmOkiVpKV2HWqshz4",
   authDomain: "geogide-7d25e.firebaseapp.com",
@@ -515,267 +516,290 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.database();
 
-// Z.ai key
+/* Z.ai key */
 const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
 
-// ╔══════════════════════════════════════════════════╗
-// ║  MULTILINGUAL STRINGS                            ║
-// ╚══════════════════════════════════════════════════╝
-const LANGS = {
-  en:{click:'Click a location',desc:'GeoMind generates structured exam-ready reports.',send:'Send',logout:'Logout',analysis:'Analysis',history:'History',chat:'Chat',loading:'Generating report\u2026',clear:'Clear'},
-  hi:{click:'\u092e\u093e\u0928\u091a\u093f\u0924\u094d\u0930 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902',desc:'GeoMind \u0906\u092a\u0915\u0947 \u0932\u093f\u090f \u0936\u0948\u0915\u094d\u0937\u093f\u0915 \u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928\u093e\u0924\u093e \u0939\u0948\u0964',send:'\u092d\u0947\u091c\u0947\u0902',logout:'\u0932\u0949\u0917 \u0906\u0909\u091f',analysis:'\u0935\u093f\u0936\u094d\u0932\u0947\u0937\u0923',history:'\u0907\u0924\u093f\u0939\u093e\u0938',chat:'\u091a\u0948\u091f',loading:'\u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928 \u0930\u0939\u0940 \u0939\u0948\u2026',clear:'\u0938\u093e\u092b \u0915\u0930\u0947\u0902'},
-  bn:{click:'\u09ae\u09be\u09a8\u099a\u09bf\u09a4\u09cd\u09b0\u09c7 \u0995\u09cd\u09b2\u09bf\u0995 \u0995\u09b0\u09c1\u09a8',desc:'GeoMind \u09b6\u09bf\u0995\u09cd\u09b7\u09be\u09ae\u09c2\u09b2\u0995 \u09b0\u09bf\u09aa\u09cb\u09b0\u09cd\u099f \u09a4\u09c8\u09b0\u09bf \u0995\u09b0\u09c7\u0964',send:'\u09aa\u09be\u09a0\u09be\u09a8',logout:'\u09b2\u0997 \u0986\u0989\u099f',analysis:'\u09ac\u09bf\u09b6\u09cd\u09b2\u09c7\u09b7\u09a3',history:'\u0987\u09a4\u09bf\u09b9\u09be\u09b8',chat:'\u099a\u09cd\u09af\u09be\u099f',loading:'\u09b0\u09bf\u09aa\u09cb\u09b0\u09cd\u099f \u09a4\u09c8\u09b0\u09bf \u09b9\u099a\u09cd\u099b\u09c7\u2026',clear:'\u09aa\u09b0\u09bf\u09b7\u09cd\u0995\u09be\u09b0'},
-  fr:{click:'Cliquez sur la carte',desc:'GeoMind g\u00e9n\u00e8re des rapports \u00e9ducatifs structur\u00e9s.',send:'Envoyer',logout:'D\u00e9connexion',analysis:'Analyse',history:'Historique',chat:'Chat',loading:'G\u00e9n\u00e9ration\u2026',clear:'Effacer'},
-  es:{click:'Haz clic en el mapa',desc:'GeoMind genera informes educativos estructurados.',send:'Enviar',logout:'Cerrar sesi\u00f3n',analysis:'An\u00e1lisis',history:'Historial',chat:'Chat',loading:'Generando\u2026',clear:'Limpiar'},
-  de:{click:'Auf die Karte klicken',desc:'GeoMind erstellt strukturierte Bildungsberichte.',send:'Senden',logout:'Abmelden',analysis:'Analyse',history:'Verlauf',chat:'Chat',loading:'Wird generiert\u2026',clear:'L\u00f6schen'},
-  ar:{click:'\u0627\u0646\u0642\u0631 \u0639\u0644\u0649 \u0627\u0644\u062e\u0631\u064a\u0637\u0629',desc:'\u064a\u0648\u0644\u062f GeoMind \u062a\u0642\u0627\u0631\u064a\u0631 \u062a\u0639\u0644\u064a\u0645\u064a\u0629.',send:'\u0625\u0631\u0633\u0627\u0644',logout:'\u062a\u0633\u062c\u064a\u0644 \u062e\u0631\u0648\u062c',analysis:'\u062a\u062d\u0644\u064a\u0644',history:'\u0627\u0644\u062a\u0627\u0631\u064a\u062e',chat:'\u0645\u062d\u0627\u062f\u062b\u0629',loading:'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u0648\u0644\u064a\u062f\u2026',clear:'\u0645\u0633\u062d'},
-  zh:{click:'\u70b9\u51fb\u5730\u56fe',desc:'GeoMind \u751f\u6210\u7ed3\u6784\u5316\u6559\u80b2\u62a5\u544a\u3002',send:'\u53d1\u9001',logout:'\u767b\u51fa',analysis:'\u5206\u6790',history:'\u5386\u53f2',chat:'\u804a\u5929',loading:'\u751f\u6210\u4e2d\u2026',clear:'\u6e05\u9664'},
-  ru:{click:'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u043a\u0430\u0440\u0442\u0443',desc:'GeoMind \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043e\u0431\u0440\u0430\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u043e\u0442\u0447\u0451\u0442\u044b.',send:'\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c',logout:'\u0412\u044b\u0439\u0442\u0438',analysis:'\u0410\u043d\u0430\u043b\u0438\u0437',history:'\u0418\u0441\u0442\u043e\u0440\u0438\u044f',chat:'\u0427\u0430\u0442',loading:'\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f\u2026',clear:'\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c'},
+/* ════════════════════════════════════════════════
+   MULTILINGUAL UI STRINGS  (24 languages)
+════════════════════════════════════════════════ */
+const L10N = {
+  en:{idle:'Click a location on the map',desc:'GeoMind generates structured exam-ready educational reports.',send:'Send',loading:'Generating report\u2026'},
+  hi:{idle:'\u092e\u093e\u0928\u091a\u093f\u0924\u094d\u0930 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902',desc:'GeoMind \u0936\u0948\u0915\u094d\u0937\u093f\u0915 \u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928\u093e\u0924\u093e \u0939\u0948\u0964',send:'\u092d\u0947\u091c\u0947\u0902',loading:'\u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928 \u0930\u0939\u0940 \u0939\u0948\u2026'},
+  bn:{idle:'\u09ae\u09be\u09a8\u099a\u09bf\u09a4\u09cd\u09b0\u09c7 \u0995\u09cd\u09b2\u09bf\u0995 \u0995\u09b0\u09c1\u09a8',desc:'GeoMind \u09b6\u09bf\u0995\u09cd\u09b7\u09be\u09ae\u09c2\u09b2\u0995 \u09b0\u09bf\u09aa\u09cb\u09b0\u09cd\u099f \u09a4\u09c8\u09b0\u09bf \u0995\u09b0\u09c7\u0964',send:'\u09aa\u09be\u09a0\u09be\u09a8',loading:'\u09a4\u09c8\u09b0\u09bf \u09b9\u099a\u09cd\u099b\u09c7\u2026'},
+  fr:{idle:'Cliquez sur la carte',desc:'GeoMind g\u00e9n\u00e8re des rapports \u00e9ducatifs.',send:'Envoyer',loading:'G\u00e9n\u00e9ration\u2026'},
+  es:{idle:'Haz clic en el mapa',desc:'GeoMind genera informes educativos.',send:'Enviar',loading:'Generando\u2026'},
+  de:{idle:'Auf die Karte klicken',desc:'GeoMind erstellt Bildungsberichte.',send:'Senden',loading:'Wird generiert\u2026'},
+  ar:{idle:'\u0627\u0646\u0642\u0631 \u0639\u0644\u0649 \u0627\u0644\u062e\u0631\u064a\u0637\u0629',desc:'GeoMind \u064a\u0648\u0644\u062f \u062a\u0642\u0627\u0631\u064a\u0631.',send:'\u0625\u0631\u0633\u0627\u0644',loading:'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u0648\u0644\u064a\u062f\u2026'},
+  zh:{idle:'\u70b9\u51fb\u5730\u56fe',desc:'GeoMind \u751f\u6210\u6559\u80b2\u62a5\u544a\u3002',send:'\u53d1\u9001',loading:'\u751f\u6210\u4e2d\u2026'},
+  ru:{idle:'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u043a\u0430\u0440\u0442\u0443',desc:'GeoMind \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043e\u0442\u0447\u0451\u0442\u044b.',send:'\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c',loading:'\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f\u2026'},
+  ja:{idle:'\u5730\u56f3\u3092\u30af\u30ea\u30c3\u30af',desc:'GeoMind\u306f\u6559\u80b2\u30ec\u30dd\u30fc\u30c8\u3092\u4f5c\u6210\u3057\u307e\u3059\u3002',send:'\u9001\u4fe1',loading:'\u751f\u6210\u4e2d\u2026'},
 };
 let curLang = 'en';
-
-function applyLang(code) {
-  curLang = code;
-  const L = LANGS[code] || LANGS.en;
-  document.getElementById('i-title').textContent = L.click;
-  document.getElementById('i-desc').textContent  = L.desc;
-  document.getElementById('cinput').placeholder  = L.click + '...';
-  document.querySelector('.send-btn').textContent = L.send + ' \u2192';
-  document.getElementById('t-a').textContent     = '\uD83D\uDD2C ' + L.analysis;
-  document.getElementById('t-h').textContent     = '\uD83D\uDCC8 ' + L.history;
-  document.getElementById('t-c').textContent     = '\uD83D\uDCAC ' + L.chat;
-  document.getElementById('loadtxt').textContent = L.loading;
-  if(document.querySelector('.nav-btn:last-child'))
-    document.querySelector('.nav-btn:last-child').textContent = '\u2192 ' + L.logout;
+function applyLang(code){
+  curLang=code;
+  const L=L10N[code]||L10N.en;
+  document.getElementById('i-title').textContent=L.idle;
+  document.getElementById('i-desc').textContent=L.desc;
+  document.getElementById('ltxt').textContent=L.loading;
+  document.getElementById('cinput').placeholder=L.idle+'...';
+  document.querySelector('.sbtn').textContent=L.send+' \u2192';
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  AUTH STATE OBSERVER                             ║
-// ╚══════════════════════════════════════════════════╝
-let currentUser = null;
+/* ════════════════════════════════════════════════
+   AUTH CARD TOGGLE
+════════════════════════════════════════════════ */
+function showCard(which){
+  document.getElementById('loginCard').style.display  = which==='login'  ? 'block':'none';
+  document.getElementById('signupCard').style.display = which==='signup' ? 'block':'none';
+}
 
-auth.onAuthStateChanged(async user => {
-  const gate = document.getElementById('authGate');
-  if (!user) {
-    window.location.href = 'login.html';
+/* ════════════════════════════════════════════════
+   AUTH STATE
+════════════════════════════════════════════════ */
+let currentUser=null;
+
+auth.onAuthStateChanged(async user=>{
+  if(!user){
+    document.getElementById('authScreen').style.display='flex';
+    document.getElementById('appScreen').style.display='none';
     return;
   }
-  currentUser = user;
-  gate.style.display = 'none';
+  currentUser=user;
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='flex';
 
-  // Load user profile from DB for display name
-  let displayName = user.displayName || user.email.split('@')[0];
-  try {
-    const snap = await db.ref('users/' + user.uid).once('value');
-    if (snap.exists()) {
-      displayName = snap.val().name || displayName;
-      const cls  = snap.val().classLevel;
-      const exam = snap.val().examType;
-      if(cls)  document.getElementById('classLevel').value = cls;
-      if(exam) document.getElementById('examType').value   = exam;
+  /* Load profile from DB */
+  let name=user.displayName||user.email.split('@')[0];
+  try{
+    const snap=await db.ref('users/'+user.uid).once('value');
+    if(snap.exists()){
+      name=snap.val().name||name;
+      if(snap.val().classLevel) document.getElementById('classLevel').value=snap.val().classLevel;
+      if(snap.val().examType)   document.getElementById('examType').value=snap.val().examType;
     }
-  } catch(e) {}
+  }catch(e){}
 
-  // Set user chip
-  document.getElementById('userName').textContent  = displayName;
-  document.getElementById('userAvatar').textContent = displayName.charAt(0).toUpperCase();
-
-  // Show UI
-  document.getElementById('topNav').style.display    = 'flex';
-  document.getElementById('mainWrap').style.display  = 'grid';
-  document.getElementById('footer').style.display    = 'flex';
-
-  // Init map after auth confirmed
+  document.getElementById('uname').textContent=name;
+  document.getElementById('uav').textContent=name.charAt(0).toUpperCase();
   initMap();
 });
 
-async function doLogout() {
-  try {
-    await auth.signOut();
-    window.location.href = 'login.html';
-  } catch(e) { toast('Logout failed: ' + e.message, 'err'); }
+/* ════════════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════════════ */
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pwd  =document.getElementById('lpwd').value;
+  const btn  =document.getElementById('lbtn');
+  const err  =document.getElementById('lerr');
+  const ok   =document.getElementById('lok');
+  err.style.display='none'; ok.style.display='none';
+  if(!email||!pwd) return showA(err,'Please fill in all fields.');
+  btn.disabled=true;
+  btn.innerHTML='<span class="smsm"></span>Signing in&hellip;';
+  try{
+    await auth.signInWithEmailAndPassword(email,pwd);
+    ok.textContent='Login successful! Loading GeoMind\u2026'; ok.style.display='block';
+  }catch(e){
+    btn.disabled=false; btn.textContent='Sign In';
+    showA(err,authErr(e.code));
+  }
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  MAP INIT                                        ║
-// ╚══════════════════════════════════════════════════╝
-let map, mapMarker, curData = {};
+/* ════════════════════════════════════════════════
+   SIGNUP
+════════════════════════════════════════════════ */
+function chkPwd(v){
+  const b=document.getElementById('pwdBar');
+  b.className='pwd-bar'+(v.length<4?'':v.length<8?' w':v.length<12&&!/[!@#$%^&*]/.test(v)?' m':' s');
+}
 
-function initMap() {
-  if (map) return; // prevent double init
-  map = L.map('map', {zoomControl:true}).setView([20.59, 78.96], 4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
+async function doSignup(){
+  const name  =document.getElementById('sname').value.trim();
+  const email =document.getElementById('semail').value.trim();
+  const pwd   =document.getElementById('spwd').value;
+  const cpwd  =document.getElementById('scpwd').value;
+  const cls   =document.getElementById('scls').value;
+  const exam  =document.getElementById('sexam').value;
+  const btn   =document.getElementById('sbtn');
+  const err   =document.getElementById('serr');
+  const ok    =document.getElementById('sok');
+  err.style.display='none'; ok.style.display='none';
+  if(!name||!email||!pwd||!cpwd) return showA(err,'Please fill in all fields.');
+  if(pwd!==cpwd) return showA(err,'Passwords do not match.');
+  if(pwd.length<8) return showA(err,'Password must be at least 8 characters.');
+  btn.disabled=true;
+  btn.innerHTML='<span class="smsm smsm-w"></span>Creating account&hellip;';
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(email,pwd);
+    await cred.user.updateProfile({displayName:name});
+    await db.ref('users/'+cred.user.uid).set({
+      name,email,
+      classLevel:cls||'Competitive',
+      examType:exam||'UPSC',
+      signupDate:new Date().toISOString(),
+      language:navigator.language||'en'
+    });
+    ok.textContent='Account created! Loading GeoMind\u2026'; ok.style.display='block';
+  }catch(e){
+    btn.disabled=false; btn.textContent='Create Account';
+    showA(err,authErr(e.code));
+  }
+}
+
+function showA(el,msg){el.textContent=msg;el.style.display='block';}
+function authErr(code){
+  return {
+    'auth/user-not-found':'No account found with this email.',
+    'auth/wrong-password':'Incorrect password. Try again.',
+    'auth/invalid-email':'Invalid email format.',
+    'auth/email-already-in-use':'Email already registered. Try logging in.',
+    'auth/weak-password':'Password too weak. Use at least 8 characters.',
+    'auth/too-many-requests':'Too many attempts. Please wait.',
+    'auth/network-request-failed':'Network error. Check your connection.',
+    'auth/invalid-credential':'Invalid email or password.',
+  }[code]||'Authentication failed. Please try again.';
+}
+
+async function doLogout(){
+  try{await auth.signOut();}catch(e){toast('Logout error: '+e.message,'err');}
+}
+
+/* Enter key on auth forms */
+document.getElementById('lpwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('scpwd').addEventListener('keydown',e=>{if(e.key==='Enter')doSignup();});
+
+/* ════════════════════════════════════════════════
+   MAP
+════════════════════════════════════════════════ */
+let map,mapMarker,curData={};
+
+function initMap(){
+  if(map) return;
+  map=L.map('map',{zoomControl:true}).setView([20.59,78.96],4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19
   }).addTo(map);
-
-  map.on('click', async e => {
-    placeMarker(e.latlng.lat, e.latlng.lng, '#00e5a0');
-    showCoordPill(e.latlng.lat, e.latlng.lng);
-    await generateReport(e.latlng.lat, e.latlng.lng);
+  map.on('click',async e=>{
+    placePin(e.latlng.lat,e.latlng.lng,'#00e5a0');
+    showPill(e.latlng.lat,e.latlng.lng);
+    await generateReport(e.latlng.lat,e.latlng.lng);
   });
 }
-
-function placeMarker(lat, lng, color) {
-  if (mapMarker) map.removeLayer(mapMarker);
-  mapMarker = L.circleMarker([lat,lng],{radius:9,fillColor:color,color:'#fff',weight:2,fillOpacity:0.92}).addTo(map);
+function placePin(lat,lng,color){
+  if(mapMarker)map.removeLayer(mapMarker);
+  mapMarker=L.circleMarker([lat,lng],{radius:9,fillColor:color,color:'#fff',weight:2,fillOpacity:0.92}).addTo(map);
+}
+function showPill(lat,lng){
+  const p=document.getElementById('cpill');
+  p.style.display='block';
+  p.textContent=lat.toFixed(4)+'\u00b0   '+lng.toFixed(4)+'\u00b0';
 }
 
-function showCoordPill(lat, lng) {
-  const p = document.getElementById('cpill');
-  p.style.display = 'block';
-  p.textContent   = lat.toFixed(4) + '\u00b0   ' + lng.toFixed(4) + '\u00b0';
-}
-
-// ╔══════════════════════════════════════════════════╗
-// ║  REPORT PIPELINE                                 ║
-// ╚══════════════════════════════════════════════════╝
-async function generateReport(lat, lon) {
+/* ════════════════════════════════════════════════
+   REPORT PIPELINE
+════════════════════════════════════════════════ */
+async function generateReport(lat,lon){
   showLoading();
-  try {
-    step('Reverse geocoding\u2026', 12);
-    const geo = await fetchGeocode(lat, lon);
+  try{
+    step('Reverse geocoding\u2026',12);
+    const geo=await fetchGeo(lat,lon);
 
-    step('Country data\u2026', 28);
-    const country = await fetchCountry(geo.address?.country || '');
+    step('Country data\u2026',28);
+    const country=await fetchCountry(geo.address?.country||'');
 
-    step('Wikipedia summary\u2026', 44);
-    const wiki = await fetchWiki(geo.address?.city || geo.address?.state || geo.address?.country || '');
+    step('Wikipedia\u2026',44);
+    const wiki=await fetchWiki(geo.address?.city||geo.address?.state||geo.address?.country||'');
 
-    step('Generating AI report\u2026 (' + (LANGS[curLang]||LANGS.en).loading + ')', 62);
-    const ai = await callZai(lat, lon, geo, country, wiki);
+    step('AI generating report\u2026',64);
+    const ai=await callZai(lat,lon,geo,country,wiki);
 
-    step('Saving to Firebase\u2026', 84);
-    await saveQuery(lat, lon, geo, ai);
+    step('Saving to Firebase\u2026',84);
+    await saveQuery(lat,lon,geo,ai);
 
-    step('Done!', 100);
-    curData = {geo, country, wiki, lat, lon, ai};
-    updatePlaceTooltip(geo, country, ai);
-    renderReport(lat, lon, geo, country, wiki, ai);
-
-  } catch (err) {
-    showError(err.message);
+    step('Done!',100);
+    curData={geo,country,wiki,lat,lon,ai};
+    updateTooltip(geo,ai);
+    renderReport(lat,lon,geo,country,wiki,ai);
+  }catch(err){
+    showErr(err.message);
   }
 }
 
-function updatePlaceTooltip(geo, country, ai) {
-  const tt = document.getElementById('placeTooltip');
-  document.getElementById('ptName').textContent    = ai.locationId?.nearestCity || geo.address?.city || '';
-  document.getElementById('ptLang').textContent    = ai.localInfo?.localLanguages ? '&#128483; ' + ai.localInfo.localLanguages : '';
-  document.getElementById('ptLang').innerHTML      = ai.localInfo?.localLanguages ? '&#128483; ' + ai.localInfo.localLanguages : '';
-  document.getElementById('ptCountry').textContent = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ');
-  tt.style.display = 'block';
-
-  // Famous bar
-  if (ai.localInfo?.famousFor?.length) {
-    const fb = document.getElementById('famousBar');
-    fb.style.display = 'block';
-    fb.innerHTML = '&#11088; Famous: ' + (ai.localInfo.famousFor||[]).map(f=>`<span class="famous-item">${f}</span>`).join('');
+function updateTooltip(geo,ai){
+  const tip=document.getElementById('ptip');
+  document.getElementById('ptName').textContent=ai.locationId?.nearestCity||geo.address?.city||'';
+  document.getElementById('ptLang').innerHTML=ai.localInfo?.localLanguages?'&#128483; '+ai.localInfo.localLanguages:'';
+  document.getElementById('ptLoc').textContent=[geo.address?.state,geo.address?.country].filter(Boolean).join(', ');
+  tip.style.display='block';
+  if(ai.localInfo?.famousFor?.length){
+    const fb=document.getElementById('famBar');
+    fb.style.display='block';
+    fb.innerHTML='&#11088; '+ai.localInfo.famousFor.map(f=>`<span class="fi">${f}</span>`).join('');
   }
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  FETCH HELPERS                                   ║
-// ╚══════════════════════════════════════════════════╝
-async function fetchGeocode(lat, lon) {
-  const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,{headers:{'Accept-Language':'en'}});
-  if(!r.ok) throw new Error('Geocode failed');
+/* ════════════════════════════════════════════════
+   FETCH HELPERS
+════════════════════════════════════════════════ */
+async function fetchGeo(lat,lon){
+  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,{headers:{'Accept-Language':'en'}});
+  if(!r.ok) throw new Error('Geocode failed ('+r.status+')');
   return r.json();
 }
-
-async function fetchCountry(name) {
+async function fetchCountry(name){
   if(!name) return null;
-  try {
-    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);
-    const d = await r.json();
-    return Array.isArray(d) ? d[0] : null;
-  } catch { return null; }
+  try{const r=await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);const d=await r.json();return Array.isArray(d)?d[0]:null;}
+  catch{return null;}
 }
-
-async function fetchWiki(place) {
+async function fetchWiki(place){
   if(!place) return null;
-  try {
-    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
-    return r.ok ? r.json() : null;
-  } catch { return null; }
+  try{const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);return r.ok?r.json():null;}
+  catch{return null;}
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  JWT + Z.AI GLM                                  ║
-// ╚══════════════════════════════════════════════════╝
-function makeJWT() {
-  const pts = ZAI_KEY.split('.');
-  const id  = pts[0], sec = pts.slice(1).join('.');
-  const now = Date.now();
+/* ════════════════════════════════════════════════
+   JWT + Z.AI
+════════════════════════════════════════════════ */
+function makeJWT(){
+  const pts=ZAI_KEY.split('.');
+  const id=pts[0],sec=pts.slice(1).join('.');
+  const now=Date.now();
   return KJUR.jws.JWS.sign('HS256',
     JSON.stringify({alg:'HS256',sign_type:'SIGN'}),
-    JSON.stringify({api_key:id, exp:now+3600000, timestamp:now}),
-    {utf8:sec}
-  );
+    JSON.stringify({api_key:id,exp:now+3600000,timestamp:now}),
+    {utf8:sec});
 }
 
-async function callZai(lat, lon, geo, country, wiki) {
-  const cls   = getVal('classLevel');
-  const exam  = getVal('examType');
-  const mode  = getVal('learningMode');
-  const addr  = geo.address || {};
-  const loc   = [addr.city,addr.state,addr.country].filter(Boolean).join(', ') || `${lat},${lon}`;
-  const langName = document.getElementById('langPicker')?.options[document.getElementById('langPicker').selectedIndex]?.text || 'English';
+async function callZai(lat,lon,geo,country,wiki){
+  const cls  =gv('classLevel');
+  const exam =gv('examType');
+  const mode =gv('learningMode');
+  const addr =geo.address||{};
+  const loc  =[addr.city,addr.state,addr.country].filter(Boolean).join(', ')||`${lat},${lon}`;
+  const lPick=document.getElementById('langPick');
+  const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
 
-  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
+  const prompt=`You are an Advanced AI Educational Geo-Intelligence System.
 LOCATION: ${loc} | LAT: ${lat} | LON: ${lon}
 COUNTRY: ${addr.country||'?'} | STATE: ${addr.state||'?'} | DISTRICT: ${addr.county||addr.district||'?'}
-CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode}
-RESPONSE LANGUAGE: ${langName}
+CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode} | RESPONSE LANGUAGE: ${langName}
 WIKI: ${wiki?.extract?.substring(0,350)||'N/A'}
-POP: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
-LANGUAGES: ${(country?.languages ? Object.values(country.languages).join(', ') : 'Unknown')}
+POPULATION: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
+COUNTRY LANGUAGES: ${country?.languages?Object.values(country.languages).join(', '):'Unknown'}
 
 Return ONLY compact valid JSON (no markdown, no backticks) with this EXACT structure:
-{
-  "locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},
-  "geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},
-  "agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},
-  "history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},
-  "economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},
-  "currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},
-  "localInfo":{
-    "localLanguages":"spoken languages in this specific place",
-    "famousFor":["famous thing 1","famous thing 2","famous thing 3","famous thing 4"],
-    "famousPlaces":["Narmada river","Sundarbans, name context-appropriate places for this location"],
-    "famousPersonalities":["",""],
-    "festivals":["",""],
-    "localCuisine":["",""],
-    "importantFacts":["key fact 1 for ${exam}","key fact 2","key fact 3"]
-  },
-  "timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],
-  "quiz":{
-    "mcqs":[
-      {"q":"","options":["A.","B.","C.","D."],"answer":"A"},
-      {"q":"","options":["A.","B.","C.","D."],"answer":"B"},
-      {"q":"","options":["A.","B.","C.","D."],"answer":"C"},
-      {"q":"","options":["A.","B.","C.","D."],"answer":"D"},
-      {"q":"","options":["A.","B.","C.","D."],"answer":"A"}
-    ],
-    "assertionReason":[
-      {"assertion":"","reason":"","answer":""},
-      {"assertion":"","reason":"","answer":""}
-    ],
-    "mapQuestion":""
-  },
-  "examFocus":["","",""]
-}
-Rules: All values in ${langName}. 1-2 sentences per field. Complete valid JSON. Adjust for CLASS ${cls} and EXAM ${exam}.
-For famousFor include things like rivers (Narmada, Ganga), forests (Sundarbans), monuments, crops. Be specific to this exact location.`;
+{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"localInfo":{"localLanguages":"local spoken languages","famousFor":["famous thing 1","famous thing 2","famous thing 3"],"famousPlaces":["specific place like Narmada/Sundarbans relevant to this location","place 2"],"famousPersonalities":["person 1","person 2"],"festivals":["festival 1","festival 2"],"localCuisine":["dish 1","dish 2"],"importantFacts":["key exam fact 1 for ${exam}","key exam fact 2","key exam fact 3"]},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
+Rules: All values in ${langName}. 1-2 sentences per field. Valid closed JSON. Adjust depth for CLASS ${cls}.`;
 
-  const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
+  const resp=await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+makeJWT()},
     body:JSON.stringify({model:'glm-4.5-flash',messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:4096})
   });
-
   if(!resp.ok){const e=await resp.text();throw new Error('Z.ai '+resp.status+': '+e);}
-  const d = await resp.json();
-  let raw = (d.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim();
+  const d=await resp.json();
+  let raw=(d.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim();
   const f=raw.indexOf('{'),l=raw.lastIndexOf('}');
   if(f!==-1&&l!==-1) raw=raw.substring(f,l+1);
   try{return JSON.parse(raw);}catch{return fixJSON(raw);}
@@ -792,78 +816,59 @@ function fixJSON(s){
   return JSON.parse(s);
 }
 
-function getVal(id){
-  const el=document.getElementById(id)||document.getElementById(id+'M');
-  return el?el.value:'';
-}
+function gv(id){const e=document.getElementById(id)||document.getElementById(id+'M');return e?e.value:'';}
 
-// ╔══════════════════════════════════════════════════╗
-// ║  FIREBASE DATA SAVE                              ║
-// ╚══════════════════════════════════════════════════╝
-async function saveQuery(lat, lon, geo, ai) {
+/* ════════════════════════════════════════════════
+   FIREBASE SAVE
+════════════════════════════════════════════════ */
+async function saveQuery(lat,lon,geo,ai){
   if(!currentUser) return;
-  const addr = geo.address || {};
-  const record = {
-    userId: currentUser.uid,
-    latitude: parseFloat(lat),
-    longitude: parseFloat(lon),
-    selectedPlace: ai.locationId?.nearestCity || addr.city || addr.state || addr.country || '',
-    country: addr.country || '',
-    state: addr.state || '',
-    userClass: getVal('classLevel'),
-    examType: getVal('examType'),
-    mode: getVal('learningMode'),
-    language: curLang,
-    userPrompt: 'Map click at ' + lat.toFixed(4) + ', ' + lon.toFixed(4),
-    aiResponse: JSON.stringify(ai),
-    famousFor: ai.localInfo?.famousFor || [],
-    localLanguages: ai.localInfo?.localLanguages || '',
-    timestamp: new Date().toISOString()
+  const addr=geo.address||{};
+  const rec={
+    userId:currentUser.uid,
+    latitude:parseFloat(lat),longitude:parseFloat(lon),
+    selectedPlace:ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'',
+    country:addr.country||'',state:addr.state||'',
+    userClass:gv('classLevel'),examType:gv('examType'),
+    mode:gv('learningMode'),language:curLang,
+    userPrompt:'Map click at '+parseFloat(lat).toFixed(4)+', '+parseFloat(lon).toFixed(4),
+    aiResponse:JSON.stringify(ai),
+    famousFor:ai.localInfo?.famousFor||[],
+    localLanguages:ai.localInfo?.localLanguages||'',
+    timestamp:new Date().toISOString()
   };
-  try {
-    // Save to userQueries (global log)
-    await db.ref('userQueries').push(record);
-    // Save to user-specific history
-    await db.ref('users/' + currentUser.uid + '/queries').push(record);
-  } catch(e) { console.warn('Firebase save error:', e); }
+  try{
+    await db.ref('userQueries').push(rec);
+    await db.ref('users/'+currentUser.uid+'/queries').push(rec);
+  }catch(e){console.warn('DB save error:',e);}
 }
 
-async function saveChat(question, answer) {
+async function saveChat(q,ans){
   if(!currentUser||!curData.lat) return;
-  try {
-    await db.ref('chats').push({
-      userId: currentUser.uid,
-      location: curData.ai?.locationId?.nearestCity || '',
-      lat: curData.lat, lon: curData.lon,
-      question, answer,
-      timestamp: new Date().toISOString()
-    });
-    await db.ref('users/'+currentUser.uid+'/chats').push({question,answer,timestamp:new Date().toISOString()});
-  } catch(e){}
+  try{
+    const rec={userId:currentUser.uid,location:curData.ai?.locationId?.nearestCity||'',lat:curData.lat,lon:curData.lon,question:q,answer:ans,timestamp:new Date().toISOString()};
+    await db.ref('chats').push(rec);
+    await db.ref('users/'+currentUser.uid+'/chats').push(rec);
+  }catch(e){}
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  HISTORY TAB                                     ║
-// ╚══════════════════════════════════════════════════╝
-async function loadHistory() {
-  const hc = document.getElementById('hcontent');
-  hc.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;">Loading&hellip;</div>';
-
-  try {
-    const snap = await db.ref('users/'+currentUser.uid+'/queries').once('value');
-    if(!snap.exists()||!snap.val()){
-      hc.innerHTML='';
-      hc.appendChild(document.getElementById('hempty')||makeEmptyHist());
-      return;
-    }
-    const entries = Object.entries(snap.val()).sort((a,b)=>b[1].timestamp?.localeCompare(a[1].timestamp)||0);
-    let html = `<button class="hclr" onclick="clearHistory()">&#128465; Clear My History</button>`;
-    entries.forEach(([key,rec])=>{
-      const d = new Date(rec.timestamp);
-      const ds = isNaN(d)?rec.timestamp:(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}));
-      const enc = encodeURIComponent(JSON.stringify(rec));
-      html += `<div class="hitem" onclick="reloadHist('${enc}')">
-        <div class="hname">&#128205; ${rec.selectedPlace||'Unknown Location'}</div>
+/* ════════════════════════════════════════════════
+   HISTORY TAB
+════════════════════════════════════════════════ */
+async function loadHistory(){
+  const hc=document.getElementById('hcontent');
+  hc.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Loading&hellip;</div>';
+  try{
+    const snap=await db.ref('users/'+currentUser.uid+'/queries').once('value');
+    if(!snap.exists()||!snap.val()){hc.innerHTML='<div class="hempty"><div style="font-size:46px;opacity:0.25">&#128200;</div><p>No history yet.</p></div>';return;}
+    const entries=Object.entries(snap.val()).sort((a,b)=>(b[1].timestamp||'').localeCompare(a[1].timestamp||''));
+    let html=`<button class="hclr" onclick="clearHistory()">&#128465; Clear My History</button>`;
+    entries.forEach(([,rec])=>{
+      const d=new Date(rec.timestamp);
+      const ds=isNaN(d)?rec.timestamp:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const enc=encodeURIComponent(JSON.stringify(rec));
+      html+=`<div class="hitem" onclick="reloadHist('${enc}')">
+        <div class="hname">&#128205; ${rec.selectedPlace||'Unknown'}</div>
         <div class="hmeta">${[rec.state,rec.country].filter(Boolean).join(', ')} &bull; ${rec.userClass||''} &bull; ${rec.examType||''}</div>
         ${rec.localLanguages?`<div class="hmeta" style="color:var(--a5)">&#128483; ${rec.localLanguages}</div>`:''}
         ${rec.famousFor?.length?`<div class="hmeta">&#11088; ${rec.famousFor.slice(0,3).join(', ')}</div>`:''}
@@ -871,100 +876,90 @@ async function loadHistory() {
         <div class="hts">${ds}</div>
       </div>`;
     });
-    hc.innerHTML = html;
-  } catch(e) {
-    hc.innerHTML = '<div class="ebox">Failed to load history: '+e.message+'</div>';
-  }
+    hc.innerHTML=html;
+  }catch(e){hc.innerHTML=`<div class="ebox">Failed to load: ${e.message}</div>`;}
 }
 
-function makeEmptyHist() {
-  const d=document.createElement('div');
-  d.className='hempty';
-  d.innerHTML='<div style="font-size:48px;opacity:0.3">&#128200;</div><p>No searches yet. Click locations on the map to build your history.</p>';
-  return d;
-}
-
-async function clearHistory() {
+async function clearHistory(){
   if(!confirm('Delete all your search history?')) return;
   await db.ref('users/'+currentUser.uid+'/queries').remove();
-  loadHistory();
-  toast('History cleared', 'ok');
+  loadHistory(); toast('History cleared','ok');
 }
 
-function reloadHist(enc) {
-  try {
-    const rec = JSON.parse(decodeURIComponent(enc));
+function reloadHist(enc){
+  try{
+    const rec=JSON.parse(decodeURIComponent(enc));
     if(!rec||!rec.aiResponse) return;
-    const ai = JSON.parse(rec.aiResponse);
-    curData = {geo:{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},lat:rec.latitude,lon:rec.longitude,ai};
-    document.getElementById('classLevel').value   = rec.userClass||'Competitive';
-    document.getElementById('examType').value     = rec.examType||'UPSC';
-    document.getElementById('learningMode').value = rec.mode||'Full Analysis';
-    placeMarker(rec.latitude, rec.longitude, '#4f9eff');
-    map.setView([rec.latitude, rec.longitude], 8);
-    showCoordPill(rec.latitude, rec.longitude);
+    const ai=JSON.parse(rec.aiResponse);
+    curData={geo:{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},lat:rec.latitude,lon:rec.longitude,ai};
+    ['classLevel','examType','learningMode'].forEach(id=>{
+      const v=id==='classLevel'?rec.userClass:id==='examType'?rec.examType:rec.mode;
+      if(v) document.getElementById(id).value=v;
+    });
+    placePin(rec.latitude,rec.longitude,'#4f9eff');
+    map.setView([rec.latitude,rec.longitude],8);
+    showPill(rec.latitude,rec.longitude);
     renderReport(rec.latitude,rec.longitude,{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},null,null,ai);
-    goTab('a', document.getElementById('t-a'));
-  } catch(e){ toast('Failed to reload: '+e.message,'err'); }
+    goTab('a',document.getElementById('t-a'));
+    toast('Loaded from history','ok');
+  }catch(e){toast('Load failed: '+e.message,'err');}
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  CHAT                                            ║
-// ╚══════════════════════════════════════════════════╝
-async function sendChat() {
-  const inp = document.getElementById('cinput');
-  const q   = inp.value.trim();
+/* ════════════════════════════════════════════════
+   CHAT
+════════════════════════════════════════════════ */
+async function sendChat(){
+  const inp=document.getElementById('cinput');
+  const q=inp.value.trim();
   if(!q) return;
-  if(!curData.lat){ toast('Click a map location first','err'); return; }
-  inp.value = '';
-
-  const addr = curData.geo?.address || {};
-  const loc  = [addr.city, addr.state, addr.country].filter(Boolean).join(', ');
-  const msgs = document.getElementById('cmsgs');
+  if(!curData.lat){toast('Click a map location first','err');return;}
+  inp.value='';
+  const addr=curData.geo?.address||{};
+  const loc=[addr.city,addr.state,addr.country].filter(Boolean).join(', ');
+  const msgs=document.getElementById('cmsgs');
   document.getElementById('cnoloc')?.remove();
 
-  const ts  = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const div = document.createElement('div');
+  const ts=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div=document.createElement('div');
   div.className='cmsg';
-  div.innerHTML=`<div class="cmq">&#128172; ${q}</div><div class="cma" id="ca-${Date.now()}">&#9711; Thinking&hellip;</div><div class="cmts">${ts}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
+  const aid='ca'+Date.now();
+  div.innerHTML=`<div class="cmq">&#128172; ${q}</div><div class="cma" id="${aid}">&#9711; Thinking&hellip;</div><div class="cmts">${ts}</div>`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
 
-  const langName = document.getElementById('langPicker')?.options[document.getElementById('langPicker').selectedIndex]?.text||'English';
-  const prompt = `You are a geography & history tutor. Location studied: ${loc}.
+  const lPick=document.getElementById('langPick');
+  const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
+  const prompt=`You are a geography & history tutor. Location: ${loc}.
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
-Give a clear, academic, 2-4 sentence answer. Include exam-relevant facts.`;
+Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
 
   let answer='No response received.';
-  try {
-    const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
+  try{
+    const resp=await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+makeJWT()},
       body:JSON.stringify({model:'glm-4.5-flash',messages:[{role:'user',content:prompt}],temperature:0.5,max_tokens:600})
     });
-    const d = await resp.json();
-    answer = d.choices?.[0]?.message?.content||'No response.';
-  } catch(e){ answer='Error: '+e.message; }
-
-  div.querySelector('.cma').textContent = answer;
+    const d=await resp.json();
+    answer=d.choices?.[0]?.message?.content||'No response.';
+  }catch(e){answer='Error: '+e.message;}
+  document.getElementById(aid).textContent=answer;
   msgs.scrollTop=msgs.scrollHeight;
-  await saveChat(q, answer);
+  await saveChat(q,answer);
 }
+document.getElementById('cinput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
 
-document.getElementById('cinput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+/* ════════════════════════════════════════════════
+   RENDER REPORT
+════════════════════════════════════════════════ */
+function renderReport(lat,lon,geo,country,wiki,ai){
+  const addr=geo?.address||{};
+  const mode=gv('learningMode');
+  const flag=country?.flag||'';
+  const name=ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'Unknown';
+  const langs=ai.localInfo?.localLanguages||'';
 
-// ╔══════════════════════════════════════════════════╗
-// ║  RENDER REPORT                                   ║
-// ╚══════════════════════════════════════════════════╝
-function renderReport(lat, lon, geo, country, wiki, ai) {
-  const addr = geo?.address||{};
-  const mode = getVal('learningMode');
-  const flag = country?.flag||'';
-  const name = ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'Unknown';
-  const langs= ai.localInfo?.localLanguages||'';
-
-  let h = `<div class="loc-badge">
+  let h=`<div class="loc-badge">
     <div>
       <div class="loc-name">${flag} ${name}</div>
       <div class="loc-sub">${[ai.locationId?.state,ai.locationId?.country].filter(Boolean).join(' &middot; ')}</div>
@@ -973,60 +968,49 @@ function renderReport(lat, lon, geo, country, wiki, ai) {
     <div class="cbadge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;</div>
   </div>`;
 
-  if(wiki?.extract){
-    h+=`<div class="wiki-box">&#128214; ${wiki.extract.substring(0,280)}&hellip;</div>`;
-  }
+  if(wiki?.extract) h+=`<div class="wiki-box">&#128214; ${wiki.extract.substring(0,280)}&hellip;</div>`;
 
-  // LOCAL INFO — Language + Famous section
+  /* LOCAL INFO section (Feature 10) */
   if(ai.localInfo){
     const li=ai.localInfo;
-    h+=S('&#128483;','Local Info & Famous Places',`
-      ${R('Spoken Languages', li.localLanguages)}
-      ${R('Famous For', (li.famousFor||[]).map(f=>`<span class="tag tp">${f}</span>`).join('')||'N/A')}
-      ${R('Famous Places', (li.famousPlaces||[]).map(f=>`<span class="tag tb">${f}</span>`).join('')||'N/A')}
-      ${R('Famous People', (li.famousPersonalities||[]).map(f=>`<span class="tag tg">${f}</span>`).join('')||'N/A')}
-      ${R('Festivals', (li.festivals||[]).map(f=>`<span class="tag ty">${f}</span>`).join('')||'N/A')}
-      ${R('Local Cuisine', (li.localCuisine||[]).map(f=>`<span class="tag tr">${f}</span>`).join('')||'N/A')}
+    h+=S('&#128483;','Local Info &amp; Famous Places',`
+      ${R('Spoken Languages',li.localLanguages)}
+      ${R('Famous For',(li.famousFor||[]).map(f=>`<span class="tag tp">${f}</span>`).join(''))}
+      ${R('Famous Places',(li.famousPlaces||[]).map(f=>`<span class="tag tb">${f}</span>`).join(''))}
+      ${R('Famous People',(li.famousPersonalities||[]).map(f=>`<span class="tag tg">${f}</span>`).join(''))}
+      ${R('Festivals',(li.festivals||[]).map(f=>`<span class="tag ty">${f}</span>`).join(''))}
+      ${R('Local Cuisine',(li.localCuisine||[]).map(f=>`<span class="tag tr">${f}</span>`).join(''))}
       ${(li.importantFacts||[]).map(f=>`<div class="epill" style="color:var(--a2);border-color:rgba(79,158,255,0.2)">&#128204; ${f}</div>`).join('')}
-    `, true);
+    `,true);
   }
 
   h+=S('01','Location Identification',`
-    ${R('Country',ai.locationId?.country)}
-    ${R('State',ai.locationId?.state)}
-    ${R('District',ai.locationId?.district)}
-    ${R('Nearest City',ai.locationId?.nearestCity)}
+    ${R('Country',ai.locationId?.country)}${R('State',ai.locationId?.state)}
+    ${R('District',ai.locationId?.district)}${R('Nearest City',ai.locationId?.nearestCity)}
     ${R('Coordinates',ai.locationId?.coordinates)}
   `);
 
-  if(mode!=='Quiz Mode'){
-    h+=S('02','Geography Analysis',`
-      ${R('Terrain',ai.geography?.terrain)}
-      ${R('Climate',ai.geography?.climate)}
-      ${R('Soil Type',ai.geography?.soilType)}
-      ${R('Rivers',ai.geography?.rivers)}
-      ${R('Natural Resources',ai.geography?.naturalResources)}
-    `);
-  }
+  if(mode!=='Quiz Mode') h+=S('02','Geography Analysis',`
+    ${R('Terrain',ai.geography?.terrain)}${R('Climate',ai.geography?.climate)}
+    ${R('Soil Type',ai.geography?.soilType)}${R('Rivers',ai.geography?.rivers)}
+    ${R('Natural Resources',ai.geography?.naturalResources)}
+  `);
 
   h+=S('03','Agriculture Intelligence',`
     <div class="srow"><span class="slbl">Major Crops</span><span class="sval">${(ai.agriculture?.majorCrops||[]).map(c=>`<span class="tag ty">${c}</span>`).join('')}</span></div>
     ${R('Why Crops Grow',ai.agriculture?.whyCropsGrow)}
     ${R('Irrigation',ai.agriculture?.irrigationSources)}
-    ${R('Seasonal Pattern',ai.agriculture?.seasonalPattern)}
+    ${R('Seasons',ai.agriculture?.seasonalPattern)}
   `);
 
   h+=S('04','Historical Significance',`
-    ${R('Ancient',ai.history?.ancient)}
-    ${R('Medieval',ai.history?.medieval)}
-    ${R('Modern',ai.history?.modern)}
-    ${R('Freedom Movement',ai.history?.freedomMovement)}
+    ${R('Ancient',ai.history?.ancient)}${R('Medieval',ai.history?.medieval)}
+    ${R('Modern',ai.history?.modern)}${R('Freedom Movement',ai.history?.freedomMovement)}
   `);
 
   h+=S('05','Economic Profile',`
     <div class="srow"><span class="slbl">Industries</span><span class="sval">${(ai.economy?.majorIndustries||[]).map(i=>`<span class="tag tb">${i}</span>`).join('')}</span></div>
-    ${R('GDP',ai.economy?.gdpContribution)}
-    ${R('Employment',ai.economy?.employmentPattern)}
+    ${R('GDP',ai.economy?.gdpContribution)}${R('Employment',ai.economy?.employmentPattern)}
   `);
 
   h+=S('06','Current Relevance',`
@@ -1036,63 +1020,44 @@ function renderReport(lat, lon, geo, country, wiki, ai) {
   `);
 
   if(mode==='Timeline Mode'||mode==='Full Analysis'){
-    const tl=(ai.timeline||[]).map(t=>`
-      <div class="tli"><div class="tldot"></div>
-        <div class="tlyear">${t.year}</div>
-        <div class="tltext">${t.event}</div>
-      </div>`).join('');
+    const tl=(ai.timeline||[]).map(t=>`<div class="tli"><div class="tldot"></div><div class="tlyear">${t.year}</div><div class="tltext">${t.event}</div></div>`).join('');
     h+=S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
   }
 
   if(mode==='Quiz Mode'||mode==='Full Analysis'){
-    let qh='<div style="margin-bottom:8px;font-size:10px;color:var(--muted);">Click options to check your answers.</div>';
+    let qh='<div style="margin-bottom:8px;font-size:10px;color:var(--muted)">Click options to check answers.</div>';
     (ai.quiz?.mcqs||[]).forEach((q,i)=>{
-      qh+=`<div class="mcqi"><div class="mcqq">Q${i+1}. ${q.q}</div>
-        ${(q.options||[]).map((opt,oi)=>{
-          const L=['A','B','C','D'][oi];
-          return `<span class="mcqo" onclick="chkMCQ(this,'${L}','${q.answer}')">${opt}</span>`;
-        }).join('')}</div>`;
+      qh+=`<div class="mcqi"><div class="mcqq">Q${i+1}. ${q.q}</div>${(q.options||[]).map((opt,oi)=>{const L=['A','B','C','D'][oi];return`<span class="mcqo" onclick="chkMCQ(this,'${L}','${q.answer}')">${opt}</span>`;}).join('')}</div>`;
     });
     if(ai.quiz?.assertionReason?.length){
       qh+=`<div style="margin:9px 0 5px;font-size:10px;color:var(--accent);letter-spacing:1px;font-family:'DM Mono',monospace">ASSERTION-REASON</div>`;
-      ai.quiz.assertionReason.forEach((ar,i)=>{
-        qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div><div style="font-size:10px;color:var(--muted);margin-top:5px">Ans: <span style="color:var(--accent)">${ar.answer}</span></div></div>`;
-      });
+      ai.quiz.assertionReason.forEach((ar,i)=>{qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Ans: <span style="color:var(--accent)">${ar.answer}</span></div></div>`;});
     }
-    if(ai.quiz?.mapQuestion){
-      qh+=`<div style="margin:9px 0 5px;font-size:10px;color:var(--a2);letter-spacing:1px;font-family:'DM Mono',monospace">MAP QUESTION</div>
-        <div class="mcqi"><div class="mcqq">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
-    }
+    if(ai.quiz?.mapQuestion) qh+=`<div style="margin:9px 0 5px;font-size:10px;color:var(--a2);letter-spacing:1px">MAP QUESTION</div><div class="mcqi"><div class="mcqq">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
     h+=S('08','Quiz Mode',qh);
   }
 
   const ef=(ai.examFocus||[]).map(q=>`<div class="epill">&#9889; ${q}</div>`).join('');
-  h+=S('09',`Exam Focus &mdash; ${getVal('examType')}`,ef);
+  h+=S('09',`Exam Focus &mdash; ${gv('examType')}`,ef);
 
   const wrap=document.getElementById('resultWrap');
-  wrap.innerHTML=h; wrap.style.display='block';
-  document.getElementById('idleState').style.display='none';
+  wrap.innerHTML=h;wrap.style.display='block';
+  document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
   setBadge('READY','accent');
+  goTab('a',document.getElementById('t-a'));
 }
 
-// section builder
+/* section helpers */
 function S(num,title,content,open=false){
   const id='sc_'+Math.random().toString(36).substr(2,6);
-  return `<div class="scard">
-    <div class="shdr" onclick="togSec('${id}',this)">
-      <span class="snum">${num}</span>
-      <span class="stitle">${title}</span>
-      <span class="chev ${open?'o':''}">&#9662;</span>
-    </div>
-    <div class="sbody ${open?'':'hid'}" id="${id}">${content}</div>
-  </div>`;
+  return `<div class="scard"><div class="shdr" onclick="togS('${id}',this)"><span class="snum">${num}</span><span class="stitle">${title}</span><span class="chev ${open?'o':''}">&#9662;</span></div><div class="sbody ${open?'':'hid'}" id="${id}">${content}</div></div>`;
 }
 function R(label,val){
   const v=(val&&val.toString().trim())?val:'<span style="color:var(--muted)">N/A</span>';
   return `<div class="srow"><span class="slbl">${label}</span><span class="sval">${v}</span></div>`;
 }
-function togSec(id,hdr){document.getElementById(id).classList.toggle('hid');hdr.querySelector('.chev').classList.toggle('o');}
+function togS(id,hdr){document.getElementById(id).classList.toggle('hid');hdr.querySelector('.chev').classList.toggle('o');}
 function chkMCQ(el,sel,correct){
   el.closest('.mcqi').querySelectorAll('.mcqo').forEach(o=>{
     o.style.pointerEvents='none';
@@ -1102,9 +1067,9 @@ function chkMCQ(el,sel,correct){
   });
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  TABS                                            ║
-// ╚══════════════════════════════════════════════════╝
+/* ════════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════════ */
 function goTab(name,btn){
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
@@ -1113,45 +1078,40 @@ function goTab(name,btn){
   if(name==='h') loadHistory();
 }
 
-// ╔══════════════════════════════════════════════════╗
-// ║  UI HELPERS                                      ║
-// ╚══════════════════════════════════════════════════╝
+/* ════════════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════════════ */
 function showLoading(){
-  document.getElementById('idleState').style.display='none';
+  document.getElementById('idleBox').style.display='none';
   document.getElementById('resultWrap').style.display='none';
-  document.getElementById('famousBar').style.display='none';
-  document.getElementById('placeTooltip').style.display='none';
+  document.getElementById('famBar').style.display='none';
+  document.getElementById('ptip').style.display='none';
   document.getElementById('loadbox').style.display='flex';
   setBadge('LOADING','a4');
   goTab('a',document.getElementById('t-a'));
 }
-function showError(msg){
+function showErr(msg){
   document.getElementById('loadbox').style.display='none';
   const w=document.getElementById('resultWrap');
-  w.innerHTML=`<div class="ebox">&#9888; ${msg}<br><br><span style="color:var(--muted);font-size:11px">Please check your connection or try another location.</span></div>`;
+  w.innerHTML=`<div class="ebox">&#9888; ${msg}<br><br><span style="color:var(--muted);font-size:11px">Check your connection or try a different location.</span></div>`;
   w.style.display='block';
   setBadge('ERROR','a3');
   toast(msg,'err');
 }
 function clearAll(){
-  document.getElementById('idleState').style.display='flex';
+  document.getElementById('idleBox').style.display='flex';
   document.getElementById('loadbox').style.display='none';
   document.getElementById('resultWrap').style.display='none';
   document.getElementById('resultWrap').innerHTML='';
   document.getElementById('cpill').style.display='none';
-  document.getElementById('famousBar').style.display='none';
-  document.getElementById('placeTooltip').style.display='none';
+  document.getElementById('famBar').style.display='none';
+  document.getElementById('ptip').style.display='none';
   if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}
-  curData={};
-  setBadge('READY','accent');
+  curData={};setBadge('READY','accent');
 }
-function step(msg,pct){
-  document.getElementById('lstep').textContent=msg;
-  document.getElementById('pfill').style.width=pct+'%';
-}
+function step(msg,pct){document.getElementById('lstep').textContent=msg;document.getElementById('pfill').style.width=pct+'%';}
 function setBadge(text,color){
-  const b=document.getElementById('sbadge');
-  b.textContent=text;
+  const b=document.getElementById('sbadge');b.textContent=text;
   const cm={accent:'rgba(0,229,160',a2:'rgba(79,158,255',a3:'rgba(255,107,107',a4:'rgba(255,209,102',a5:'rgba(192,132,252'};
   const c=cm[color]||cm.accent;
   b.style.color=`${c},1)`;b.style.borderColor=`${c},0.3)`;b.style.background=`${c},0.07)`;
@@ -1159,8 +1119,7 @@ function setBadge(text,color){
 function toast(msg,type='ok'){
   const t=document.createElement('div');
   t.className='toast '+type;t.textContent=msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),3000);
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
 }
 </script>
 </body>

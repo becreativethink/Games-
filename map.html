@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GeoMind \u2014 AI Educational Geo-Intelligence</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --card: #161a22;
+    --border: #252a35;
+    --accent: #00e5a0;
+    --accent2: #4f9eff;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --glow: 0 0 30px rgba(0,229,160,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 1000;
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-top: -2px; }
+
+  .header-controls {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  select, button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+  }
+  select:hover, select:focus { border-color: var(--accent); }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #00b87a);
+    color: #000 !important;
+    font-weight: 600;
+    border: none !important;
+  }
+  .btn-primary:hover { opacity: 0.85; color: #000 !important; }
+
+  /* LAYOUT */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: calc(100vh - 67px);
+  }
+
+  /* MAP PANEL */
+  .map-panel {
+    position: relative;
+    border-right: 1px solid var(--border);
+  }
+  #map { width: 100%; height: 100%; }
+  .map-overlay {
+    position: absolute;
+    top: 14px; left: 14px; z-index: 500;
+    background: rgba(10,12,16,0.85);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--muted);
+    backdrop-filter: blur(8px);
+    max-width: 220px;
+  }
+  .map-overlay strong { color: var(--accent); display: block; margin-bottom: 4px; font-family: 'Syne', sans-serif; }
+  .coord-display {
+    position: absolute;
+    bottom: 14px; left: 14px; z-index: 500;
+    background: rgba(10,12,16,0.9);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+    box-shadow: var(--glow);
+    display: none;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* CONTROLS BAR */
+  .controls-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 18px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  }
+  .controls-bar label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+
+  /* OUTPUT AREA */
+  .output-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .output-area::-webkit-scrollbar { width: 5px; }
+  .output-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* IDLE STATE */
+  .idle-state {
+    height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    gap: 16px;
+    opacity: 0.5;
+  }
+  .idle-state .big-icon { font-size: 60px; }
+  .idle-state h3 { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--text); }
+  .idle-state p { font-size: 12px; color: var(--muted); max-width: 280px; line-height: 1.6; }
+
+  /* LOADING */
+  .loading-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 20px;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--muted); }
+  .loading-steps { font-size: 11px; color: var(--accent); margin-top: 4px; }
+
+  /* RESULT CONTENT */
+  .result-content { display: none; animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* LOCATION BADGE */
+  .location-badge {
+    background: linear-gradient(135deg, rgba(0,229,160,0.08), rgba(79,158,255,0.08));
+    border: 1px solid rgba(0,229,160,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .location-badge .place-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .location-badge .place-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .location-badge .coords-badge {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--accent);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* SECTION CARDS */
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .section-card:hover { border-color: rgba(0,229,160,0.3); }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header .sec-icon { font-size: 16px; }
+  .section-header .sec-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text);
+  }
+  .section-header .sec-num {
+    margin-left: auto;
+    font-size: 10px; color: var(--muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .section-body {
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .section-body strong { color: var(--accent); font-weight: 500; }
+
+  /* FORMATTED CONTENT */
+  .sec-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+  .sec-row .label {
+    color: var(--muted); min-width: 120px; font-size: 11px;
+    padding-top: 1px; flex-shrink: 0;
+  }
+  .sec-row .val { color: var(--text); }
+  .tag {
+    display: inline-block;
+    background: rgba(0,229,160,0.1);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    margin: 2px;
+  }
+  .tag.blue {
+    background: rgba(79,158,255,0.1);
+    border-color: rgba(79,158,255,0.2);
+    color: var(--accent2);
+  }
+  .tag.red {
+    background: rgba(255,107,107,0.1);
+    border-color: rgba(255,107,107,0.2);
+    color: var(--accent3);
+  }
+  .tag.yellow {
+    background: rgba(255,209,102,0.1);
+    border-color: rgba(255,209,102,0.2);
+    color: var(--accent4);
+  }
+
+  /* MCQ STYLES */
+  .mcq-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .mcq-q { font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--text); }
+  .mcq-opt {
+    display: block;
+    padding: 6px 10px;
+    margin: 3px 0;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mcq-opt:hover { background: rgba(0,229,160,0.05); border-color: rgba(0,229,160,0.2); color: var(--text); }
+  .mcq-opt.correct { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
+  .mcq-opt.wrong { background: rgba(255,107,107,0.1); border-color: var(--accent3); color: var(--accent3); }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(to bottom, var(--accent), transparent);
+  }
+  .tl-item { position: relative; margin-bottom: 14px; }
+  .tl-dot {
+    position: absolute; left: -18px; top: 4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .tl-year { font-size: 10px; color: var(--accent); margin-bottom: 2px; letter-spacing: 1px; }
+  .tl-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+
+  /* EXAM FOCUS */
+  .exam-pill {
+    background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(255,107,107,0.1));
+    border: 1px solid rgba(255,209,102,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--accent4);
+    line-height: 1.6;
+  }
+
+  /* CHAT BOX */
+  .chat-box {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; gap: 10px;
+  }
+  .chat-box input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-box input:focus { border-color: var(--accent); }
+  .chat-box input::placeholder { color: var(--muted); }
+
+  /* COLLAPSIBLE */
+  .section-body.collapsed { display: none; }
+  .chevron { margin-left: auto; transition: transform 0.2s; font-size: 12px; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* WIKI SUMMARY */
+  .wiki-box {
+    background: rgba(79,158,255,0.05);
+    border: 1px solid rgba(79,158,255,0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  /* COUNTRY FLAGS */
+  .flag-img { font-size: 28px; }
+
+  /* PROGRESS STEPS */
+  .progress-bar {
+    width: 220px; height: 3px;
+    background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    color: var(--accent3);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: auto; }
+    .map-panel { height: 45vh; border-right: none; border-bottom: 1px solid var(--border); }
+    header { flex-wrap: wrap; gap: 8px; }
+    .header-controls { width: 100%; }
+  }
+
+  .api-note {
+    font-size: 10px; color: var(--muted);
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">\ud83c\udf0d</div>
+    <div>
+      <div class="logo-text">GeoMind</div>
+      <div class="logo-sub">AI EDUCATIONAL GEO-INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <div class="ctrl-group">
+      <label>CLASS LEVEL</label>
+      <select id="classLevel">
+        <option value="6-8">Class 6\u20138</option>
+        <option value="9-10">Class 9\u201310</option>
+        <option value="11-12">Class 11\u201312</option>
+        <option value="Competitive" selected>Competitive</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>EXAM TYPE</label>
+      <select id="examType">
+        <option value="School">School</option>
+        <option value="Board">Board</option>
+        <option value="UPSC" selected>UPSC</option>
+        <option value="SSC">SSC</option>
+        <option value="State PCS">State PCS</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>LEARNING MODE</label>
+      <select id="learningMode">
+        <option value="Full Analysis" selected>Full Analysis</option>
+        <option value="Quiz Mode">Quiz Mode</option>
+        <option value="Timeline Mode">Timeline Mode</option>
+        <option value="Agriculture Mode">Agriculture Mode</option>
+        <option value="Normal">Normal</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- MAP PANEL -->
+  <div class="map-panel">
+    <div class="map-overlay">
+      <strong>\ud83d\udccd Click anywhere on the map</strong>
+      Select a location to generate your educational geo-intelligence report.
+    </div>
+    <div class="coord-display" id="coordDisplay"></div>
+    <div id="map"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="controls-bar">
+      <span style="font-size:11px; color: var(--muted);">\ud83d\udd2c GEMINI AI ANALYSIS ENGINE</span>
+      <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button onclick="clearResult()">\u2715 Clear</button>
+      </div>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="idle-state" id="idleState">
+        <div class="big-icon">\ud83d\uddfa\ufe0f</div>
+        <h3>Click a location on the map</h3>
+        <p>GeoMind will generate a structured educational report with geography, history, agriculture, economics, and exam-ready content powered by Gemini AI.</p>
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+          <span class="tag">Geography</span>
+          <span class="tag blue">History</span>
+          <span class="tag yellow">Agriculture</span>
+          <span class="tag red">Quiz Mode</span>
+        </div>
+      </div>
+      <div class="loading-state" id="loadingState">
+        <div class="spinner"></div>
+        <div style="text-align:center;">
+          <div class="loading-text">Generating educational report\u2026</div>
+          <div class="loading-steps" id="loadingStep">Fetching location data\u2026</div>
+          <div style="margin-top:12px;"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
+        </div>
+      </div>
+      <div class="result-content" id="resultContent"></div>
+    </div>
+
+    <div class="chat-box" id="chatBox" style="display:none;">
+      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location\u2026" />
+      <button class="btn-primary" onclick="sendFollowUp()">Ask \u2192</button>
+    </div>
+    <div class="api-note">Powered by Gemini AI \u00b7 OpenStreetMap \u00b7 Nominatim \u00b7 REST Countries \u00b7 Wikipedia</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// === MAP INIT ===
+const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '\u00a9 OpenStreetMap \u00a9 CARTO', maxZoom: 19
+}).addTo(map);
+
+let marker = null;
+let currentLat = null, currentLon = null;
+let currentLocationData = {};
+
+const coordDisplay = document.getElementById('coordDisplay');
+
+map.on('click', async (e) => {
+  const { lat, lng } = e.latlng;
+  currentLat = lat.toFixed(5);
+  currentLon = lng.toFixed(5);
+
+  if (marker) map.removeLayer(marker);
+  marker = L.circleMarker([lat, lng], {
+    radius: 8, fillColor: '#00e5a0', color: '#fff',
+    weight: 2, opacity: 1, fillOpacity: 0.9
+  }).addTo(map);
+
+  coordDisplay.style.display = 'block';
+  coordDisplay.textContent = `\ud83d\udccd ${currentLat}\u00b0N  ${currentLon}\u00b0E`;
+  await generateReport(lat, lng);
+});
+
+// === MAIN REPORT GENERATOR ===
+async function generateReport(lat, lon) {
+  showLoading();
+  try {
+    setStep('\ud83d\udce1 Fetching reverse geocode\u2026', 15);
+    const geoData = await fetchGeocode(lat, lon);
+
+    setStep('\ud83c\udf10 Loading country data\u2026', 35);
+    const countryName = geoData.address?.country || 'India';
+    const countryData = await fetchCountryData(countryName);
+
+    setStep('\ud83d\udcd6 Loading Wikipedia summary\u2026', 55);
+    const placeName = geoData.address?.city || geoData.address?.state || geoData.address?.country || 'India';
+    const wikiData = await fetchWikipedia(placeName);
+
+    setStep('\ud83e\udd16 Generating AI analysis\u2026', 75);
+    const aiResult = await generateWithGemini(lat, lon, geoData, countryData, wikiData);
+
+    setStep('\u2705 Rendering report\u2026', 95);
+    currentLocationData = { geoData, countryData, wikiData, lat, lon };
+    renderResult(lat, lon, geoData, countryData, wikiData, aiResult);
+    setStep('Done', 100);
+
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// === FETCH HELPERS ===
+async function fetchGeocode(lat, lon) {
+  const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {
+    headers: { 'Accept-Language': 'en' }
+  });
+  return r.json();
+}
+
+async function fetchCountryData(country) {
+  try {
+    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(country)}?fullText=false`);
+    const d = await r.json();
+    return Array.isArray(d) ? d[0] : null;
+  } catch { return null; }
+}
+
+async function fetchWikipedia(place) {
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+async function generateWithGemini(lat, lon, geoData, countryData, wikiData) {
+  const classLevel = document.getElementById('classLevel').value;
+  const examType = document.getElementById('examType').value;
+  const learningMode = document.getElementById('learningMode').value;
+
+  const addr = geoData.address || {};
+  const locationStr = [addr.city, addr.state, addr.country].filter(Boolean).join(', ') || `${lat}, ${lon}`;
+
+  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
+
+LOCATION: ${locationStr}
+COORDINATES: ${lat}, ${lon}
+CLASS LEVEL: ${classLevel}
+EXAM TYPE: ${examType}
+LEARNING MODE: ${learningMode}
+COUNTRY: ${addr.country || 'Unknown'}
+STATE/REGION: ${addr.state || addr.region || 'Unknown'}
+DISTRICT: ${addr.county || addr.distr

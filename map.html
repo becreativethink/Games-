@@ -628,6 +628,305 @@ async function generateReport(lat, lon) {
     const countryName = geoData.address?.country || 'India';
     const countryData = await fetchCountryData(countryName);
 
+    setStep('&#128214; Loading Wikipedia summary&hellip;',t); line-height: 1.6; }
+
+  /* EXAM FOCUS */
+  .exam-pill {
+    background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(255,107,107,0.1));
+    border: 1px solid rgba(255,209,102,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--accent4);
+    line-height: 1.6;
+  }
+
+  /* CHAT BOX */
+  .chat-box {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; gap: 10px;
+  }
+  .chat-box input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-box input:focus { border-color: var(--accent); }
+  .chat-box input::placeholder { color: var(--muted); }
+
+  /* COLLAPSIBLE */
+  .section-body.collapsed { display: none; }
+  .chevron { margin-left: auto; transition: transform 0.2s; font-size: 12px; }
+  .chevron.open { transform: rotate(180deg); }
+
+  /* WIKI SUMMARY */
+  .wiki-box {
+    background: rgba(79,158,255,0.05);
+    border: 1px solid rgba(79,158,255,0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  /* COUNTRY FLAGS */
+  .flag-img { font-size: 28px; }
+
+  /* PROGRESS STEPS */
+  .progress-bar {
+    width: 220px; height: 3px;
+    background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    color: var(--accent3);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: auto; }
+    .map-panel { height: 45vh; border-right: none; border-bottom: 1px solid var(--border); }
+    header { flex-wrap: wrap; gap: 8px; }
+    .header-controls { width: 100%; }
+  }
+
+  .api-note {
+    font-size: 10px; color: var(--muted);
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    letter-spacing: 0.5px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">&#127757;</div>
+    <div>
+      <div class="logo-text">GeoMind</div>
+      <div class="logo-sub">AI EDUCATIONAL GEO-INTELLIGENCE</div>
+    </div>
+  </div>
+  <div class="header-controls">
+    <div class="ctrl-group">
+      <label>CLASS LEVEL</label>
+      <select id="classLevel">
+        <option value="6-8">Class 6&ndash;8</option>
+        <option value="9-10">Class 9&ndash;10</option>
+        <option value="11-12">Class 11&ndash;12</option>
+        <option value="Competitive" selected>Competitive</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>EXAM TYPE</label>
+      <select id="examType">
+        <option value="School">School</option>
+        <option value="Board">Board</option>
+        <option value="UPSC" selected>UPSC</option>
+        <option value="SSC">SSC</option>
+        <option value="State PCS">State PCS</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>LEARNING MODE</label>
+      <select id="learningMode">
+        <option value="Full Analysis" selected>Full Analysis</option>
+        <option value="Quiz Mode">Quiz Mode</option>
+        <option value="Timeline Mode">Timeline Mode</option>
+        <option value="Agriculture Mode">Agriculture Mode</option>
+        <option value="Normal">Normal</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<div class="app-layout">
+  <!-- MAP PANEL -->
+  <div class="map-panel">
+    <div class="map-overlay">
+      <strong>&#128205; Click anywhere on the map</strong>
+      Select a location to generate your educational geo-intelligence report.
+    </div>
+    <div class="coord-display" id="coordDisplay"></div>
+    <div id="map"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="controls-bar">
+      <span style="font-size:11px; color: var(--muted);">&#128300; Z.AI GLM ANALYSIS ENGINE</span>
+      <span id="statusBadge" style="font-size:10px; background:rgba(0,229,160,0.1); border:1px solid rgba(0,229,160,0.2); color:var(--accent); padding:3px 10px; border-radius:20px;">READY</span>
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button onclick="clearResult()">&times; Clear</button>
+      </div>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="idle-state" id="idleState">
+        <div class="big-icon">&#128506;</div>
+        <h3>Click a location on the map</h3>
+        <p>GeoMind will generate a structured educational report with geography, history, agriculture, economics, and exam-ready content powered by Gemini AI.</p>
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+          <span class="tag">Geography</span>
+          <span class="tag blue">History</span>
+          <span class="tag yellow">Agriculture</span>
+          <span class="tag red">Quiz Mode</span>
+        </div>
+      </div>
+      <div class="loading-state" id="loadingState">
+        <div class="spinner"></div>
+        <div style="text-align:center;">
+          <div class="loading-text">Generating educational report&hellip;</div>
+          <div class="loading-steps" id="loadingStep">Fetching location data&hellip;</div>
+          <div style="margin-top:12px;"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
+        </div>
+      </div>
+      <div class="result-content" id="resultContent"></div>
+    </div>
+
+    <div class="chat-box" id="chatBox" style="display:none;">
+      <input type="text" id="chatInput" placeholder="Ask a follow-up question about this location&hellip;" />
+      <button class="btn-primary" onclick="sendFollowUp()">Ask &rarr;</button>
+    </div>
+    <div class="api-note">Powered by Z.ai GLM &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// === JSON REPAIR UTILITY ===
+function repairAndParseJSON(str) {
+  let s = str;
+  // Close any open strings by counting quotes
+  let inString = false, escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    if (escaped) { escaped = false; continue; }
+    if (s[i] === '\\') { escaped = true; continue; }
+    if (s[i] === '"') inString = !inString;
+  }
+  if (inString) s += '"'; // close open string
+
+  // Balance brackets and braces
+  let opens = 0, aopens = 0;
+  inString = false; escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    if (escaped) { escaped = false; continue; }
+    if (s[i] === '\\') { escaped = true; continue; }
+    if (s[i] === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (s[i] === '{') opens++;
+    else if (s[i] === '}') opens--;
+    else if (s[i] === '[') aopens++;
+    else if (s[i] === ']') aopens--;
+  }
+  // Remove trailing comma before closing
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  while (aopens > 0) { s += ']'; aopens--; }
+  while (opens > 0) { s += '}'; opens--; }
+  try {
+    return JSON.parse(s);
+  } catch(e2) {
+    console.error('JSON repair failed:', e2, s.substring(0, 200));
+    throw new Error('Could not parse AI response. Please try again.');
+  }
+}
+
+// === Z.AI JWT TOKEN GENERATOR ===
+function generateZaiToken(apiKey) {
+  try {
+    const parts = apiKey.split('.');
+    if (parts.length < 2) throw new Error('Invalid API key format');
+    const id = parts[0];
+    const secret = parts.slice(1).join('.');
+    const now = Math.round(new Date().getTime());
+    const header = { alg: 'HS256', sign_type: 'SIGN' };
+    const payload = {
+      api_key: id,
+      exp: now + 3600 * 1000,
+      timestamp: now
+    };
+    const token = KJUR.jws.JWS.sign(
+      'HS256',
+      JSON.stringify(header),
+      JSON.stringify(payload),
+      { utf8: secret }
+    );
+    return token;
+  } catch(e) {
+    console.error('JWT generation error:', e);
+    throw new Error('Failed to generate auth token: ' + e.message);
+  }
+}
+
+// === MAP INIT ===
+const map = L.map('map', { zoomControl: true }).setView([20.5937, 78.9629], 4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+}).addTo(map);
+
+let marker = null;
+let currentLat = null, currentLon = null;
+let currentLocationData = {};
+
+const coordDisplay = document.getElementById('coordDisplay');
+
+map.on('click', async (e) => {
+  const { lat, lng } = e.latlng;
+  currentLat = lat.toFixed(5);
+  currentLon = lng.toFixed(5);
+
+  if (marker) map.removeLayer(marker);
+  marker = L.circleMarker([lat, lng], {
+    radius: 8, fillColor: '#00e5a0', color: '#fff',
+    weight: 2, opacity: 1, fillOpacity: 0.9
+  }).addTo(map);
+
+  coordDisplay.style.display = 'block';
+  coordDisplay.textContent = `&#128205; ${currentLat}&deg;N  ${currentLon}&deg;E`;
+  await generateReport(lat, lng);
+});
+
+// === MAIN REPORT GENERATOR ===
+async function generateReport(lat, lon) {
+  showLoading();
+  try {
+    setStep('&#128225; Fetching reverse geocode&hellip;', 15);
+    const geoData = await fetchGeocode(lat, lon);
+
+    setStep('&#127760; Loading country data&hellip;', 35);
+    const countryName = geoData.address?.country || 'India';
+    const countryData = await fetchCountryData(countryName);
+
     setStep('&#128214; Loading Wikipedia summary&hellip;', 55);
     const placeName = geoData.address?.city || geoData.address?.state || geoData.address?.country || 'India';
     const wikiData = await fetchWikipedia(placeName);

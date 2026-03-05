@@ -525,6 +525,43 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+// === JSON REPAIR UTILITY ===
+function repairAndParseJSON(str) {
+  let s = str;
+  // Close any open strings by counting quotes
+  let inString = false, escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    if (escaped) { escaped = false; continue; }
+    if (s[i] === '\\') { escaped = true; continue; }
+    if (s[i] === '"') inString = !inString;
+  }
+  if (inString) s += '"'; // close open string
+
+  // Balance brackets and braces
+  let opens = 0, aopens = 0;
+  inString = false; escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    if (escaped) { escaped = false; continue; }
+    if (s[i] === '\\') { escaped = true; continue; }
+    if (s[i] === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (s[i] === '{') opens++;
+    else if (s[i] === '}') opens--;
+    else if (s[i] === '[') aopens++;
+    else if (s[i] === ']') aopens--;
+  }
+  // Remove trailing comma before closing
+  s = s.replace(/,\s*([}\]])/g, '$1');
+  while (aopens > 0) { s += ']'; aopens--; }
+  while (opens > 0) { s += '}'; opens--; }
+  try {
+    return JSON.parse(s);
+  } catch(e2) {
+    console.error('JSON repair failed:', e2, s.substring(0, 200));
+    throw new Error('Could not parse AI response. Please try again.');
+  }
+}
+
 // === Z.AI JWT TOKEN GENERATOR ===
 function generateZaiToken(apiKey) {
   try {
@@ -719,7 +756,11 @@ ${learningMode === 'Quiz Mode' ? 'Emphasize quiz section heavily.' : ''}
 ${learningMode === 'Timeline Mode' ? 'Add 8-10 timeline entries.' : ''}
 ${learningMode === 'Agriculture Mode' ? 'Expand agriculture section with technical details.' : ''}
 
-Return ONLY valid JSON, no markdown, no preamble.`;
+CRITICAL RULES:
+- Return ONLY raw valid JSON. No markdown. No backticks. No explanation.
+- Keep each field value concise (1-2 sentences max).
+- The JSON must be complete and properly closed.
+- Do not truncate any field.`;
 
   const ZAI_KEY = 'dc287b265efc48bca81f5e4c69f2ff7a.BxvCI6YyKLHhAWs0';
   const jwtToken = generateZaiToken(ZAI_KEY);
@@ -733,7 +774,7 @@ Return ONLY valid JSON, no markdown, no preamble.`;
       model: 'glm-4.5-flash',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-      max_tokens: 3000
+      max_tokens: 6000
     })
   });
 
@@ -743,8 +784,19 @@ Return ONLY valid JSON, no markdown, no preamble.`;
   }
   const data = await resp.json();
   const text = data.choices?.[0]?.message?.content || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  let clean = text.replace(/```json|```/g, '').trim();
+  // Extract only the JSON object portion
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    clean = clean.substring(firstBrace, lastBrace + 1);
+  }
+  // Attempt to repair truncated JSON
+  try {
+    return JSON.parse(clean);
+  } catch(e) {
+    return repairAndParseJSON(clean);
+  }
 }
 
 // === RENDER ===

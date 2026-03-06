@@ -118,4 +118,3 @@ export async function savePrivacyPolicy({ title, content }) {
     updatedAt: Date.now()
   });
 }
-  

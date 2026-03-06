@@ -46,74 +46,117 @@
 
 <!-- OFFLINE SETUP -->
 <div id="screen-offline" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated page-enter">
-    <div class="setup-head"><div class="setup-ic">🤝</div><div><h2>Offline Mode</h2><p class="text-sm text-muted">Player 1 sets word — Player 2 guesses.</p></div></div>
-    <div class="divider"></div>
-    <div class="form-group"><label class="form-label">Secret Word (A–Z only)</label><input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12"/></div>
-    <div class="form-group"><label class="form-label">Word Length</label><input class="form-control" id="off-len" type="text" value="—" readonly/></div>
-    <div class="form-group"><label class="form-label">Max Attempts</label><input class="form-control" id="off-attempts" type="number" value="6" min="3" max="10"/></div>
-    <div class="flex gap-8 mt-16"><button class="btn btn-primary flex-1" onclick="startOfflineGame()">Start Game →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:420px;width:calc(100%-32px);">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.07);">
+      <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(109,81,245,.3),rgba(180,76,255,.2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">🤝</div>
+      <div><h2 style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;margin:0 0 3px;letter-spacing:.03em;">Offline Mode</h2><p style="font-size:.75rem;color:var(--text3);margin:0;">Player 1 sets word — Player 2 guesses.</p></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🔑 Secret Word (A–Z only)</label>
+      <input class="form-control" id="off-secret" type="password" placeholder="Type secretly…" maxlength="12" style="font-family:var(--mono);letter-spacing:.1em;font-size:1rem;"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">📏 Word Length</label>
+        <input class="form-control" id="off-len" type="text" value="—" readonly style="font-family:var(--mono);text-align:center;font-size:1.1rem;background:rgba(255,255,255,.02);color:var(--text3);cursor:default;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🎯 Max Attempts</label>
+        <input class="form-control" id="off-attempts" type="number" value="6" min="3" max="10" style="font-family:var(--mono);text-align:center;font-size:1.1rem;"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn-primary" style="flex:1;padding:14px;font-size:.9rem;" onclick="startOfflineGame()">⚡ Start Game</button>
+      <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+    </div>
   </div>
 </div>
 
 <!-- ONLINE SETUP -->
 <div id="screen-online" class="hidden setup-wrap">
-  <div class="setup-card wide card card-elevated page-enter">
-    <div class="setup-head"><div class="setup-ic">🌐</div><div><h2>Online Multiplayer</h2><p class="text-sm text-muted">Host or join a room.</p></div></div>
-    <div class="divider"></div>
-    <div class="tab-strip">
-      <button class="tab-btn active" id="tab-host"  onclick="switchOnlineTab('host')">Host a Room</button>
-      <button class="tab-btn"        id="tab-guest" onclick="switchOnlineTab('guest')">Join a Room</button>
+  <div class="setup-card wide page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:460px;width:calc(100%-32px);">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.07);">
+      <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(61,232,255,.25),rgba(109,81,245,.2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">🌐</div>
+      <div><h2 style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;margin:0 0 3px;letter-spacing:.03em;">Online Multiplayer</h2><p style="font-size:.75rem;color:var(--text3);margin:0;">Host or join a room.</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:rgba(255,255,255,.05);border-radius:12px;padding:3px;margin-bottom:22px;">
+      <button class="tab-btn active" id="tab-host" onclick="switchOnlineTab('host')" style="padding:10px;border-radius:9px;font-size:.8rem;font-weight:700;">🏠 Host a Room</button>
+      <button class="tab-btn" id="tab-guest" onclick="switchOnlineTab('guest')" style="padding:10px;border-radius:9px;font-size:.8rem;font-weight:700;">🚪 Join a Room</button>
     </div>
     <div id="host-panel">
-      <div class="form-group"><label class="form-label">Secret Word (A–Z only)</label><input class="form-control" id="h-secret" type="password" placeholder="Your secret word…" maxlength="12"/></div>
-      <div class="flex gap-12">
-        <div class="form-group flex-1"><label class="form-label">Max Attempts</label><input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10"/></div>
-        <div class="form-group flex-1"><label class="form-label">Bet Score (have: <span id="h-score-cur" class="text-accent">0</span>)</label><input class="form-control" id="h-bet" type="number" value="50" min="0"/></div>
+      <div class="form-group">
+        <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🔑 Secret Word (A–Z only)</label>
+        <input class="form-control" id="h-secret" type="password" placeholder="Your secret word…" maxlength="12" style="font-family:var(--mono);letter-spacing:.1em;"/>
       </div>
-      <div class="flex gap-8 mt-8"><button class="btn btn-primary flex-1" onclick="createRoom()">Create Room →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🎯 Max Attempts</label>
+          <input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10" style="font-family:var(--mono);text-align:center;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">💰 Bet Score (<span id="h-score-cur" style="color:var(--accent);">0</span>)</label>
+          <input class="form-control" id="h-bet" type="number" value="50" min="0" style="font-family:var(--mono);text-align:center;"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-primary" style="flex:1;padding:14px;font-size:.9rem;" onclick="createRoom()">🚀 Create Room</button>
+        <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+      </div>
     </div>
     <div id="guest-panel" class="hidden">
-      <p class="text-muted text-sm mb-16">Enter the 6-character Room ID.</p>
-      <div class="form-group"><label class="form-label">Room ID</label>
-        <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6" style="font-family:var(--mono);letter-spacing:.25em;text-transform:uppercase;text-align:center;font-size:1.7rem;padding:14px;"/>
+      <p style="font-size:.8rem;color:var(--text3);margin-bottom:16px;text-align:center;">Enter the 6-character Room ID shared by your host.</p>
+      <div class="form-group">
+        <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🔑 Room ID</label>
+        <input class="form-control" id="g-room-id" type="text" placeholder="AB12CD" maxlength="6" style="font-family:var(--mono);letter-spacing:.35em;text-transform:uppercase;text-align:center;font-size:1.9rem;padding:16px;"/>
       </div>
-      <div class="flex gap-8 mt-8"><button class="btn btn-primary flex-1" onclick="joinRoom()">Join Room →</button><a href="index.html" class="btn btn-ghost">Cancel</a></div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-primary" style="flex:1;padding:14px;font-size:.9rem;" onclick="joinRoom()">🚪 Join Room</button>
+        <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- WAITING -->
 <div id="screen-waiting" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated text-center page-enter">
-    <div style="font-size:3rem;margin-bottom:12px;">⏳</div>
-    <h2 class="mb-8">Waiting for Opponent…</h2>
-    <p class="text-muted text-sm mb-20">Share this Room ID:</p>
-    <div class="room-id-display mb-8" id="room-id-show" onclick="copyRoomId()">——</div>
-    <p class="text-faint text-xs mb-20">Tap to copy</p>
-    <button class="btn btn-danger btn-sm" onclick="cancelRoom()">Cancel Room</button>
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:36px 24px;max-width:380px;width:calc(100%-32px);text-align:center;">
+    <div style="font-size:3rem;margin-bottom:16px;animation:pulse 1.5s ease-in-out infinite;">⏳</div>
+    <h2 style="font-family:var(--font-display);font-size:1.15rem;font-weight:800;margin-bottom:8px;">Waiting for Opponent…</h2>
+    <p style="font-size:.78rem;color:var(--text3);margin-bottom:22px;">Share this Room ID with your opponent</p>
+    <div id="room-id-show" onclick="copyRoomId()" style="font-family:var(--mono);font-size:2rem;font-weight:700;letter-spacing:.35em;padding:16px 24px;background:rgba(109,81,245,.12);border:1px solid rgba(109,81,245,.3);border-radius:14px;cursor:pointer;margin-bottom:6px;transition:background .18s;">——</div>
+    <p style="font-size:.65rem;color:var(--text3);margin-bottom:24px;">👆 Tap to copy</p>
+    <button class="btn btn-danger btn-sm" onclick="cancelRoom()">✕ Cancel Room</button>
   </div>
 </div>
 
 <!-- DAILY SETUP -->
 <div id="screen-daily" class="hidden setup-wrap">
-  <div class="setup-card card card-elevated text-center page-enter">
-    <div style="font-size:3rem;margin-bottom:12px;">📅</div>
-    <h2 class="mb-8">Daily Challenge</h2>
-    <p class="text-muted text-sm mb-16">60 seconds. One word. Beat the clock.</p>
-    <div class="card mb-16" style="background:rgba(240,180,41,.05);border-color:rgba(240,180,41,.18);">
-      <div class="flex justify-between mb-8"><span class="text-muted text-sm">Reward Money</span><span class="text-gold text-mono fw-700" id="d-reward-money">—</span></div>
-      <div class="flex justify-between mb-8"><span class="text-muted text-sm">Reward Score</span><span class="text-accent text-mono fw-700" id="d-reward-score">—</span></div>
-      <div class="flex justify-between"><span class="text-muted text-sm">Attempts</span><span class="text-mono fw-700" id="d-attempts">—</span></div>
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:400px;width:calc(100%-32px);text-align:center;">
+    <div style="font-size:3.5rem;margin-bottom:14px;filter:drop-shadow(0 0 16px rgba(240,180,41,.5));">📅</div>
+    <h2 style="font-family:var(--font-display);font-size:1.3rem;font-weight:800;letter-spacing:.04em;margin-bottom:6px;">Daily Challenge</h2>
+    <p style="font-size:.78rem;color:var(--text3);margin-bottom:22px;">60 seconds. One word. Beat the clock.</p>
+    <div style="background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.2);border-radius:16px;padding:16px 18px;margin-bottom:20px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:.8rem;color:var(--text3);">Reward Money</span>
+        <span style="font-family:var(--mono);font-weight:700;color:#f0b429;" id="d-reward-money">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:.8rem;color:var(--text3);">Reward Score</span>
+        <span style="font-family:var(--mono);font-weight:700;color:var(--accent);" id="d-reward-score">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:.8rem;color:var(--text3);">Attempts</span>
+        <span style="font-family:var(--mono);font-weight:700;" id="d-attempts">—</span>
+      </div>
     </div>
     <div id="d-already-played" class="hidden">
-      <div class="tag tag-green" style="display:inline-flex;padding:8px 18px;font-size:.82rem;">✓ Already completed today!</div>
-      <p class="text-muted text-sm mt-12">Come back tomorrow.</p>
-      <a href="index.html" class="btn btn-ghost btn-full mt-16">← Back Home</a>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(22,194,106,.12);border:1px solid rgba(22,194,106,.25);border-radius:100px;padding:10px 20px;font-size:.82rem;color:#16c26a;font-weight:700;margin-bottom:12px;">✓ Already completed today!</div>
+      <p style="font-size:.78rem;color:var(--text3);margin-bottom:16px;">Come back tomorrow for a new word.</p>
+      <a href="index.html" class="btn btn-ghost btn-full">← Back Home</a>
     </div>
     <div id="d-start-wrap">
-      <button class="btn btn-gold btn-full btn-xl" onclick="startDailyGame()">⚡ Start Challenge</button>
-      <a href="index.html" class="btn btn-ghost btn-sm mt-8">Cancel</a>
+      <button class="btn btn-gold btn-full" style="padding:15px;font-size:.95rem;border-radius:14px;box-shadow:0 4px 20px rgba(240,180,41,.3);" onclick="startDailyGame()">⚡ Start Challenge</button>
+      <a href="index.html" class="btn btn-ghost btn-sm" style="margin-top:10px;display:block;">Cancel</a>
     </div>
   </div>
 </div>

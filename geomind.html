@@ -3,212 +3,319 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GeoMind &mdash; AI Educational Geo-Intelligence</title>
+<title>GeoMind &mdash; AI Geo-Intelligence Platform</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.27/jsrsasign-all-min.js"></script>
 <style>
-/* ══════════════════════════════════════
-   TOKENS
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════ */
 :root{
-  --bg:#090c12; --surface:#111520; --card:#171c28; --border:#222840;
-  --accent:#00e5a0; --a2:#4f9eff; --a3:#ff6b6b; --a4:#ffd166; --a5:#c084fc;
-  --text:#e8eaf0; --muted:#6b7280; --sub:#9ca3af;
-  --r:12px; --rs:8px; --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --bg:#07090f; --bg2:#0c0f1a; --surface:#111827; --card:#141929; --card2:#1a2035;
+  --border:#1e2844; --border2:#2a3558;
+  --accent:#00d4aa; --accent2:#00b894; --a2:#3b82f6; --a3:#f87171;
+  --a4:#fbbf24; --a5:#a78bfa; --a6:#34d399;
+  --text:#f1f5f9; --muted:#64748b; --sub:#94a3b8;
+  --plan-free:#64748b; --plan-basic:#3b82f6; --plan-std:#a78bfa; --plan-prem:#fbbf24;
+  --r:14px; --rs:10px; --shadow:0 8px 32px rgba(0,0,0,0.5);
+  --glow:0 0 32px rgba(0,212,170,0.15);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;}
-button{cursor:pointer;font-family:'DM Sans',sans-serif;outline:none;}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;outline:none;border:none;}
 input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
+a{text-decoration:none;}
 
-/* ══════════════════════════════════════
-   AUTH SCREENS  (login / signup)
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   AUTH SCREEN
+══════════════════════════════════════════ */
 #authScreen{
-  position:fixed;inset:0;z-index:9999;
-  background:linear-gradient(135deg,#090c12 0%,#0d1b2a 60%,#0a1628 100%);
-  display:flex;align-items:center;justify-content:center;overflow:auto;
+  position:fixed;inset:0;z-index:9999;overflow:auto;
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+  padding:20px;
 }
-#authScreen::before,#authScreen::after{
-  content:'';position:fixed;border-radius:50%;filter:blur(90px);opacity:0.1;pointer-events:none;
-  animation:blob 9s infinite alternate;
+.auth-bg{
+  position:fixed;inset:0;pointer-events:none;overflow:hidden;
 }
-#authScreen::before{width:520px;height:520px;background:radial-gradient(circle,var(--accent),transparent);top:-120px;left:-120px;}
-#authScreen::after{width:440px;height:440px;background:radial-gradient(circle,var(--a2),transparent);bottom:-100px;right:-100px;animation-delay:3s;}
-@keyframes blob{0%{transform:scale(1) translate(0,0);}100%{transform:scale(1.15) translate(30px,25px);}}
+.auth-bg::before{
+  content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,170,0.06) 0%,transparent 70%);
+  top:-150px;left:-150px;animation:pulse 6s ease-in-out infinite;
+}
+.auth-bg::after{
+  content:'';position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(59,130,246,0.05) 0%,transparent 70%);
+  bottom:-100px;right:-100px;animation:pulse 8s ease-in-out infinite reverse;
+}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
 
 .auth-card{
-  background:rgba(17,21,32,0.94);border:1px solid rgba(255,255,255,0.07);
-  border-radius:20px;padding:44px 40px;width:100%;max-width:430px;
-  box-shadow:0 28px 80px rgba(0,0,0,0.55);backdrop-filter:blur(20px);
-  position:relative;z-index:10;animation:slideUp 0.45s ease;margin:20px;
+  position:relative;z-index:10;
+  background:rgba(17,24,39,0.95);border:1px solid var(--border2);
+  border-radius:20px;padding:40px 36px;width:100%;max-width:420px;
+  box-shadow:0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.05);
+  animation:slideUp 0.4s ease;
 }
-@keyframes slideUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
-.auth-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:30px;}
-.auth-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(0,229,160,0.3);}
-.auth-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.auth-h2{font-family:'Syne',sans-serif;font-size:20px;color:var(--text);text-align:center;margin-bottom:5px;}
-.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:26px;}
+.auth-logo{display:flex;align-items:center;gap:11px;justify-content:center;margin-bottom:28px;}
+.auth-logo-gem{
+  width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--a2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 8px 20px rgba(0,212,170,0.35);
+}
+.auth-logo-name{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;
+  background:linear-gradient(90deg,var(--accent),var(--a2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.auth-title{font-family:'Syne',sans-serif;font-size:19px;color:var(--text);text-align:center;margin-bottom:5px;}
+.auth-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.5;}
 
-.afield{margin-bottom:15px;}
-.afield label{display:block;font-size:11px;color:var(--sub);margin-bottom:6px;letter-spacing:0.8px;text-transform:uppercase;}
+.afield{margin-bottom:14px;}
+.afield label{display:block;font-size:11px;color:var(--sub);margin-bottom:5px;letter-spacing:0.8px;text-transform:uppercase;font-family:'DM Mono',monospace;}
 .afield input,.afield select{
-  width:100%;padding:12px 16px;
-  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
-  border-radius:10px;color:var(--text);font-size:14px;transition:all 0.2s;
+  width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);
+  border:1px solid var(--border2);border-radius:10px;color:var(--text);
+  font-size:14px;transition:all 0.2s;
 }
-.afield input:focus,.afield select:focus{border-color:var(--accent);background:rgba(0,229,160,0.04);box-shadow:0 0 0 3px rgba(0,229,160,0.1);}
-.afield input::placeholder{color:#4b5563;}
-.afield select option{background:#111318;color:var(--text);}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.afield input:focus,.afield select:focus{border-color:var(--accent);background:rgba(0,212,170,0.04);box-shadow:0 0 0 3px rgba(0,212,170,0.08);}
+.afield input::placeholder{color:#374151;}
+.afield select option{background:#111827;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
-.abtn{
-  width:100%;padding:13px;border:none;border-radius:10px;font-family:'Syne',sans-serif;
-  font-size:15px;font-weight:700;transition:all 0.2s;margin-top:6px;
-}
-.abtn-g{background:linear-gradient(135deg,var(--accent),#00b87a);color:#000;box-shadow:0 8px 24px rgba(0,229,160,0.3);}
-.abtn-g:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(0,229,160,0.4);}
-.abtn-b{background:linear-gradient(135deg,var(--a2),#2563eb);color:#fff;box-shadow:0 8px 24px rgba(79,158,255,0.3);}
-.abtn-b:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(79,158,255,0.4);}
-.abtn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+.abtn{width:100%;padding:12px;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;transition:all 0.2s;margin-top:6px;letter-spacing:0.5px;}
+.abtn-g{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;box-shadow:0 8px 24px rgba(0,212,170,0.3);}
+.abtn-g:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,212,170,0.4);}
+.abtn-b{background:linear-gradient(135deg,var(--a2),#1d4ed8);color:#fff;box-shadow:0 8px 24px rgba(59,130,246,0.3);}
+.abtn-b:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(59,130,246,0.4);}
+.abtn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
 
-.adiv{display:flex;align-items:center;gap:12px;margin:18px 0;}
-.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08);}
-.adiv span{font-size:12px;color:#4b5563;}
+.adiv{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.adiv::before,.adiv::after{content:'';flex:1;height:1px;background:var(--border2);}
+.adiv span{font-size:11px;color:var(--muted);}
+.alink{width:100%;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--sub);font-size:13px;transition:all 0.2s;}
+.alink-g:hover{border-color:rgba(0,212,170,0.4);color:var(--accent);background:rgba(0,212,170,0.04);}
+.alink-b:hover{border-color:rgba(59,130,246,0.4);color:var(--a2);background:rgba(59,130,246,0.04);}
 
-.alink{
-  width:100%;padding:12px;background:transparent;border:1px solid rgba(255,255,255,0.1);
-  border-radius:10px;color:var(--sub);font-size:14px;transition:all 0.2s;
-}
-.alink-g:hover{border-color:rgba(0,229,160,0.4);color:var(--accent);background:rgba(0,229,160,0.05);}
-.alink-b:hover{border-color:rgba(79,158,255,0.4);color:var(--a2);background:rgba(79,158,255,0.05);}
+.amsg{border-radius:9px;padding:10px 13px;font-size:12px;margin-bottom:13px;display:none;line-height:1.5;}
+.amsg.err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--a3);}
+.amsg.ok{background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--accent);}
 
-.aerr{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);border-radius:8px;padding:10px 14px;color:var(--a3);font-size:13px;margin-bottom:14px;display:none;line-height:1.5;}
-.aok{background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.3);border-radius:8px;padding:10px 14px;color:var(--accent);font-size:13px;margin-bottom:14px;display:none;}
-.pwd-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);transition:all 0.3s;}
-.pwd-bar.w{background:linear-gradient(90deg,var(--a3) 33%,var(--border) 33%);}
-.pwd-bar.m{background:linear-gradient(90deg,var(--a4) 66%,var(--border) 66%);}
+.pwd-bar{height:3px;border-radius:2px;margin-top:5px;background:var(--border);transition:all 0.3s;}
+.pwd-bar.w{background:linear-gradient(90deg,var(--a3) 30%,var(--border) 30%);}
+.pwd-bar.m{background:linear-gradient(90deg,var(--a4) 65%,var(--border) 65%);}
 .pwd-bar.s{background:var(--accent);}
-.afooter{text-align:center;margin-top:18px;font-size:12px;color:#4b5563;}
-.smsm{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,0.3);border-top-color:rgba(0,0,0,0.8);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:5px;}
-.smsm-w{border-color:rgba(255,255,255,0.3);border-top-color:#fff;}
+.spin-xs{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,0.25);border-top-color:rgba(0,0,0,0.8);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:5px;}
+.spin-xs.w{border-color:rgba(255,255,255,0.25);border-top-color:#fff;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-/* ══════════════════════════════════════
-   MAIN APP
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   MAIN APP SCREEN
+══════════════════════════════════════════ */
 #appScreen{display:none;flex-direction:column;height:100%;}
 
 /* TOP NAV */
 #topNav{
-  flex-shrink:0;height:56px;
-  background:rgba(17,21,32,0.97);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 14px;gap:10px;z-index:500;
-  backdrop-filter:blur(16px);
+  flex-shrink:0;height:54px;
+  background:rgba(12,15,26,0.97);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+  position:relative;z-index:600;backdrop-filter:blur(20px);
 }
 .nav-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
-.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(0,229,160,0.25);}
-.nav-logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.nav-sels{display:flex;gap:6px;align-items:flex-end;}
-.nsg{display:flex;flex-direction:column;gap:2px;}
-.nsg label{font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;}
-.nsel{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:11px;transition:border-color 0.2s;}
-.nsel:hover,.nsel:focus{border-color:var(--accent);}
-#langPick{background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.28);color:var(--a5);padding:5px 8px;border-radius:7px;font-size:11px;}
-#langPick:focus{border-color:var(--a5);}
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.user-chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 11px 4px 5px;}
-.uav{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;font-family:'Syne',sans-serif;flex-shrink:0;}
-.uname{font-size:12px;color:var(--sub);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sbadge{font-size:9px;padding:3px 9px;border-radius:20px;border:1px solid rgba(0,229,160,0.3);background:rgba(0,229,160,0.07);color:var(--accent);font-family:'DM Mono',monospace;letter-spacing:0.5px;}
-.nvbtn{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--sub);padding:6px 11px;border-radius:7px;font-size:11px;transition:all 0.2s;}
-.nvbtn:hover{border-color:var(--a3);color:var(--a3);}
+.nav-logo-gem{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 4px 12px rgba(0,212,170,0.3);}
+.nav-logo-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 
-/* MAIN 2-PANEL */
+.nav-controls{display:flex;gap:6px;align-items:flex-end;}
+.nc-group{display:flex;flex-direction:column;gap:2px;}
+.nc-group label{font-size:7.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;}
+.nsel{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:7px;font-size:11px;transition:border-color 0.2s;min-width:80px;}
+.nsel:hover,.nsel:focus{border-color:var(--accent);}
+
+/* plan badge in nav */
+.plan-badge{
+  font-size:10px;padding:3px 9px;border-radius:20px;font-family:'DM Mono',monospace;
+  font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border:1px solid;
+  flex-shrink:0;
+}
+.pb-free{background:rgba(100,116,139,0.12);border-color:rgba(100,116,139,0.4);color:var(--plan-free);}
+.pb-basic{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.4);color:var(--plan-basic);}
+.pb-standard{background:rgba(167,139,250,0.12);border-color:rgba(167,139,250,0.4);color:var(--plan-std);}
+.pb-premium{background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.4);color:var(--plan-prem);}
+
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.user-chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 5px;}
+.user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--a2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;font-family:'Syne',sans-serif;}
+.user-nm{font-size:12px;color:var(--sub);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.usage-mini{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap;}
+
+.nvbtn{background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--sub);padding:5px 11px;border-radius:7px;font-size:11px;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.nvbtn:hover{border-color:var(--a3);color:var(--a3);}
+.nvbtn-plan{border-color:rgba(251,191,36,0.3);color:var(--a4);}
+.nvbtn-plan:hover{background:rgba(251,191,36,0.08);border-color:var(--a4);}
+
+/* MOBILE NAV BAR */
+#mobileBar{display:none;gap:5px;padding:7px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
+@media(max-width:768px){
+  #mobileBar{display:flex;}
+  .nav-controls{display:none;}
+  #mainWrap{grid-template-columns:1fr!important;grid-template-rows:45vh 1fr!important;}
+  #mapPanel{border-right:none!important;border-bottom:1px solid var(--border);}
+  #mapControlsBar{flex-direction:column;}
+}
+
+/* ══════════════════════════════════════════
+   MAIN 2-PANEL
+══════════════════════════════════════════ */
 #mainWrap{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;overflow:hidden;}
 
-/* MAP */
-#mapPanel{position:relative;border-right:1px solid var(--border);overflow:hidden;}
-#map{width:100%;height:100%;}
-.map-hint{position:absolute;top:12px;left:12px;z-index:400;background:rgba(9,12,18,0.9);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:11px;color:var(--muted);backdrop-filter:blur(12px);max-width:185px;pointer-events:none;font-family:'DM Mono',monospace;}
-.map-hint strong{color:var(--accent);display:block;margin-bottom:2px;font-size:11px;}
-.coord-pill{position:absolute;bottom:12px;left:12px;z-index:400;background:rgba(9,12,18,0.93);border:1px solid var(--accent);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--accent);box-shadow:0 0 20px rgba(0,229,160,0.15);display:none;pointer-events:none;font-family:'DM Mono',monospace;}
-.ptip{position:absolute;top:12px;right:12px;z-index:400;background:rgba(9,12,18,0.93);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:11px;backdrop-filter:blur(12px);max-width:200px;display:none;}
-.ptip-name{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
-.ptip-lang{color:var(--a5);font-size:10px;}
-.ptip-loc{color:var(--muted);font-size:10px;margin-top:2px;}
-.famous-bar{display:none;position:absolute;bottom:0;left:0;right:0;z-index:400;background:rgba(9,12,18,0.93);border-top:1px solid var(--border);padding:7px 13px;font-size:11px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;}
-.famous-bar::-webkit-scrollbar{display:none;}
-.fi{display:inline-block;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:20px;padding:2px 9px;margin-right:6px;font-size:10px;color:var(--sub);}
+/* MAP PANEL */
+#mapPanel{position:relative;border-right:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;}
+#map{flex:1;min-height:0;}
 
-/* RIGHT PANEL */
-#rightPanel{display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+/* MAP HINT */
+.map-hint{position:absolute;top:12px;left:12px;z-index:400;background:rgba(7,9,15,0.92);border:1px solid var(--border2);border-radius:10px;padding:9px 13px;font-size:11px;color:var(--muted);backdrop-filter:blur(12px);max-width:185px;pointer-events:none;font-family:'DM Mono',monospace;}
+.map-hint strong{color:var(--accent);display:block;margin-bottom:2px;}
+
+/* MAP CONTROLS BAR (below map) */
+#mapControlsBar{
+  flex-shrink:0;background:rgba(12,15,26,0.98);border-top:1px solid var(--border);
+  padding:10px 12px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;
+  z-index:400;
+}
+.mc-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;}
+.mc-group label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'DM Mono',monospace;}
+.mc-group input,.mc-group select{
+  background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);
+  padding:7px 10px;border-radius:8px;font-size:12px;width:100%;transition:border-color 0.2s;
+}
+.mc-group input:focus,.mc-group select:focus{border-color:var(--accent);background:rgba(0,212,170,0.03);}
+.mc-group input::placeholder{color:#374151;}
+.mc-group select option{background:#111827;}
+
+/* COORD PILL */
+.coord-pill{
+  position:absolute;top:12px;right:12px;z-index:400;
+  background:rgba(7,9,15,0.93);border:1px solid var(--accent);border-radius:8px;
+  padding:6px 11px;font-size:11px;color:var(--accent);
+  box-shadow:0 0 16px rgba(0,212,170,0.2);display:none;pointer-events:none;
+  font-family:'DM Mono',monospace;
+}
+
+/* PLACE TOOLTIP */
+.ptip{position:absolute;bottom:120px;left:12px;z-index:400;background:rgba(7,9,15,0.95);border:1px solid var(--border2);border-radius:10px;padding:10px 13px;max-width:200px;display:none;backdrop-filter:blur(12px);}
+.ptip-name{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
+.ptip-lang{font-size:10px;color:var(--a5);margin-top:2px;}
+.ptip-loc{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* FAMOUS BAR */
+.famous-bar{display:none;position:absolute;bottom:118px;left:0;right:0;z-index:399;background:rgba(7,9,15,0.92);border-top:1px solid var(--border);padding:6px 12px;font-size:11px;overflow-x:auto;white-space:nowrap;scrollbar-width:none;}
+.famous-bar::-webkit-scrollbar{display:none;}
+.fi-chip{display:inline-block;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;margin-right:6px;font-size:10px;color:var(--sub);}
+
+/* SEND BUTTON */
+#sendBtn{
+  flex-shrink:0;padding:9px 22px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;border-radius:9px;font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:800;letter-spacing:0.5px;
+  box-shadow:0 6px 20px rgba(0,212,170,0.35);transition:all 0.2s;
+  white-space:nowrap;
+}
+#sendBtn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,212,170,0.45);}
+#sendBtn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+/* ══════════════════════════════════════════
+   RIGHT PANEL — TABS
+══════════════════════════════════════════ */
+#rightPanel{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--bg2);}
+
 .tabs{display:flex;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);}
-.tab{flex:1;padding:10px 0;font-size:11px;background:none;border:none;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.tab{flex:1;padding:10px 0;font-size:10px;background:none;border:none;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .tab:hover{color:var(--text);}
 .tab.on{color:var(--accent);border-bottom-color:var(--accent);}
 .tab.ht.on{color:var(--a2);border-bottom-color:var(--a2);}
 .tab.ct.on{color:var(--a4);border-bottom-color:var(--a4);}
+.tab.pt.on{color:var(--plan-prem);border-bottom-color:var(--plan-prem);}
+
 .tpanel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;}
 .tpanel.on{display:flex;}
 .scroll{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .scroll::-webkit-scrollbar{width:4px;}
 .scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 
-/* IDLE */
-.idle{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:13px;}
-.idle .bi{font-size:52px;opacity:0.3;}
-.idle h3{font-family:'Syne',sans-serif;font-size:17px;color:var(--text);opacity:0.5;}
-.idle p{font-size:12px;color:var(--muted);max-width:240px;line-height:1.6;opacity:0.65;}
-.tag-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;opacity:0.55;}
+/* ══════════════════════════════════════════
+   ANALYSIS PANEL
+══════════════════════════════════════════ */
+.idle{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:20px;}
+.idle-icon{font-size:52px;opacity:0.2;}
+.idle h3{font-family:'Syne',sans-serif;font-size:18px;color:var(--text);opacity:0.45;}
+.idle p{font-size:12px;color:var(--muted);max-width:240px;line-height:1.7;opacity:0.7;}
+.tag-row{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;opacity:0.5;}
+
+/* Usage widget in idle */
+.usage-widget{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:12px 16px;width:100%;max-width:260px;
+}
+.uw-title{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:10px;}
+.uw-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.uw-label{font-size:11px;color:var(--sub);}
+.uw-val{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;}
+.uw-bar{height:3px;background:var(--border);border-radius:2px;margin-top:3px;overflow:hidden;}
+.uw-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--a2));border-radius:2px;transition:width 0.4s;}
+.uw-bar-fill.danger{background:linear-gradient(90deg,var(--a3),#dc2626);}
 
 /* LOADING */
 .loadbox{display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;}
-.spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.lstep{font-size:11px;color:var(--accent);margin-top:3px;font-family:'DM Mono',monospace;}
-.pbar{width:200px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px;}
-.pfill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--a2));transition:width 0.4s;}
+.spin-lg{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+.lstep{font-size:11px;color:var(--accent);margin-top:3px;font-family:'DM Mono',monospace;letter-spacing:0.5px;}
+.pbar{width:210px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:10px;}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--a2));transition:width 0.5s;}
 
 /* RESULT */
 .result-wrap{display:none;animation:fi 0.4s ease;}
-@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.loc-badge{background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(79,158,255,0.06));border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:13px 15px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:9px;}
-.loc-name{font-family:'Syne',sans-serif;font-size:19px;color:var(--text);line-height:1.2;}
-.loc-sub{font-size:10px;color:var(--muted);margin-top:2px;}
-.loc-lang{font-size:10px;color:var(--a5);margin-top:2px;}
-.cbadge{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:10px;color:var(--accent);text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;}
-.wiki-box{background:rgba(79,158,255,0.05);border:1px solid rgba(79,158,255,0.14);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.7;font-style:italic;margin-bottom:11px;}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
-/* SECTIONS */
+.loc-badge{
+  background:linear-gradient(135deg,rgba(0,212,170,0.06),rgba(59,130,246,0.05));
+  border:1px solid rgba(0,212,170,0.18);border-radius:12px;padding:13px 15px;
+  margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+}
+.loc-name{font-family:'Syne',sans-serif;font-size:18px;color:var(--text);line-height:1.2;}
+.loc-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.loc-lang{font-size:10px;color:var(--a5);margin-top:3px;}
+.cbadge{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:10px;color:var(--accent);text-align:right;flex-shrink:0;font-family:'DM Mono',monospace;line-height:1.5;}
+.wiki-box{background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.13);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.7;font-style:italic;margin-bottom:11px;}
+
+/* SECTION CARDS */
 .scard{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:border-color 0.2s;}
-.scard:hover{border-color:rgba(0,229,160,0.2);}
-.shdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.015);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.scard:hover{border-color:rgba(0,212,170,0.2);}
+.shdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.018);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
 .snum{font-size:11px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;min-width:22px;}
 .stitle{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);}
-.chev{margin-left:auto;font-size:11px;color:var(--muted);transition:transform 0.2s;}
+.chev{margin-left:auto;font-size:10px;color:var(--muted);transition:transform 0.2s;}
 .chev.o{transform:rotate(180deg);}
 .sbody{padding:12px 14px;font-size:12px;line-height:1.7;}
 .sbody.hid{display:none;}
 .srow{display:flex;gap:7px;margin-bottom:5px;align-items:flex-start;}
-.slbl{color:var(--muted);min-width:110px;font-size:10px;padding-top:1px;flex-shrink:0;font-family:'DM Mono',monospace;}
+.slbl{color:var(--muted);min-width:115px;font-size:10px;padding-top:1px;flex-shrink:0;font-family:'DM Mono',monospace;}
 .sval{color:var(--text);font-size:11px;line-height:1.6;}
 .tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;margin:2px;border:1px solid;}
-.tg{background:rgba(0,229,160,0.08);border-color:rgba(0,229,160,0.2);color:var(--accent);}
-.tb{background:rgba(79,158,255,0.08);border-color:rgba(79,158,255,0.2);color:var(--a2);}
-.ty{background:rgba(255,209,102,0.08);border-color:rgba(255,209,102,0.2);color:var(--a4);}
-.tr{background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.2);color:var(--a3);}
-.tp{background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.2);color:var(--a5);}
+.tg{background:rgba(0,212,170,0.08);border-color:rgba(0,212,170,0.2);color:var(--accent);}
+.tb{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2);color:var(--a2);}
+.ty{background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.2);color:var(--a4);}
+.tr{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2);color:var(--a3);}
+.tp{background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.2);color:var(--a5);}
 
 /* MCQ */
 .mcqi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px;margin-bottom:9px;}
 .mcqq{font-size:12px;font-weight:500;margin-bottom:7px;color:var(--text);}
 .mcqo{display:block;padding:5px 9px;margin:3px 0;border-radius:6px;font-size:11px;color:var(--muted);border:1px solid transparent;transition:all 0.15s;}
-.mcqo:hover{background:rgba(0,229,160,0.05);border-color:rgba(0,229,160,0.2);color:var(--text);cursor:pointer;}
-.mcqo.ok{background:rgba(0,229,160,0.1);border-color:var(--accent);color:var(--accent);}
-.mcqo.no{background:rgba(255,107,107,0.1);border-color:var(--a3);color:var(--a3);}
+.mcqo:hover{background:rgba(0,212,170,0.05);border-color:rgba(0,212,170,0.2);color:var(--text);cursor:pointer;}
+.mcqo.ok{background:rgba(0,212,170,0.1);border-color:var(--accent);color:var(--accent);}
+.mcqo.no{background:rgba(248,113,113,0.1);border-color:var(--a3);color:var(--a3);}
 
 /* TIMELINE */
 .tl{position:relative;padding-left:20px;}
@@ -218,157 +325,202 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
 .tlyear{font-size:10px;color:var(--accent);margin-bottom:2px;letter-spacing:1px;font-family:'DM Mono',monospace;}
 .tltext{font-size:11px;color:var(--text);line-height:1.6;}
 
-/* EXAM PILLS */
-.epill{background:linear-gradient(135deg,rgba(255,209,102,0.06),rgba(192,132,252,0.06));border:1px solid rgba(255,209,102,0.18);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:11px;color:var(--a4);line-height:1.6;}
-.ebox{background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.25);border-radius:9px;padding:13px;color:var(--a3);font-size:12px;line-height:1.6;}
+.epill{background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(167,139,250,0.06));border:1px solid rgba(251,191,36,0.18);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:11px;color:var(--a4);line-height:1.6;}
+.ebox{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);border-radius:9px;padding:13px;color:var(--a3);font-size:12px;line-height:1.6;}
+.limit-box{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:16px;text-align:center;}
+.limit-box .lb-icon{font-size:32px;margin-bottom:8px;display:block;}
+.limit-box .lb-title{font-family:'Syne',sans-serif;font-size:14px;color:var(--a4);margin-bottom:5px;}
+.limit-box .lb-desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;}
+.limit-box .lb-btn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;border:none;border-radius:8px;padding:9px 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:opacity 0.2s;}
+.limit-box .lb-btn:hover{opacity:0.85;}
 
-/* HISTORY */
-.hempty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px;opacity:0.4;}
-.hempty p{font-size:11px;color:var(--muted);max-width:200px;line-height:1.6;}
-.hclr{width:100%;margin-bottom:11px;background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.2);color:var(--a3);font-size:11px;padding:8px;border-radius:8px;transition:background 0.2s;}
-.hclr:hover{background:rgba(255,107,107,0.12);}
-.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:9px;transition:border-color 0.2s;cursor:pointer;}
-.hitem:hover{border-color:rgba(79,158,255,0.35);}
+/* ══════════════════════════════════════════
+   HISTORY TAB
+══════════════════════════════════════════ */
+.hempty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px;opacity:0.35;}
+.hempty p{font-size:11px;color:var(--muted);max-width:200px;line-height:1.7;}
+.hclr{width:100%;margin-bottom:11px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);color:var(--a3);font-size:11px;padding:8px;border-radius:8px;transition:background 0.2s;}
+.hclr:hover{background:rgba(248,113,113,0.12);}
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;transition:border-color 0.2s;cursor:pointer;}
+.hitem:hover{border-color:rgba(59,130,246,0.4);}
 .hname{font-family:'Syne',sans-serif;font-size:13px;color:var(--text);margin-bottom:3px;}
 .hmeta{font-size:10px;color:var(--muted);margin-bottom:2px;}
 .hcoord{font-size:10px;color:var(--a2);font-family:'DM Mono',monospace;}
 .hts{font-size:9px;color:var(--muted);margin-top:3px;}
 
-/* CHAT */
+/* ══════════════════════════════════════════
+   CHAT TAB
+══════════════════════════════════════════ */
 .cmsgs{flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .cmsgs::-webkit-scrollbar{width:4px;}
 .cmsgs::-webkit-scrollbar-thumb{background:var(--border);}
-.cnoloc{display:flex;align-items:center;justify-content:center;height:100%;text-align:center;opacity:0.4;padding:20px;font-size:12px;color:var(--muted);}
+.cnoloc{display:flex;align-items:center;justify-content:center;height:100%;text-align:center;opacity:0.35;padding:20px;font-size:12px;color:var(--muted);}
 .cmsg{margin-bottom:12px;}
-.cmq{background:rgba(79,158,255,0.07);border:1px solid rgba(79,158,255,0.16);border-radius:10px 10px 2px 10px;padding:9px 12px;font-size:12px;color:var(--a2);margin-bottom:5px;}
+.cmq{background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.16);border-radius:10px 10px 2px 10px;padding:9px 12px;font-size:12px;color:var(--a2);margin-bottom:5px;}
 .cma{background:var(--card);border:1px solid var(--border);border-radius:2px 10px 10px 10px;padding:9px 12px;font-size:12px;color:var(--text);line-height:1.7;}
 .cmts{font-size:9px;color:var(--muted);margin-top:3px;text-align:right;font-family:'DM Mono',monospace;}
-.cbar{display:flex;gap:8px;padding:10px 13px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
-.cbar input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12px;transition:border-color 0.2s;}
-.cbar input:focus{border-color:var(--a4);background:rgba(255,209,102,0.03);}
+.cbar{display:flex;gap:7px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;align-items:center;}
+.cbar-limit{flex:1;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.cbar input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:8px;font-size:12px;transition:border-color 0.2s;}
+.cbar input:focus{border-color:var(--a4);background:rgba(251,191,36,0.03);}
 .cbar input::placeholder{color:var(--muted);}
-.sbtn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;transition:opacity 0.2s;}
+.sbtn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;border:none;padding:9px 15px;border-radius:8px;font-weight:700;font-size:12px;transition:opacity 0.2s;flex-shrink:0;}
 .sbtn:hover{opacity:0.85;}
+.sbtn:disabled{opacity:0.4;cursor:not-allowed;}
 
-/* FOOTER */
-#footer{flex-shrink:0;height:24px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px;font-size:9px;color:var(--muted);letter-spacing:0.5px;font-family:'DM Mono',monospace;}
+/* ══════════════════════════════════════════
+   PRICING TAB
+══════════════════════════════════════════ */
+.pricing-wrap{padding:16px;}
+.pricing-title{font-family:'Syne',sans-serif;font-size:16px;color:var(--text);margin-bottom:4px;}
+.pricing-sub{font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.6;}
 
-/* TOAST */
-.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:12px;color:var(--text);box-shadow:var(--shadow);z-index:9998;animation:toastIn 0.3s ease;pointer-events:none;white-space:nowrap;}
-.toast.ok{border-color:rgba(0,229,160,0.3);color:var(--accent);}
-.toast.err{border-color:rgba(255,107,107,0.3);color:var(--a3);}
+.plan-card{
+  border-radius:12px;border:1px solid;padding:16px;margin-bottom:12px;
+  position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;
+}
+.plan-card:hover{transform:translateY(-2px);}
+.plan-card.free{border-color:rgba(100,116,139,0.3);background:rgba(100,116,139,0.04);}
+.plan-card.basic{border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.04);}
+.plan-card.standard{border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.04);}
+.plan-card.premium{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.05);box-shadow:0 0 24px rgba(251,191,36,0.08);}
+.plan-card.current-plan::after{content:'CURRENT';position:absolute;top:12px;right:12px;font-size:9px;font-family:'DM Mono',monospace;color:var(--accent);border:1px solid rgba(0,212,170,0.3);padding:2px 7px;border-radius:20px;background:rgba(0,212,170,0.07);}
+
+.plan-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.plan-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:1px;}
+.pn-free{color:var(--plan-free);}
+.pn-basic{color:var(--plan-basic);}
+.pn-standard{color:var(--plan-std);}
+.pn-premium{color:var(--plan-prem);}
+.plan-price{text-align:right;}
+.plan-price .amt{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);}
+.plan-price .per{font-size:10px;color:var(--muted);}
+
+.plan-features{margin-bottom:14px;}
+.pf{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:var(--sub);}
+.pf-check{font-size:12px;flex-shrink:0;}
+.pf.highlight{color:var(--text);}
+.pf .pf-badge{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:var(--a4);padding:1px 6px;border-radius:4px;font-size:9px;font-family:'DM Mono',monospace;margin-left:4px;}
+
+.plan-btn{
+  width:100%;padding:10px;border-radius:9px;font-family:'Syne',sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:0.5px;transition:all 0.2s;border:none;
+}
+.pb-free-btn{background:rgba(100,116,139,0.15);color:var(--plan-free);border:1px solid rgba(100,116,139,0.3);}
+.pb-basic-btn{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.08));color:var(--plan-basic);border:1px solid rgba(59,130,246,0.3);}
+.pb-basic-btn:hover{background:linear-gradient(135deg,var(--a2),#1d4ed8);color:#fff;}
+.pb-std-btn{background:linear-gradient(135deg,rgba(167,139,250,0.15),rgba(167,139,250,0.08));color:var(--plan-std);border:1px solid rgba(167,139,250,0.3);}
+.pb-std-btn:hover{background:linear-gradient(135deg,var(--a5),#7c3aed);color:#fff;}
+.pb-prem-btn{background:linear-gradient(135deg,var(--a4),#f59e0b);color:#000;box-shadow:0 6px 16px rgba(251,191,36,0.25);}
+.pb-prem-btn:hover{box-shadow:0 10px 24px rgba(251,191,36,0.4);transform:translateY(-1px);}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+#footer{flex-shrink:0;height:22px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px;font-size:9px;color:var(--muted);letter-spacing:0.3px;font-family:'DM Mono',monospace;}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+.toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:12px;color:var(--text);box-shadow:var(--shadow);z-index:9998;animation:toastIn 0.3s ease;pointer-events:none;white-space:nowrap;}
+.toast.ok{border-color:rgba(0,212,170,0.35);color:var(--accent);}
+.toast.err{border-color:rgba(248,113,113,0.35);color:var(--a3);}
+.toast.warn{border-color:rgba(251,191,36,0.35);color:var(--a4);}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 
-/* RESPONSIVE */
-@media(max-width:768px){
-  #mainWrap{grid-template-columns:1fr;grid-template-rows:42vh 1fr;}
-  #mapPanel{border-right:none;border-bottom:1px solid var(--border);}
-  .nav-sels{display:none;}
-  #mobileBar{display:flex;}
-}
-@media(min-width:769px){#mobileBar{display:none;}}
-#mobileBar{gap:6px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
+/* Lang select */
+#langPick{background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.25);color:var(--a5);padding:5px 8px;border-radius:7px;font-size:11px;}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════
-     AUTH SCREEN  (Login + Signup in one div, toggled)
-══════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════════════ -->
 <div id="authScreen">
+  <div class="auth-bg"></div>
 
   <!-- LOGIN CARD -->
   <div class="auth-card" id="loginCard">
     <div class="auth-logo">
-      <div class="auth-logo-icon">&#127757;</div>
-      <div class="auth-logo-text">GeoMind</div>
+      <div class="auth-logo-gem">&#127757;</div>
+      <div class="auth-logo-name">GeoMind</div>
     </div>
-    <div class="auth-h2">Welcome back</div>
-    <div class="auth-sub">Sign in to continue your geo-learning journey</div>
-    <div class="aerr" id="lerr"></div>
-    <div class="aok"  id="lok"></div>
-    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@example.com"/></div>
-    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="Your password"/></div>
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Sign in to your AI geo-learning account</div>
+    <div class="amsg err" id="lerr"></div>
+    <div class="amsg ok"  id="lok"></div>
+    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@example.com" autocomplete="email"/></div>
+    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="Your password" autocomplete="current-password"/></div>
     <button class="abtn abtn-g" id="lbtn" onclick="doLogin()">Sign In</button>
     <div class="adiv"><span>or</span></div>
     <button class="alink alink-b" onclick="showCard('signup')">Create a new account &rarr;</button>
-    <div class="afooter">&copy; 2025 GeoMind &mdash; AI Educational Geo-Intelligence</div>
   </div>
 
   <!-- SIGNUP CARD -->
   <div class="auth-card" id="signupCard" style="display:none;">
     <div class="auth-logo">
-      <div class="auth-logo-icon">&#127757;</div>
-      <div class="auth-logo-text">GeoMind</div>
+      <div class="auth-logo-gem">&#127757;</div>
+      <div class="auth-logo-name">GeoMind</div>
     </div>
-    <div class="auth-h2">Create your account</div>
-    <div class="auth-sub">Start your AI geo-learning journey today</div>
-    <div class="aerr" id="serr"></div>
-    <div class="aok"  id="sok"></div>
-    <div class="afield"><label>Full Name</label><input type="text" id="sname" placeholder="Your full name"/></div>
-    <div class="afield"><label>Email Address</label><input type="email" id="semail" placeholder="you@example.com"/></div>
+    <div class="auth-title">Create account</div>
+    <div class="auth-sub">Start free &mdash; upgrade anytime for more power</div>
+    <div class="amsg err" id="serr"></div>
+    <div class="amsg ok"  id="sok"></div>
+    <div class="afield"><label>Full Name</label><input type="text" id="sname" placeholder="Your full name" autocomplete="name"/></div>
+    <div class="afield"><label>Email Address</label><input type="email" id="semail" placeholder="you@example.com" autocomplete="email"/></div>
     <div class="row2">
-      <div class="afield">
-        <label>Class Level</label>
+      <div class="afield"><label>Class Level</label>
         <select id="scls">
-          <option value="">Select</option>
-          <option value="6-8">Class 6-8</option>
-          <option value="9-10">Class 9-10</option>
-          <option value="11-12">Class 11-12</option>
           <option value="Competitive" selected>Competitive</option>
+          <option value="6-8">Class 6-8</option><option value="9-10">Class 9-10</option><option value="11-12">Class 11-12</option>
         </select>
       </div>
-      <div class="afield">
-        <label>Exam Focus</label>
+      <div class="afield"><label>Exam Focus</label>
         <select id="sexam">
-          <option value="">Select</option>
-          <option value="UPSC" selected>UPSC</option>
-          <option value="SSC">SSC</option>
-          <option value="Board">Board</option>
-          <option value="School">School</option>
-          <option value="State PCS">State PCS</option>
+          <option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option>
+          <option value="Board">Board</option><option value="School">School</option><option value="State PCS">State PCS</option>
         </select>
       </div>
     </div>
     <div class="afield">
       <label>Password</label>
-      <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)"/>
+      <input type="password" id="spwd" placeholder="Min 8 characters" autocomplete="new-password" oninput="chkPwd(this.value)"/>
       <div class="pwd-bar" id="pwdBar"></div>
     </div>
-    <div class="afield"><label>Confirm Password</label><input type="password" id="scpwd" placeholder="Repeat password"/></div>
-    <button class="abtn abtn-b" id="sbtn" onclick="doSignup()">Create Account</button>
+    <div class="afield"><label>Confirm Password</label><input type="password" id="scpwd" placeholder="Repeat password" autocomplete="new-password"/></div>
+    <button class="abtn abtn-b" id="sbtn" onclick="doSignup()">Create Free Account</button>
     <div class="adiv"><span>or</span></div>
-    <button class="alink alink-g" onclick="showCard('login')">Already have an account? Sign in</button>
-    <div class="afooter">&copy; 2025 GeoMind &mdash; AI Educational Geo-Intelligence</div>
+    <button class="alink alink-g" onclick="showCard('login')">&larr; Already have an account? Sign in</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════
      MAIN APP SCREEN
-══════════════════════════════════════════════════ -->
+══════════════════════════════════════════════ -->
 <div id="appScreen">
 
   <!-- TOP NAV -->
   <nav id="topNav">
     <div class="nav-logo">
-      <div class="nav-logo-icon">&#127757;</div>
-      <div class="nav-logo-text">GeoMind</div>
+      <div class="nav-logo-gem">&#127757;</div>
+      <div class="nav-logo-name">GeoMind</div>
     </div>
-    <div class="nav-sels">
-      <div class="nsg"><label>Class</label>
+
+    <div class="nav-controls" id="navCtrl">
+      <div class="nc-group"><label>Class</label>
         <select class="nsel" id="classLevel">
           <option value="6-8">6-8</option><option value="9-10">9-10</option>
           <option value="11-12">11-12</option><option value="Competitive" selected>Competitive</option>
         </select>
       </div>
-      <div class="nsg"><label>Exam</label>
+      <div class="nc-group"><label>Exam</label>
         <select class="nsel" id="examType">
-          <option value="School">School</option><option value="Board">Board</option>
           <option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option>
-          <option value="State PCS">State PCS</option><option value="Other">Other</option>
+          <option value="Board">Board</option><option value="School">School</option><option value="State PCS">State PCS</option>
         </select>
       </div>
-      <div class="nsg"><label>Mode</label>
+      <div class="nc-group"><label>Mode</label>
         <select class="nsel" id="learningMode">
           <option value="Full Analysis" selected>Full Analysis</option>
           <option value="Quiz Mode">Quiz Mode</option>
@@ -377,40 +529,39 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
           <option value="Normal">Normal</option>
         </select>
       </div>
-      <div class="nsg"><label>Language</label>
+      <div class="nc-group"><label>Language</label>
         <select id="langPick" onchange="applyLang(this.value)">
           <option value="en">&#127468;&#127463; English</option>
           <option value="hi">&#127470;&#127475; Hindi</option>
-          <option value="bn">&#127463;&#127465; Bengali</option>
-          <option value="te">Telugu</option><option value="mr">Marathi</option>
-          <option value="ta">Tamil</option><option value="gu">Gujarati</option>
-          <option value="kn">Kannada</option><option value="ml">Malayalam</option>
-          <option value="pa">Punjabi</option><option value="ur">&#127472;&#127477; Urdu</option>
+          <option value="bn">Bengali</option><option value="te">Telugu</option>
+          <option value="mr">Marathi</option><option value="ta">Tamil</option>
+          <option value="gu">Gujarati</option><option value="ur">Urdu</option>
           <option value="fr">&#127467;&#127479; French</option>
           <option value="es">&#127466;&#127480; Spanish</option>
           <option value="de">&#127465;&#127466; German</option>
           <option value="zh">&#127464;&#127475; Chinese</option>
           <option value="ar">&#127462;&#127466; Arabic</option>
           <option value="ru">&#127479;&#127482; Russian</option>
-          <option value="pt">Portuguese</option><option value="ja">&#127471;&#127477; Japanese</option>
+          <option value="ja">&#127471;&#127477; Japanese</option>
           <option value="ko">&#127472;&#127479; Korean</option>
-          <option value="it">Italian</option><option value="tr">Turkish</option>
-          <option value="sw">Swahili</option>
         </select>
       </div>
     </div>
+
     <div class="nav-right">
-      <span class="sbadge" id="sbadge">READY</span>
+      <span class="usage-mini" id="usageMini"></span>
+      <span class="plan-badge pb-free" id="planBadge">FREE</span>
       <div class="user-chip">
-        <div class="uav" id="uav">?</div>
-        <span class="uname" id="uname">Loading&hellip;</span>
+        <div class="user-av" id="userAv">?</div>
+        <span class="user-nm" id="userNm">Loading</span>
       </div>
-      <button class="nvbtn" onclick="clearAll()">&#10005; Clear</button>
-      <button class="nvbtn" onclick="doLogout()">Logout &#8594;</button>
+      <button class="nvbtn nvbtn-plan" onclick="goTab('p',document.getElementById('t-p'))">&#9733; Plans</button>
+      <button class="nvbtn" onclick="clearAll()">&#10005;</button>
+      <button class="nvbtn" onclick="doLogout()">Logout</button>
     </div>
   </nav>
 
-  <!-- MOBILE CONTROLS -->
+  <!-- MOBILE BAR -->
   <div id="mobileBar">
     <select class="nsel" id="clsM" style="flex:1"><option value="Competitive" selected>Competitive</option><option value="6-8">6-8</option><option value="9-10">9-10</option><option value="11-12">11-12</option></select>
     <select class="nsel" id="exM"  style="flex:1"><option value="UPSC" selected>UPSC</option><option value="SSC">SSC</option><option value="Board">Board</option></select>
@@ -420,9 +571,9 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
   <!-- 2-PANEL -->
   <div id="mainWrap">
 
-    <!-- MAP -->
+    <!-- LEFT: MAP -->
     <div id="mapPanel">
-      <div class="map-hint"><strong>&#128205; Click the map</strong>Select any location for an AI report.</div>
+      <div class="map-hint"><strong>&#128205; Step 1 — Click map</strong>Select a location, then hit Send.</div>
       <div class="coord-pill" id="cpill"></div>
       <div class="ptip" id="ptip">
         <div class="ptip-name" id="ptName"></div>
@@ -431,33 +582,52 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
       </div>
       <div class="famous-bar" id="famBar"></div>
       <div id="map"></div>
+
+      <!-- MAP CONTROLS BAR (below map) -->
+      <div id="mapControlsBar">
+        <div class="mc-group" style="max-width:180px;">
+          <label>Country (optional)</label>
+          <input type="text" id="countryInput" placeholder="Auto-detected"/>
+        </div>
+        <div class="mc-group" style="min-width:140px;flex:2;">
+          <label>Your Question (optional)</label>
+          <input type="text" id="userQuestion" placeholder="e.g. Why is Narmada important?"/>
+        </div>
+        <button id="sendBtn" onclick="handleSend()">
+          &#9658; Send Report
+        </button>
+      </div>
     </div>
 
-    <!-- RIGHT PANEL -->
+    <!-- RIGHT: TABS -->
     <div id="rightPanel">
       <div class="tabs">
         <button class="tab on"  id="t-a" onclick="goTab('a',this)">&#128300; Analysis</button>
         <button class="tab ht"  id="t-h" onclick="goTab('h',this)">&#128200; History</button>
         <button class="tab ct"  id="t-c" onclick="goTab('c',this)">&#128172; Chat</button>
+        <button class="tab pt"  id="t-p" onclick="goTab('p',this)">&#9733; Plans</button>
       </div>
 
-      <!-- ANALYSIS TAB -->
+      <!-- ANALYSIS -->
       <div class="tpanel on" id="tp-a">
         <div class="scroll" id="ascroll">
           <div class="idle" id="idleBox">
-            <div class="bi">&#128506;</div>
-            <h3 id="i-title">Click a location on the map</h3>
-            <p  id="i-desc">GeoMind generates a structured exam-ready report covering geography, history, agriculture, economy, local languages, famous places, quiz and more.</p>
+            <div class="idle-icon">&#128506;</div>
+            <h3 id="i-title">Click a location, then Send</h3>
+            <p  id="i-desc">GeoMind generates AI-powered exam-ready reports covering geography, history, agriculture, economy, local culture, quiz &amp; more.</p>
             <div class="tag-row">
               <span class="tag tg">Geography</span><span class="tag tb">History</span>
-              <span class="tag ty">Agriculture</span><span class="tag tr">Quiz</span>
-              <span class="tag tp">Language</span>
+              <span class="tag ty">Agriculture</span><span class="tag tr">Quiz</span><span class="tag tp">Language</span>
+            </div>
+            <div class="usage-widget" id="usageWidget">
+              <div class="uw-title">Today's Usage</div>
+              <div id="uwContent">Loading&hellip;</div>
             </div>
           </div>
           <div class="loadbox" id="loadbox">
-            <div class="spin"></div>
+            <div class="spin-lg"></div>
             <div style="text-align:center">
-              <div style="font-size:12px;color:var(--muted)" id="ltxt">Generating&hellip;</div>
+              <div style="font-size:12px;color:var(--muted)" id="ltxt">Generating report&hellip;</div>
               <div class="lstep" id="lstep">Starting&hellip;</div>
               <div class="pbar"><div class="pfill" id="pfill"></div></div>
             </div>
@@ -466,33 +636,44 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
         </div>
       </div>
 
-      <!-- HISTORY TAB -->
+      <!-- HISTORY -->
       <div class="tpanel" id="tp-h">
         <div class="scroll"><div id="hcontent">
-          <div class="hempty" id="hempty">
-            <div style="font-size:46px;opacity:0.25">&#128200;</div>
-            <p>No searches yet. Click locations on the map to build your history.</p>
+          <div class="hempty">
+            <div style="font-size:46px;opacity:0.2">&#128200;</div>
+            <p>No searches yet. Click the map and Send to start.</p>
           </div>
         </div></div>
       </div>
 
-      <!-- CHAT TAB -->
+      <!-- CHAT -->
       <div class="tpanel" id="tp-c">
         <div class="cmsgs" id="cmsgs">
-          <div class="cnoloc" id="cnoloc">&#128172; Click a map location first, then ask questions here.</div>
+          <div class="cnoloc" id="cnoloc">&#128172; Click a map location first, then ask follow-up questions here.</div>
         </div>
         <div class="cbar">
           <input type="text" id="cinput" placeholder="Ask about this location&hellip;"/>
-          <button class="sbtn" onclick="sendChat()">Send &#8594;</button>
+          <button class="sbtn" id="chatSendBtn" onclick="sendChat()">Send</button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div id="footer">Powered by Z.ai GLM-4.5-Flash &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia &middot; Firebase Auth + Realtime DB</div>
-</div>
+      <!-- PLANS -->
+      <div class="tpanel" id="tp-p">
+        <div class="scroll">
+          <div class="pricing-wrap" id="pricingContent">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
 
-<!-- Firebase SDKs -->
+    </div><!-- /rightPanel -->
+  </div><!-- /mainWrap -->
+
+  <div id="footer">GeoMind v3.0 &mdash; Z.ai GLM-4.5-Flash &middot; OpenStreetMap &middot; Nominatim &middot; REST Countries &middot; Wikipedia &middot; Firebase Auth + DB</div>
+</div><!-- /appScreen -->
+
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -500,9 +681,9 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <script>
-/* ════════════════════════════════════════════════
-   FIREBASE INIT
-════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════
+   ██████  FIREBASE CONFIG
+════════════════════════════════════════════════════════ */
 const firebaseConfig = {
   apiKey: "AIzaSyD10aCUKg1YRao4bzCmOkiVpKV2HWqshz4",
   authDomain: "geogide-7d25e.firebaseapp.com",
@@ -516,296 +697,559 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.database();
 
-/* Z.ai key */
-const ZAI_KEY = '56be53a8ce444b17b99cdcc838340080.ImloxA0ptTJ5n4Tg';
+/* ════════════════════════════════════════════════════════
+   ██████  Z.AI KEY ROTATION
+   ─ 31 keys → one per calendar day (day 1 = index 0)
+   ─ Failed keys are skipped for the rest of the day
+   ─ PREMIUM plan gets TWO keys per day for extra reliability
+════════════════════════════════════════════════════════ */
+const ZAI_KEYS = [
+  "edbe9a2883aa40b3b23447543f59f1b6.dhzpN0EMKU3WIsEh",   // Day 1
+  "API_KEY_2",   // Day 2
+  "API_KEY_3",   // Day 3
+  "API_KEY_4",   // Day 4
+  "API_KEY_5",   // Day 5
+  "API_KEY_6",   // Day 6
+  "API_KEY_7",   // Day 7
+  "API_KEY_8",   // Day 8
+  "API_KEY_9",   // Day 9
+  "API_KEY_10",  // Day 10
+  "API_KEY_11",  // Day 11
+  "API_KEY_12",  // Day 12
+  "API_KEY_13",  // Day 13
+  "API_KEY_14",  // Day 14
+  "API_KEY_15",  // Day 15
+  "API_KEY_16",  // Day 16
+  "API_KEY_17",  // Day 17
+  "API_KEY_18",  // Day 18
+  "API_KEY_19",  // Day 19
+  "API_KEY_20",  // Day 20
+  "API_KEY_21",  // Day 21
+  "API_KEY_22",  // Day 22
+  "API_KEY_23",  // Day 23
+  "API_KEY_24",  // Day 24
+  "API_KEY_25",  // Day 25
+  "API_KEY_26",  // Day 26
+  "API_KEY_27",  // Day 27
+  "API_KEY_28",  // Day 28
+  "API_KEY_29",  // Day 29
+  "API_KEY_30",  // Day 30
+  "API_KEY_31"   // Day 31
+];
 
-/* ════════════════════════════════════════════════
-   MULTILINGUAL UI STRINGS  (24 languages)
-════════════════════════════════════════════════ */
-const L10N = {
-  en:{idle:'Click a location on the map',desc:'GeoMind generates structured exam-ready educational reports.',send:'Send',loading:'Generating report\u2026'},
-  hi:{idle:'\u092e\u093e\u0928\u091a\u093f\u0924\u094d\u0930 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902',desc:'GeoMind \u0936\u0948\u0915\u094d\u0937\u093f\u0915 \u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928\u093e\u0924\u093e \u0939\u0948\u0964',send:'\u092d\u0947\u091c\u0947\u0902',loading:'\u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928 \u0930\u0939\u0940 \u0939\u0948\u2026'},
-  bn:{idle:'\u09ae\u09be\u09a8\u099a\u09bf\u09a4\u09cd\u09b0\u09c7 \u0995\u09cd\u09b2\u09bf\u0995 \u0995\u09b0\u09c1\u09a8',desc:'GeoMind \u09b6\u09bf\u0995\u09cd\u09b7\u09be\u09ae\u09c2\u09b2\u0995 \u09b0\u09bf\u09aa\u09cb\u09b0\u09cd\u099f \u09a4\u09c8\u09b0\u09bf \u0995\u09b0\u09c7\u0964',send:'\u09aa\u09be\u09a0\u09be\u09a8',loading:'\u09a4\u09c8\u09b0\u09bf \u09b9\u099a\u09cd\u099b\u09c7\u2026'},
-  fr:{idle:'Cliquez sur la carte',desc:'GeoMind g\u00e9n\u00e8re des rapports \u00e9ducatifs.',send:'Envoyer',loading:'G\u00e9n\u00e9ration\u2026'},
-  es:{idle:'Haz clic en el mapa',desc:'GeoMind genera informes educativos.',send:'Enviar',loading:'Generando\u2026'},
-  de:{idle:'Auf die Karte klicken',desc:'GeoMind erstellt Bildungsberichte.',send:'Senden',loading:'Wird generiert\u2026'},
-  ar:{idle:'\u0627\u0646\u0642\u0631 \u0639\u0644\u0649 \u0627\u0644\u062e\u0631\u064a\u0637\u0629',desc:'GeoMind \u064a\u0648\u0644\u062f \u062a\u0642\u0627\u0631\u064a\u0631.',send:'\u0625\u0631\u0633\u0627\u0644',loading:'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u0648\u0644\u064a\u062f\u2026'},
-  zh:{idle:'\u70b9\u51fb\u5730\u56fe',desc:'GeoMind \u751f\u6210\u6559\u80b2\u62a5\u544a\u3002',send:'\u53d1\u9001',loading:'\u751f\u6210\u4e2d\u2026'},
-  ru:{idle:'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u043a\u0430\u0440\u0442\u0443',desc:'GeoMind \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u0435\u0442 \u043e\u0442\u0447\u0451\u0442\u044b.',send:'\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c',loading:'\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f\u2026'},
-  ja:{idle:'\u5730\u56f3\u3092\u30af\u30ea\u30c3\u30af',desc:'GeoMind\u306f\u6559\u80b2\u30ec\u30dd\u30fc\u30c8\u3092\u4f5c\u6210\u3057\u307e\u3059\u3002',send:'\u9001\u4fe1',loading:'\u751f\u6210\u4e2d\u2026'},
+/* ── Key rotation state ───────────────────────── */
+const _startDay   = new Date().getDate(); // 1–31
+let   _keyIndex   = (_startDay - 1) % ZAI_KEYS.length;
+let   _failedKeys = new Set(); // indices that failed today
+let   _todayDate  = _startDay;
+
+/** Return the currently active key, resetting at midnight */
+function getActiveKey() {
+  const nowDay = new Date().getDate();
+  if (nowDay !== _todayDate) {
+    _todayDate  = nowDay;
+    _keyIndex   = (nowDay - 1) % ZAI_KEYS.length;
+    _failedKeys = new Set();
+    console.log('[GeoMind] New day — key rotated. Day:', nowDay, 'Index:', _keyIndex);
+  }
+  return ZAI_KEYS[_keyIndex];
+}
+
+/** Mark current key failed and find next available */
+function rotateKey() {
+  _failedKeys.add(_keyIndex);
+  console.warn('[GeoMind] Key index', _keyIndex, 'failed — rotating.');
+  for (let i = 1; i < ZAI_KEYS.length; i++) {
+    const c = (_keyIndex + i) % ZAI_KEYS.length;
+    if (!_failedKeys.has(c)) {
+      _keyIndex = c;
+      console.log('[GeoMind] New active key index:', _keyIndex);
+      return ZAI_KEYS[_keyIndex];
+    }
+  }
+  return null; // all exhausted
+}
+
+/** Get PREMIUM dual keys: today + tomorrow index */
+function getPremiumKeys() {
+  const today = new Date().getDate();
+  const k1 = ZAI_KEYS[(today - 1) % ZAI_KEYS.length];
+  const k2 = ZAI_KEYS[today % ZAI_KEYS.length];       // next index
+  return [k1, k2];
+}
+
+console.log('[GeoMind] Z.ai Key Rotation — Day:', _startDay, '| Starting index:', _keyIndex);
+
+/* ════════════════════════════════════════════════════════
+   ██████  PLAN DEFINITIONS
+════════════════════════════════════════════════════════ */
+const PLANS = {
+  free:     { name:'Free',     price:'₹0',      genLimit:1,  chatLimit:5,  emoji:'&#9711;',  color:'plan-free',  btnClass:'pb-free-btn'     },
+  basic:    { name:'Basic',    price:'₹199/mo',  genLimit:2,  chatLimit:8,  emoji:'&#9733;',  color:'plan-basic', btnClass:'pb-basic-btn'    },
+  standard: { name:'Standard', price:'₹249/mo',  genLimit:3,  chatLimit:20, emoji:'&#10022;', color:'plan-std',   btnClass:'pb-std-btn'      },
+  premium:  { name:'Premium',  price:'₹399/mo',  genLimit:4,  chatLimit:30, emoji:'&#9813;',  color:'plan-prem',  btnClass:'pb-prem-btn',
+               dual_keys:true // Premium gets 2 API keys
+             }
 };
+
+const PLAN_FEATURES = {
+  free:     ['1 AI report per day','5 chat messages per day','All learning modes','Map history'],
+  basic:    ['2 AI reports per day','8 chat messages per day','All learning modes','History & chat saved','Priority responses'],
+  standard: ['3 AI reports per day','20 chat messages per day','All learning modes','Full history','Faster responses'],
+  premium:  ['4 AI reports per day','30 chat messages per day','Dual API keys — extra reliable','All learning modes','Priority support','Download reports']
+};
+
+/* ════════════════════════════════════════════════════════
+   ██████  USER STATE
+════════════════════════════════════════════════════════ */
+let currentUser = null;
+let userProfile = { plan:'free', dailyGenerationsUsed:0, dailyMessagesUsed:0, lastResetDate:'' };
 let curLang = 'en';
-function applyLang(code){
-  curLang=code;
-  const L=L10N[code]||L10N.en;
-  document.getElementById('i-title').textContent=L.idle;
-  document.getElementById('i-desc').textContent=L.desc;
-  document.getElementById('ltxt').textContent=L.loading;
-  document.getElementById('cinput').placeholder=L.idle+'...';
-  document.querySelector('.sbtn').textContent=L.send+' \u2192';
-}
 
-/* ════════════════════════════════════════════════
-   AUTH CARD TOGGLE
-════════════════════════════════════════════════ */
-function showCard(which){
-  document.getElementById('loginCard').style.display  = which==='login'  ? 'block':'none';
-  document.getElementById('signupCard').style.display = which==='signup' ? 'block':'none';
-}
-
-/* ════════════════════════════════════════════════
-   AUTH STATE
-════════════════════════════════════════════════ */
-let currentUser=null;
-
-auth.onAuthStateChanged(async user=>{
-  if(!user){
-    document.getElementById('authScreen').style.display='flex';
-    document.getElementById('appScreen').style.display='none';
+/* ════════════════════════════════════════════════════════
+   ██████  FIREBASE AUTH
+════════════════════════════════════════════════════════ */
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display  = 'none';
     return;
   }
-  currentUser=user;
-  document.getElementById('authScreen').style.display='none';
-  document.getElementById('appScreen').style.display='flex';
+  currentUser = user;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display  = 'flex';
 
-  /* Load profile from DB */
-  let name=user.displayName||user.email.split('@')[0];
-  try{
-    const snap=await db.ref('users/'+user.uid).once('value');
-    if(snap.exists()){
-      name=snap.val().name||name;
-      if(snap.val().classLevel) document.getElementById('classLevel').value=snap.val().classLevel;
-      if(snap.val().examType)   document.getElementById('examType').value=snap.val().examType;
-    }
-  }catch(e){}
-
-  document.getElementById('uname').textContent=name;
-  document.getElementById('uav').textContent=name.charAt(0).toUpperCase();
+  await loadUserProfile();
   initMap();
 });
 
-/* ════════════════════════════════════════════════
-   LOGIN
-════════════════════════════════════════════════ */
-async function doLogin(){
-  const email=document.getElementById('lemail').value.trim();
-  const pwd  =document.getElementById('lpwd').value;
-  const btn  =document.getElementById('lbtn');
-  const err  =document.getElementById('lerr');
-  const ok   =document.getElementById('lok');
-  err.style.display='none'; ok.style.display='none';
-  if(!email||!pwd) return showA(err,'Please fill in all fields.');
-  btn.disabled=true;
-  btn.innerHTML='<span class="smsm"></span>Signing in&hellip;';
-  try{
-    await auth.signInWithEmailAndPassword(email,pwd);
-    ok.textContent='Login successful! Loading GeoMind\u2026'; ok.style.display='block';
-  }catch(e){
-    btn.disabled=false; btn.textContent='Sign In';
-    showA(err,authErr(e.code));
+async function loadUserProfile() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.ref('users/' + currentUser.uid).once('value');
+    if (snap.exists()) {
+      userProfile = { ...userProfile, ...snap.val() };
+    } else {
+      // First login — create profile
+      userProfile = {
+        name: currentUser.displayName || currentUser.email.split('@')[0],
+        email: currentUser.email,
+        plan: 'free',
+        dailyGenerationsUsed: 0,
+        dailyMessagesUsed: 0,
+        lastResetDate: todayStr()
+      };
+      await db.ref('users/' + currentUser.uid).set(userProfile);
+    }
+    checkDailyReset();
+    updateNavUI();
+    updateUsageWidget();
+  } catch (e) { console.error('loadUserProfile:', e); }
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+/** Reset daily counters if it's a new day */
+async function checkDailyReset() {
+  if (!userProfile.lastResetDate || userProfile.lastResetDate !== todayStr()) {
+    userProfile.dailyGenerationsUsed = 0;
+    userProfile.dailyMessagesUsed    = 0;
+    userProfile.lastResetDate        = todayStr();
+    await saveUserProfile();
+    console.log('[GeoMind] Daily counters reset for', todayStr());
   }
 }
 
-/* ════════════════════════════════════════════════
-   SIGNUP
-════════════════════════════════════════════════ */
-function chkPwd(v){
-  const b=document.getElementById('pwdBar');
-  b.className='pwd-bar'+(v.length<4?'':v.length<8?' w':v.length<12&&!/[!@#$%^&*]/.test(v)?' m':' s');
+async function saveUserProfile() {
+  if (!currentUser) return;
+  try {
+    await db.ref('users/' + currentUser.uid).update({
+      dailyGenerationsUsed: userProfile.dailyGenerationsUsed,
+      dailyMessagesUsed:    userProfile.dailyMessagesUsed,
+      lastResetDate:        userProfile.lastResetDate,
+      plan:                 userProfile.plan
+    });
+  } catch (e) { console.warn('saveUserProfile error:', e); }
 }
 
-async function doSignup(){
-  const name  =document.getElementById('sname').value.trim();
-  const email =document.getElementById('semail').value.trim();
-  const pwd   =document.getElementById('spwd').value;
-  const cpwd  =document.getElementById('scpwd').value;
-  const cls   =document.getElementById('scls').value;
-  const exam  =document.getElementById('sexam').value;
-  const btn   =document.getElementById('sbtn');
-  const err   =document.getElementById('serr');
-  const ok    =document.getElementById('sok');
+/** Check if user can generate (returns true/false) */
+function canGenerate() {
+  const limit = PLANS[userProfile.plan]?.genLimit ?? 1;
+  return userProfile.dailyGenerationsUsed < limit;
+}
+
+/** Check if user can chat (returns true/false) */
+function canChat() {
+  const limit = PLANS[userProfile.plan]?.chatLimit ?? 5;
+  return userProfile.dailyMessagesUsed < limit;
+}
+
+/** Increment generation counter */
+async function incrementGeneration() {
+  userProfile.dailyGenerationsUsed++;
+  await saveUserProfile();
+  updateNavUI();
+  updateUsageWidget();
+}
+
+/** Increment chat counter */
+async function incrementChat() {
+  userProfile.dailyMessagesUsed++;
+  await saveUserProfile();
+  updateNavUI();
+  updateUsageWidget();
+}
+
+/* ════════════════════════════════════════════════════════
+   ██████  AUTH FUNCTIONS
+════════════════════════════════════════════════════════ */
+function showCard(which) {
+  document.getElementById('loginCard').style.display  = which === 'login'  ? 'block' : 'none';
+  document.getElementById('signupCard').style.display = which === 'signup' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('lemail').value.trim();
+  const pwd   = document.getElementById('lpwd').value;
+  const btn   = document.getElementById('lbtn');
+  const err   = document.getElementById('lerr');
+  const ok    = document.getElementById('lok');
   err.style.display='none'; ok.style.display='none';
-  if(!name||!email||!pwd||!cpwd) return showA(err,'Please fill in all fields.');
-  if(pwd!==cpwd) return showA(err,'Passwords do not match.');
-  if(pwd.length<8) return showA(err,'Password must be at least 8 characters.');
+  if (!email||!pwd) return showAmsg(err,'Please fill in all fields.');
   btn.disabled=true;
-  btn.innerHTML='<span class="smsm smsm-w"></span>Creating account&hellip;';
-  try{
-    const cred=await auth.createUserWithEmailAndPassword(email,pwd);
-    await cred.user.updateProfile({displayName:name});
-    await db.ref('users/'+cred.user.uid).set({
-      name,email,
-      classLevel:cls||'Competitive',
-      examType:exam||'UPSC',
-      signupDate:new Date().toISOString(),
-      language:navigator.language||'en'
+  btn.innerHTML='<span class="spin-xs"></span>Signing in&hellip;';
+  try {
+    await auth.signInWithEmailAndPassword(email, pwd);
+    ok.textContent='Login successful!'; ok.style.display='block';
+  } catch(e) {
+    btn.disabled=false; btn.textContent='Sign In';
+    showAmsg(err, authErr(e.code));
+  }
+}
+
+function chkPwd(v) {
+  const b = document.getElementById('pwdBar');
+  b.className = 'pwd-bar' + (v.length<4?'':v.length<8?' w':v.length<12&&!/[!@#$%^&*]/.test(v)?' m':' s');
+}
+
+async function doSignup() {
+  const name  = document.getElementById('sname').value.trim();
+  const email = document.getElementById('semail').value.trim();
+  const pwd   = document.getElementById('spwd').value;
+  const cpwd  = document.getElementById('scpwd').value;
+  const cls   = document.getElementById('scls').value;
+  const exam  = document.getElementById('sexam').value;
+  const btn   = document.getElementById('sbtn');
+  const err   = document.getElementById('serr');
+  const ok    = document.getElementById('sok');
+  err.style.display='none'; ok.style.display='none';
+  if (!name||!email||!pwd||!cpwd) return showAmsg(err,'Please fill all fields.');
+  if (pwd!==cpwd) return showAmsg(err,'Passwords do not match.');
+  if (pwd.length<8) return showAmsg(err,'Password must be at least 8 characters.');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin-xs w"></span>Creating account&hellip;';
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+    await cred.user.updateProfile({displayName: name});
+    await db.ref('users/' + cred.user.uid).set({
+      name, email,
+      classLevel: cls || 'Competitive',
+      examType: exam || 'UPSC',
+      plan: 'free',
+      dailyGenerationsUsed: 0,
+      dailyMessagesUsed: 0,
+      lastResetDate: todayStr(),
+      signupDate: new Date().toISOString()
     });
     ok.textContent='Account created! Loading GeoMind\u2026'; ok.style.display='block';
-  }catch(e){
-    btn.disabled=false; btn.textContent='Create Account';
-    showA(err,authErr(e.code));
+  } catch(e) {
+    btn.disabled=false; btn.textContent='Create Free Account';
+    showAmsg(err, authErr(e.code));
   }
 }
 
-function showA(el,msg){el.textContent=msg;el.style.display='block';}
-function authErr(code){
+function showAmsg(el,msg){el.textContent=msg;el.style.display='block';}
+
+function authErr(code) {
   return {
     'auth/user-not-found':'No account found with this email.',
-    'auth/wrong-password':'Incorrect password. Try again.',
+    'auth/wrong-password':'Incorrect password.',
     'auth/invalid-email':'Invalid email format.',
-    'auth/email-already-in-use':'Email already registered. Try logging in.',
-    'auth/weak-password':'Password too weak. Use at least 8 characters.',
+    'auth/email-already-in-use':'Email already registered. Try signing in.',
+    'auth/weak-password':'Password too weak (min 8 chars).',
     'auth/too-many-requests':'Too many attempts. Please wait.',
-    'auth/network-request-failed':'Network error. Check your connection.',
     'auth/invalid-credential':'Invalid email or password.',
-  }[code]||'Authentication failed. Please try again.';
+    'auth/network-request-failed':'Network error. Check your connection.',
+  }[code] || 'Authentication failed. Please try again.';
 }
 
-async function doLogout(){
-  try{await auth.signOut();}catch(e){toast('Logout error: '+e.message,'err');}
+async function doLogout() {
+  try { await auth.signOut(); } catch(e) { toast('Logout error: '+e.message,'err'); }
 }
 
-/* Enter key on auth forms */
-document.getElementById('lpwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+// Enter keys
+document.getElementById('lpwd').addEventListener('keydown', e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('scpwd').addEventListener('keydown',e=>{if(e.key==='Enter')doSignup();});
 
-/* ════════════════════════════════════════════════
-   MAP
-════════════════════════════════════════════════ */
-let map,mapMarker,curData={};
+/* ════════════════════════════════════════════════════════
+   ██████  MAP SETUP
+════════════════════════════════════════════════════════ */
+let map, mapMarker;
+let pendingLat = null, pendingLon = null; // stored on click, sent on SEND
 
-function initMap(){
-  if(map) return;
-  map=L.map('map',{zoomControl:true}).setView([20.59,78.96],4);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:19
+function initMap() {
+  if (map) return;
+  map = L.map('map', {zoomControl:true}).setView([20.59, 78.96], 4);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
   }).addTo(map);
-  map.on('click',async e=>{
-    placePin(e.latlng.lat,e.latlng.lng,'#00e5a0');
-    showPill(e.latlng.lat,e.latlng.lng);
-    await generateReport(e.latlng.lat,e.latlng.lng);
+
+  /* FEATURE 1 — Click stores coordinates, does NOT send immediately */
+  map.on('click', e => {
+    pendingLat = e.latlng.lat;
+    pendingLon = e.latlng.lng;
+    placePin(pendingLat, pendingLon, '#00d4aa');
+    showPill(pendingLat, pendingLon);
+    // Visual feedback that location is selected
+    document.getElementById('sendBtn').style.boxShadow = '0 6px 24px rgba(0,212,170,0.5)';
+    toast('Location selected — click Send Report to generate', 'ok');
   });
 }
-function placePin(lat,lng,color){
-  if(mapMarker)map.removeLayer(mapMarker);
-  mapMarker=L.circleMarker([lat,lng],{radius:9,fillColor:color,color:'#fff',weight:2,fillOpacity:0.92}).addTo(map);
-}
-function showPill(lat,lng){
-  const p=document.getElementById('cpill');
-  p.style.display='block';
-  p.textContent=lat.toFixed(4)+'\u00b0   '+lng.toFixed(4)+'\u00b0';
+
+function placePin(lat, lng, color) {
+  if (mapMarker) map.removeLayer(mapMarker);
+  mapMarker = L.circleMarker([lat,lng], {radius:9,fillColor:color,color:'#fff',weight:2,fillOpacity:0.95}).addTo(map);
 }
 
-/* ════════════════════════════════════════════════
-   REPORT PIPELINE
-════════════════════════════════════════════════ */
-async function generateReport(lat,lon){
+function showPill(lat, lng) {
+  const p = document.getElementById('cpill');
+  p.style.display = 'block';
+  p.textContent   = lat.toFixed(4) + '\u00b0   ' + lng.toFixed(4) + '\u00b0';
+}
+
+/* ════════════════════════════════════════════════════════
+   ██████  FEATURE 1 — SEND BUTTON HANDLER
+════════════════════════════════════════════════════════ */
+async function handleSend() {
+  // Validate: coordinates must be selected
+  if (pendingLat === null || pendingLon === null) {
+    toast('Please select a location on the map first.', 'err');
+    return;
+  }
+
+  // Check generation limit
+  if (!canGenerate()) {
+    showLimitReached('generation');
+    goTab('a', document.getElementById('t-a'));
+    return;
+  }
+
+  await generateReport(pendingLat, pendingLon);
+}
+
+/* ════════════════════════════════════════════════════════
+   ██████  REPORT PIPELINE
+════════════════════════════════════════════════════════ */
+let curData = {};
+
+async function generateReport(lat, lon) {
   showLoading();
-  try{
-    step('Reverse geocoding\u2026',12);
-    const geo=await fetchGeo(lat,lon);
+  try {
+    step('Reverse geocoding\u2026', 12);
+    const geo = await fetchGeo(lat, lon);
 
-    step('Country data\u2026',28);
-    const country=await fetchCountry(geo.address?.country||'');
+    step('Country data\u2026', 28);
+    const country = await fetchCountry(geo.address?.country || '');
 
-    step('Wikipedia\u2026',44);
-    const wiki=await fetchWiki(geo.address?.city||geo.address?.state||geo.address?.country||'');
+    step('Wikipedia\u2026', 44);
+    const wiki = await fetchWiki(geo.address?.city || geo.address?.state || geo.address?.country || '');
 
-    step('AI generating report\u2026',64);
-    const ai=await callZai(lat,lon,geo,country,wiki);
+    step('AI generating report\u2026', 64);
+    const ai = await callZai(lat, lon, geo, country, wiki);
 
-    step('Saving to Firebase\u2026',84);
-    await saveQuery(lat,lon,geo,ai);
+    step('Saving\u2026', 86);
+    await incrementGeneration();
+    await saveQuery(lat, lon, geo, ai);
 
-    step('Done!',100);
-    curData={geo,country,wiki,lat,lon,ai};
-    updateTooltip(geo,ai);
-    renderReport(lat,lon,geo,country,wiki,ai);
-  }catch(err){
+    step('Done!', 100);
+    curData = {geo, country, wiki, lat, lon, ai};
+    updateMapTooltip(geo, ai);
+    renderReport(lat, lon, geo, country, wiki, ai);
+  } catch(err) {
     showErr(err.message);
   }
 }
 
-function updateTooltip(geo,ai){
-  const tip=document.getElementById('ptip');
-  document.getElementById('ptName').textContent=ai.locationId?.nearestCity||geo.address?.city||'';
-  document.getElementById('ptLang').innerHTML=ai.localInfo?.localLanguages?'&#128483; '+ai.localInfo.localLanguages:'';
-  document.getElementById('ptLoc').textContent=[geo.address?.state,geo.address?.country].filter(Boolean).join(', ');
-  tip.style.display='block';
-  if(ai.localInfo?.famousFor?.length){
-    const fb=document.getElementById('famBar');
-    fb.style.display='block';
-    fb.innerHTML='&#11088; '+ai.localInfo.famousFor.map(f=>`<span class="fi">${f}</span>`).join('');
+function updateMapTooltip(geo, ai) {
+  const tip = document.getElementById('ptip');
+  document.getElementById('ptName').textContent = ai.locationId?.nearestCity || geo.address?.city || '';
+  document.getElementById('ptLang').innerHTML   = ai.localInfo?.localLanguages ? '&#128483; '+ai.localInfo.localLanguages : '';
+  document.getElementById('ptLoc').textContent  = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ');
+  tip.style.display = 'block';
+
+  if (ai.localInfo?.famousFor?.length) {
+    const fb = document.getElementById('famBar');
+    fb.style.display = 'block';
+    fb.innerHTML = '&#11088; ' + ai.localInfo.famousFor.map(f=>`<span class="fi-chip">${f}</span>`).join('');
   }
 }
 
-/* ════════════════════════════════════════════════
-   FETCH HELPERS
-════════════════════════════════════════════════ */
-async function fetchGeo(lat,lon){
-  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,{headers:{'Accept-Language':'en'}});
-  if(!r.ok) throw new Error('Geocode failed ('+r.status+')');
+/* ════════════════════════════════════════════════════════
+   ██████  DATA FETCHERS
+════════════════════════════════════════════════════════ */
+async function fetchGeo(lat, lon) {
+  const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`, {headers:{'Accept-Language':'en'}});
+  if (!r.ok) throw new Error('Reverse geocoding failed (' + r.status + ')');
   return r.json();
 }
-async function fetchCountry(name){
-  if(!name) return null;
-  try{const r=await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);const d=await r.json();return Array.isArray(d)?d[0]:null;}
-  catch{return null;}
+async function fetchCountry(name) {
+  if (!name) return null;
+  try {
+    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);
+    const d = await r.json();
+    return Array.isArray(d) ? d[0] : null;
+  } catch { return null; }
 }
-async function fetchWiki(place){
-  if(!place) return null;
-  try{const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);return r.ok?r.json():null;}
-  catch{return null;}
+async function fetchWiki(place) {
+  if (!place) return null;
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
 }
 
-/* ════════════════════════════════════════════════
-   JWT + Z.AI
-════════════════════════════════════════════════ */
-function makeJWT(){
-  const pts=ZAI_KEY.split('.');
-  const id=pts[0],sec=pts.slice(1).join('.');
-  const now=Date.now();
+/* ════════════════════════════════════════════════════════
+   ██████  JWT HELPER
+════════════════════════════════════════════════════════ */
+function makeJWT(key) {
+  const pts = key.split('.');
+  const id  = pts[0], sec = pts.slice(1).join('.');
+  const now = Date.now();
   return KJUR.jws.JWS.sign('HS256',
-    JSON.stringify({alg:'HS256',sign_type:'SIGN'}),
-    JSON.stringify({api_key:id,exp:now+3600000,timestamp:now}),
+    JSON.stringify({alg:'HS256', sign_type:'SIGN'}),
+    JSON.stringify({api_key:id, exp:now+3600000, timestamp:now}),
     {utf8:sec});
 }
 
-async function callZai(lat,lon,geo,country,wiki){
-  const cls  =gv('classLevel');
-  const exam =gv('examType');
-  const mode =gv('learningMode');
-  const addr =geo.address||{};
-  const loc  =[addr.city,addr.state,addr.country].filter(Boolean).join(', ')||`${lat},${lon}`;
-  const lPick=document.getElementById('langPick');
-  const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
+/* ════════════════════════════════════════════════════════
+   ██████  FEATURE 5/6/7 — Z.AI API CALL WITH KEY ROTATION
+   • FREE/BASIC/STANDARD: daily key + sequential fallback
+   • PREMIUM: dual keys (today + next), then fallback
+════════════════════════════════════════════════════════ */
+async function zaiPost(body) {
+  const isPremium = userProfile.plan === 'premium';
 
-  const prompt=`You are an Advanced AI Educational Geo-Intelligence System.
-LOCATION: ${loc} | LAT: ${lat} | LON: ${lon}
-COUNTRY: ${addr.country||'?'} | STATE: ${addr.state||'?'} | DISTRICT: ${addr.county||addr.district||'?'}
-CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode} | RESPONSE LANGUAGE: ${langName}
-WIKI: ${wiki?.extract?.substring(0,350)||'N/A'}
-POPULATION: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
-COUNTRY LANGUAGES: ${country?.languages?Object.values(country.languages).join(', '):'Unknown'}
+  // Build ordered key list to try
+  let keyQueue = [];
+  if (isPremium) {
+    // Premium: try both today's keys first
+    const [k1, k2] = getPremiumKeys();
+    keyQueue = [k1, k2];
+    // Add fallback keys (other than those two)
+    const d = new Date().getDate();
+    const idx1 = (d-1) % ZAI_KEYS.length;
+    const idx2 = d % ZAI_KEYS.length;
+    for (let i = 1; i <= 3; i++) {
+      const c = (idx1 + i + 1) % ZAI_KEYS.length;
+      if (c !== idx1 && c !== idx2 && !keyQueue.includes(ZAI_KEYS[c])) {
+        keyQueue.push(ZAI_KEYS[c]);
+      }
+    }
+  } else {
+    // Free/Basic/Standard: start from today's key, rotate on failure
+    keyQueue = [getActiveKey()];
+  }
 
-Return ONLY compact valid JSON (no markdown, no backticks) with this EXACT structure:
-{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"localInfo":{"localLanguages":"local spoken languages","famousFor":["famous thing 1","famous thing 2","famous thing 3"],"famousPlaces":["specific place like Narmada/Sundarbans relevant to this location","place 2"],"famousPersonalities":["person 1","person 2"],"festivals":["festival 1","festival 2"],"localCuisine":["dish 1","dish 2"],"importantFacts":["key exam fact 1 for ${exam}","key exam fact 2","key exam fact 3"]},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
-Rules: All values in ${langName}. 1-2 sentences per field. Valid closed JSON. Adjust depth for CLASS ${cls}.`;
+  let lastErr = '';
+  for (let attempt = 0; attempt < (isPremium ? 4 : ZAI_KEYS.length); attempt++) {
+    // Get key for this attempt
+    const key = attempt < keyQueue.length ? keyQueue[attempt] : (isPremium ? null : getActiveKey());
+    if (!key || key.startsWith('API_KEY_')) {
+      throw new Error('No valid Z.ai API key configured. Please replace API_KEY_N values with real keys.');
+    }
 
-  const resp=await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+makeJWT()},
-    body:JSON.stringify({model:'glm-4.5-flash',messages:[{role:'user',content:prompt}],temperature:0.3,max_tokens:4096})
-  });
-  if(!resp.ok){const e=await resp.text();throw new Error('Z.ai '+resp.status+': '+e);}
-  const d=await resp.json();
-  let raw=(d.choices?.[0]?.message?.content||'').replace(/```json|```/g,'').trim();
-  const f=raw.indexOf('{'),l=raw.lastIndexOf('}');
-  if(f!==-1&&l!==-1) raw=raw.substring(f,l+1);
-  try{return JSON.parse(raw);}catch{return fixJSON(raw);}
+    try {
+      const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+makeJWT(key)},
+        body: JSON.stringify(body)
+      });
+
+      if (resp.ok) return resp; // ✅ Success
+
+      // Auth / quota / rate-limit → rotate key
+      if (resp.status===401 || resp.status===403 || resp.status===429) {
+        const et = await resp.text();
+        lastErr = `Key failed (${resp.status}): ${et}`;
+        console.warn('[GeoMind]', lastErr);
+        if (!isPremium) rotateKey(); // update global state for non-premium
+        toast('API key rotated — retrying\u2026', 'warn');
+        continue;
+      }
+
+      // Other HTTP error → throw immediately (no retry)
+      const et = await resp.text();
+      throw new Error('Z.ai ' + resp.status + ': ' + et);
+
+    } catch(e) {
+      if (e.message.startsWith('Z.ai') || e.message.startsWith('No valid')) throw e;
+      lastErr = e.message;
+      if (!isPremium) rotateKey();
+    }
+  }
+
+  // All keys tried and failed
+  throw new Error(
+    isPremium
+      ? 'Both premium API keys failed today. Please try again later.'
+      : 'All API keys exhausted for today. Please try again tomorrow or upgrade your plan.'
+  );
 }
 
-function fixJSON(s){
+/* ════════════════════════════════════════════════════════
+   ██████  AI REPORT GENERATOR
+════════════════════════════════════════════════════════ */
+async function callZai(lat, lon, geo, country, wiki) {
+  const cls    = gv('classLevel');
+  const exam   = gv('examType');
+  const mode   = gv('learningMode');
+  const addr   = geo.address || {};
+  const loc    = [addr.city, addr.state, addr.country].filter(Boolean).join(', ') || `${lat},${lon}`;
+  const country_input = document.getElementById('countryInput').value.trim() || addr.country || '';
+  const userQ  = document.getElementById('userQuestion').value.trim();
+  const lPick  = document.getElementById('langPick');
+  const langName = lPick ? lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,'') : 'English';
+
+  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
+LOCATION: ${loc} | LAT: ${lat} | LON: ${lon}
+COUNTRY: ${country_input} | STATE: ${addr.state||'?'} | DISTRICT: ${addr.county||addr.district||'?'}
+CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode} | RESPONSE LANGUAGE: ${langName}
+${userQ ? 'USER QUESTION: '+userQ : ''}
+WIKI: ${wiki?.extract?.substring(0,350)||'N/A'}
+POP: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
+COUNTRY LANGUAGES: ${country?.languages?Object.values(country.languages).join(', '):'Unknown'}
+
+Return ONLY compact valid JSON (no markdown, no backticks):
+{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"localInfo":{"localLanguages":"spoken languages at this location","famousFor":["famous river/forest/monument relevant to exact location like Narmada/Sundarbans","item2","item3"],"famousPlaces":["specific place1","place2"],"famousPersonalities":["person1","person2"],"festivals":["festival1","festival2"],"localCuisine":["dish1","dish2"],"importantFacts":["key ${exam} exam fact 1","key fact 2","key fact 3"]}${userQ?',"userAnswer":"Direct answer to: '+userQ+' in 2-3 sentences"':''},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
+Rules: All values in ${langName}. 1-2 sentences per field. Valid closed JSON. Adjust depth for CLASS ${cls} and EXAM ${exam}.`;
+
+  const resp = await zaiPost({
+    model: 'glm-4.5-flash',
+    messages: [{role:'user', content:prompt}],
+    temperature: 0.3,
+    max_tokens: 4096
+  });
+
+  const d = await resp.json();
+  let raw = (d.choices?.[0]?.message?.content || '').replace(/```json|```/g,'').trim();
+  const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+  if (f!==-1 && l!==-1) raw = raw.substring(f, l+1);
+  try { return JSON.parse(raw); } catch { return fixJSON(raw); }
+}
+
+function fixJSON(s) {
   let inStr=false,esc=false;
   for(let i=0;i<s.length;i++){if(esc){esc=false;continue;}if(s[i]==='\\'){esc=true;continue;}if(s[i]==='"')inStr=!inStr;}
   if(inStr)s+='"';
@@ -816,58 +1260,64 @@ function fixJSON(s){
   return JSON.parse(s);
 }
 
-function gv(id){const e=document.getElementById(id)||document.getElementById(id+'M');return e?e.value:'';}
+function gv(id){const e=document.getElementById(id)||document.getElementById(id.replace('Level','')+'M')||document.getElementById(id+'M');return e?e.value:'';}
 
-/* ════════════════════════════════════════════════
-   FIREBASE SAVE
-════════════════════════════════════════════════ */
-async function saveQuery(lat,lon,geo,ai){
-  if(!currentUser) return;
-  const addr=geo.address||{};
-  const rec={
-    userId:currentUser.uid,
-    latitude:parseFloat(lat),longitude:parseFloat(lon),
-    selectedPlace:ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'',
-    country:addr.country||'',state:addr.state||'',
-    userClass:gv('classLevel'),examType:gv('examType'),
-    mode:gv('learningMode'),language:curLang,
-    userPrompt:'Map click at '+parseFloat(lat).toFixed(4)+', '+parseFloat(lon).toFixed(4),
-    aiResponse:JSON.stringify(ai),
-    famousFor:ai.localInfo?.famousFor||[],
-    localLanguages:ai.localInfo?.localLanguages||'',
-    timestamp:new Date().toISOString()
+/* ════════════════════════════════════════════════════════
+   ██████  FEATURE 8 — FIREBASE SAVE
+════════════════════════════════════════════════════════ */
+async function saveQuery(lat, lon, geo, ai) {
+  if (!currentUser) return;
+  const addr = geo.address || {};
+  const rec = {
+    userId: currentUser.uid,
+    latitude: parseFloat(lat), longitude: parseFloat(lon),
+    selectedPlace: ai.locationId?.nearestCity || addr.city || addr.state || addr.country || '',
+    country: addr.country||'', state: addr.state||'',
+    userClass: gv('classLevel'), examType: gv('examType'),
+    mode: gv('learningMode'), language: curLang,
+    userQuestion: document.getElementById('userQuestion').value.trim(),
+    aiResponse: JSON.stringify(ai),
+    famousFor: ai.localInfo?.famousFor||[],
+    localLanguages: ai.localInfo?.localLanguages||'',
+    timestamp: new Date().toISOString()
   };
-  try{
+  try {
     await db.ref('userQueries').push(rec);
     await db.ref('users/'+currentUser.uid+'/queries').push(rec);
-  }catch(e){console.warn('DB save error:',e);}
+  } catch(e) { console.warn('saveQuery error:', e); }
 }
 
-async function saveChat(q,ans){
-  if(!currentUser||!curData.lat) return;
-  try{
-    const rec={userId:currentUser.uid,location:curData.ai?.locationId?.nearestCity||'',lat:curData.lat,lon:curData.lon,question:q,answer:ans,timestamp:new Date().toISOString()};
-    await db.ref('chats').push(rec);
-    await db.ref('users/'+currentUser.uid+'/chats').push(rec);
-  }catch(e){}
+async function saveChatMsg(q, ans) {
+  if (!currentUser || !curData.lat) return;
+  try {
+    await db.ref('users/'+currentUser.uid+'/chats').push({
+      location: curData.ai?.locationId?.nearestCity || '',
+      lat: curData.lat, lon: curData.lon,
+      question: q, answer: ans,
+      timestamp: new Date().toISOString()
+    });
+  } catch(e){}
 }
 
-/* ════════════════════════════════════════════════
-   HISTORY TAB
-════════════════════════════════════════════════ */
-async function loadHistory(){
-  const hc=document.getElementById('hcontent');
-  hc.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Loading&hellip;</div>';
-  try{
-    const snap=await db.ref('users/'+currentUser.uid+'/queries').once('value');
-    if(!snap.exists()||!snap.val()){hc.innerHTML='<div class="hempty"><div style="font-size:46px;opacity:0.25">&#128200;</div><p>No history yet.</p></div>';return;}
-    const entries=Object.entries(snap.val()).sort((a,b)=>(b[1].timestamp||'').localeCompare(a[1].timestamp||''));
-    let html=`<button class="hclr" onclick="clearHistory()">&#128465; Clear My History</button>`;
-    entries.forEach(([,rec])=>{
-      const d=new Date(rec.timestamp);
-      const ds=isNaN(d)?rec.timestamp:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-      const enc=encodeURIComponent(JSON.stringify(rec));
-      html+=`<div class="hitem" onclick="reloadHist('${enc}')">
+/* ════════════════════════════════════════════════════════
+   ██████  HISTORY TAB
+════════════════════════════════════════════════════════ */
+async function loadHistory() {
+  const hc = document.getElementById('hcontent');
+  hc.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Loading\u2026</div>';
+  try {
+    const snap = await db.ref('users/'+currentUser.uid+'/queries').once('value');
+    if (!snap.exists() || !snap.val()) {
+      hc.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">&#128200;</div><p>No history yet.</p></div>';
+      return;
+    }
+    const entries = Object.entries(snap.val()).sort((a,b)=>(b[1].timestamp||'').localeCompare(a[1].timestamp||''));
+    let html = `<button class="hclr" onclick="clearHistory()">&#128465; Clear My History</button>`;
+    entries.forEach(([,rec]) => {
+      const d  = new Date(rec.timestamp);
+      const ds = isNaN(d) ? rec.timestamp : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const enc = encodeURIComponent(JSON.stringify(rec));
+      html += `<div class="hitem" onclick="reloadHist('${enc}')">
         <div class="hname">&#128205; ${rec.selectedPlace||'Unknown'}</div>
         <div class="hmeta">${[rec.state,rec.country].filter(Boolean).join(', ')} &bull; ${rec.userClass||''} &bull; ${rec.examType||''}</div>
         ${rec.localLanguages?`<div class="hmeta" style="color:var(--a5)">&#128483; ${rec.localLanguages}</div>`:''}
@@ -876,139 +1326,151 @@ async function loadHistory(){
         <div class="hts">${ds}</div>
       </div>`;
     });
-    hc.innerHTML=html;
-  }catch(e){hc.innerHTML=`<div class="ebox">Failed to load: ${e.message}</div>`;}
+    hc.innerHTML = html;
+  } catch(e) { hc.innerHTML=`<div class="ebox">Failed to load: ${e.message}</div>`; }
 }
 
-async function clearHistory(){
-  if(!confirm('Delete all your search history?')) return;
+async function clearHistory() {
+  if (!confirm('Delete all your search history?')) return;
   await db.ref('users/'+currentUser.uid+'/queries').remove();
   loadHistory(); toast('History cleared','ok');
 }
 
-function reloadHist(enc){
-  try{
-    const rec=JSON.parse(decodeURIComponent(enc));
-    if(!rec||!rec.aiResponse) return;
-    const ai=JSON.parse(rec.aiResponse);
-    curData={geo:{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},lat:rec.latitude,lon:rec.longitude,ai};
-    ['classLevel','examType','learningMode'].forEach(id=>{
-      const v=id==='classLevel'?rec.userClass:id==='examType'?rec.examType:rec.mode;
-      if(v) document.getElementById(id).value=v;
-    });
-    placePin(rec.latitude,rec.longitude,'#4f9eff');
-    map.setView([rec.latitude,rec.longitude],8);
-    showPill(rec.latitude,rec.longitude);
+function reloadHist(enc) {
+  try {
+    const rec = JSON.parse(decodeURIComponent(enc));
+    if (!rec||!rec.aiResponse) return;
+    const ai = JSON.parse(rec.aiResponse);
+    curData = {geo:{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},lat:rec.latitude,lon:rec.longitude,ai};
+    pendingLat = rec.latitude; pendingLon = rec.longitude;
+    if(document.getElementById('classLevel')) document.getElementById('classLevel').value = rec.userClass||'Competitive';
+    if(document.getElementById('examType'))   document.getElementById('examType').value   = rec.examType||'UPSC';
+    placePin(rec.latitude, rec.longitude, '#3b82f6');
+    map.setView([rec.latitude, rec.longitude], 8);
+    showPill(rec.latitude, rec.longitude);
     renderReport(rec.latitude,rec.longitude,{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},null,null,ai);
-    goTab('a',document.getElementById('t-a'));
+    goTab('a', document.getElementById('t-a'));
     toast('Loaded from history','ok');
-  }catch(e){toast('Load failed: '+e.message,'err');}
+  } catch(e) { toast('Load failed: '+e.message,'err'); }
 }
 
-/* ════════════════════════════════════════════════
-   CHAT
-════════════════════════════════════════════════ */
-async function sendChat(){
-  const inp=document.getElementById('cinput');
-  const q=inp.value.trim();
-  if(!q) return;
-  if(!curData.lat){toast('Click a map location first','err');return;}
-  inp.value='';
-  const addr=curData.geo?.address||{};
-  const loc=[addr.city,addr.state,addr.country].filter(Boolean).join(', ');
-  const msgs=document.getElementById('cmsgs');
+/* ════════════════════════════════════════════════════════
+   ██████  CHAT
+════════════════════════════════════════════════════════ */
+async function sendChat() {
+  const inp = document.getElementById('cinput');
+  const q   = inp.value.trim();
+  if (!q) return;
+  if (!curData.lat) { toast('Click a map location and Send first','err'); return; }
+
+  // Check chat limit
+  if (!canChat()) {
+    showLimitReached('chat');
+    goTab('p', document.getElementById('t-p'));
+    return;
+  }
+
+  inp.value = '';
+  const msgs = document.getElementById('cmsgs');
   document.getElementById('cnoloc')?.remove();
 
-  const ts=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const div=document.createElement('div');
+  const ts  = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
   div.className='cmsg';
   const aid='ca'+Date.now();
   div.innerHTML=`<div class="cmq">&#128172; ${q}</div><div class="cma" id="${aid}">&#9711; Thinking&hellip;</div><div class="cmts">${ts}</div>`;
-  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
 
-  const lPick=document.getElementById('langPick');
-  const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
-  const prompt=`You are a geography & history tutor. Location: ${loc}.
+  const addr = curData.geo?.address||{};
+  const loc  = [addr.city,addr.state,addr.country].filter(Boolean).join(', ');
+  const lPick = document.getElementById('langPick');
+  const langName = lPick ? lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,'') : 'English';
+
+  const prompt = `You are a geography & history tutor. Location studied: ${loc}.
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
 Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
 
-  let answer='No response received.';
-  try{
-    const resp=await fetch('https://api.z.ai/api/paas/v4/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+makeJWT()},
-      body:JSON.stringify({model:'glm-4.5-flash',messages:[{role:'user',content:prompt}],temperature:0.5,max_tokens:600})
-    });
-    const d=await resp.json();
-    answer=d.choices?.[0]?.message?.content||'No response.';
-  }catch(e){answer='Error: '+e.message;}
-  document.getElementById(aid).textContent=answer;
-  msgs.scrollTop=msgs.scrollHeight;
-  await saveChat(q,answer);
+  let answer = 'No response received.';
+  try {
+    const resp = await zaiPost({model:'glm-4.5-flash',messages:[{role:'user',content:prompt}],temperature:0.5,max_tokens:600});
+    const d    = await resp.json();
+    answer     = d.choices?.[0]?.message?.content || 'No response.';
+    await incrementChat();
+  } catch(e) { answer='Error: '+e.message; }
+
+  document.getElementById(aid).textContent = answer;
+  msgs.scrollTop = msgs.scrollHeight;
+  await saveChatMsg(q, answer);
 }
-document.getElementById('cinput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
 
-/* ════════════════════════════════════════════════
-   RENDER REPORT
-════════════════════════════════════════════════ */
-function renderReport(lat,lon,geo,country,wiki,ai){
-  const addr=geo?.address||{};
-  const mode=gv('learningMode');
-  const flag=country?.flag||'';
-  const name=ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'Unknown';
-  const langs=ai.localInfo?.localLanguages||'';
+document.getElementById('cinput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
 
-  let h=`<div class="loc-badge">
+/* ════════════════════════════════════════════════════════
+   ██████  REPORT RENDERER
+════════════════════════════════════════════════════════ */
+function renderReport(lat, lon, geo, country, wiki, ai) {
+  const addr = geo?.address||{};
+  const mode = gv('learningMode');
+  const flag = country?.flag||'';
+  const name = ai.locationId?.nearestCity||addr.city||addr.state||addr.country||'Unknown';
+  const langs= ai.localInfo?.localLanguages||'';
+
+  let h = `<div class="loc-badge">
     <div>
       <div class="loc-name">${flag} ${name}</div>
       <div class="loc-sub">${[ai.locationId?.state,ai.locationId?.country].filter(Boolean).join(' &middot; ')}</div>
       ${langs?`<div class="loc-lang">&#128483; ${langs}</div>`:''}
     </div>
-    <div class="cbadge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;</div>
+    <div class="cbadge">LAT ${parseFloat(lat).toFixed(4)}&deg;<br>LON ${parseFloat(lon).toFixed(4)}&deg;<br><span style="color:var(--a4);font-size:9px">${(PLANS[userProfile.plan]?.name||'Free').toUpperCase()}</span></div>
   </div>`;
 
-  if(wiki?.extract) h+=`<div class="wiki-box">&#128214; ${wiki.extract.substring(0,280)}&hellip;</div>`;
+  if (wiki?.extract) h+=`<div class="wiki-box">&#128214; ${wiki.extract.substring(0,280)}&hellip;</div>`;
 
-  /* LOCAL INFO section (Feature 10) */
-  if(ai.localInfo){
-    const li=ai.localInfo;
-    h+=S('&#128483;','Local Info &amp; Famous Places',`
-      ${R('Spoken Languages',li.localLanguages)}
-      ${R('Famous For',(li.famousFor||[]).map(f=>`<span class="tag tp">${f}</span>`).join(''))}
-      ${R('Famous Places',(li.famousPlaces||[]).map(f=>`<span class="tag tb">${f}</span>`).join(''))}
-      ${R('Famous People',(li.famousPersonalities||[]).map(f=>`<span class="tag tg">${f}</span>`).join(''))}
-      ${R('Festivals',(li.festivals||[]).map(f=>`<span class="tag ty">${f}</span>`).join(''))}
-      ${R('Local Cuisine',(li.localCuisine||[]).map(f=>`<span class="tag tr">${f}</span>`).join(''))}
-      ${(li.importantFacts||[]).map(f=>`<div class="epill" style="color:var(--a2);border-color:rgba(79,158,255,0.2)">&#128204; ${f}</div>`).join('')}
-    `,true);
+  // User question answer
+  if (ai.userAnswer) {
+    h+=`<div class="epill" style="color:var(--a2);border-color:rgba(59,130,246,0.25)">&#128172; ${ai.userAnswer}</div>`;
   }
 
-  h+=S('01','Location Identification',`
+  // Local Info
+  if (ai.localInfo) {
+    const li=ai.localInfo;
+    h+=S('&#128483;','Local Info &amp; Famous Places',`
+      ${R('Spoken Languages', li.localLanguages)}
+      ${R('Famous For', (li.famousFor||[]).map(f=>`<span class="tag tp">${f}</span>`).join(''))}
+      ${R('Famous Places', (li.famousPlaces||[]).map(f=>`<span class="tag tb">${f}</span>`).join(''))}
+      ${R('Famous People', (li.famousPersonalities||[]).map(f=>`<span class="tag tg">${f}</span>`).join(''))}
+      ${R('Festivals', (li.festivals||[]).map(f=>`<span class="tag ty">${f}</span>`).join(''))}
+      ${R('Cuisine', (li.localCuisine||[]).map(f=>`<span class="tag tr">${f}</span>`).join(''))}
+      ${(li.importantFacts||[]).map(f=>`<div class="epill" style="color:var(--a2);border-color:rgba(59,130,246,0.2)">&#128204; ${f}</div>`).join('')}
+    `, true);
+  }
+
+  h+=S('01','Location',`
     ${R('Country',ai.locationId?.country)}${R('State',ai.locationId?.state)}
     ${R('District',ai.locationId?.district)}${R('Nearest City',ai.locationId?.nearestCity)}
     ${R('Coordinates',ai.locationId?.coordinates)}
   `);
 
-  if(mode!=='Quiz Mode') h+=S('02','Geography Analysis',`
+  if (mode!=='Quiz Mode') h+=S('02','Geography',`
     ${R('Terrain',ai.geography?.terrain)}${R('Climate',ai.geography?.climate)}
-    ${R('Soil Type',ai.geography?.soilType)}${R('Rivers',ai.geography?.rivers)}
-    ${R('Natural Resources',ai.geography?.naturalResources)}
+    ${R('Soil',ai.geography?.soilType)}${R('Rivers',ai.geography?.rivers)}
+    ${R('Resources',ai.geography?.naturalResources)}
   `);
 
-  h+=S('03','Agriculture Intelligence',`
+  h+=S('03','Agriculture',`
     <div class="srow"><span class="slbl">Major Crops</span><span class="sval">${(ai.agriculture?.majorCrops||[]).map(c=>`<span class="tag ty">${c}</span>`).join('')}</span></div>
     ${R('Why Crops Grow',ai.agriculture?.whyCropsGrow)}
     ${R('Irrigation',ai.agriculture?.irrigationSources)}
-    ${R('Seasons',ai.agriculture?.seasonalPattern)}
+    ${R('Season',ai.agriculture?.seasonalPattern)}
   `);
 
-  h+=S('04','Historical Significance',`
+  h+=S('04','History',`
     ${R('Ancient',ai.history?.ancient)}${R('Medieval',ai.history?.medieval)}
     ${R('Modern',ai.history?.modern)}${R('Freedom Movement',ai.history?.freedomMovement)}
   `);
 
-  h+=S('05','Economic Profile',`
+  h+=S('05','Economy',`
     <div class="srow"><span class="slbl">Industries</span><span class="sval">${(ai.economy?.majorIndustries||[]).map(i=>`<span class="tag tb">${i}</span>`).join('')}</span></div>
     ${R('GDP',ai.economy?.gdpContribution)}${R('Employment',ai.economy?.employmentPattern)}
   `);
@@ -1019,36 +1481,33 @@ function renderReport(lat,lon,geo,country,wiki,ai){
     ${R('Strategic',ai.currentRelevance?.strategicImportance)}
   `);
 
-  if(mode==='Timeline Mode'||mode==='Full Analysis'){
+  if (mode==='Timeline Mode'||mode==='Full Analysis') {
     const tl=(ai.timeline||[]).map(t=>`<div class="tli"><div class="tldot"></div><div class="tlyear">${t.year}</div><div class="tltext">${t.event}</div></div>`).join('');
     h+=S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
   }
 
-  if(mode==='Quiz Mode'||mode==='Full Analysis'){
+  if (mode==='Quiz Mode'||mode==='Full Analysis') {
     let qh='<div style="margin-bottom:8px;font-size:10px;color:var(--muted)">Click options to check answers.</div>';
     (ai.quiz?.mcqs||[]).forEach((q,i)=>{
       qh+=`<div class="mcqi"><div class="mcqq">Q${i+1}. ${q.q}</div>${(q.options||[]).map((opt,oi)=>{const L=['A','B','C','D'][oi];return`<span class="mcqo" onclick="chkMCQ(this,'${L}','${q.answer}')">${opt}</span>`;}).join('')}</div>`;
     });
-    if(ai.quiz?.assertionReason?.length){
-      qh+=`<div style="margin:9px 0 5px;font-size:10px;color:var(--accent);letter-spacing:1px;font-family:'DM Mono',monospace">ASSERTION-REASON</div>`;
-      ai.quiz.assertionReason.forEach((ar,i)=>{qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Ans: <span style="color:var(--accent)">${ar.answer}</span></div></div>`;});
-    }
-    if(ai.quiz?.mapQuestion) qh+=`<div style="margin:9px 0 5px;font-size:10px;color:var(--a2);letter-spacing:1px">MAP QUESTION</div><div class="mcqi"><div class="mcqq">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
-    h+=S('08','Quiz Mode',qh);
+    (ai.quiz?.assertionReason||[]).forEach((ar,i)=>{
+      qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Ans: <span style="color:var(--accent)">${ar.answer}</span></div></div>`;
+    });
+    if (ai.quiz?.mapQuestion) qh+=`<div class="mcqi"><div class="mcqq">&#128506; ${ai.quiz.mapQuestion}</div></div>`;
+    h+=S('08','Quiz',qh);
   }
 
   const ef=(ai.examFocus||[]).map(q=>`<div class="epill">&#9889; ${q}</div>`).join('');
-  h+=S('09',`Exam Focus &mdash; ${gv('examType')}`,ef);
+  h+=S('09',`Exam Focus &mdash; ${gv('examType')||'UPSC'}`,ef);
 
   const wrap=document.getElementById('resultWrap');
-  wrap.innerHTML=h;wrap.style.display='block';
+  wrap.innerHTML=h; wrap.style.display='block';
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
-  setBadge('READY','accent');
-  goTab('a',document.getElementById('t-a'));
+  goTab('a', document.getElementById('t-a'));
 }
 
-/* section helpers */
 function S(num,title,content,open=false){
   const id='sc_'+Math.random().toString(36).substr(2,6);
   return `<div class="scard"><div class="shdr" onclick="togS('${id}',this)"><span class="snum">${num}</span><span class="stitle">${title}</span><span class="chev ${open?'o':''}">&#9662;</span></div><div class="sbody ${open?'':'hid'}" id="${id}">${content}</div></div>`;
@@ -1067,59 +1526,236 @@ function chkMCQ(el,sel,correct){
   });
 }
 
-/* ════════════════════════════════════════════════
-   TABS
-════════════════════════════════════════════════ */
-function goTab(name,btn){
-  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
-  document.getElementById('tp-'+name).classList.add('on');
-  btn.classList.add('on');
-  if(name==='h') loadHistory();
+/* ════════════════════════════════════════════════════════
+   ██████  PRICING PAGE (Feature 10)
+════════════════════════════════════════════════════════ */
+function renderPricing() {
+  const wrap = document.getElementById('pricingContent');
+  const currentPlan = userProfile.plan || 'free';
+
+  let html = `
+    <div class="pricing-title">&#9733; Upgrade Your Plan</div>
+    <div class="pricing-sub">More reports, more chats, more learning. Reset daily at midnight.</div>
+  `;
+
+  const planOrder = ['free','basic','standard','premium'];
+  planOrder.forEach(key => {
+    const P    = PLANS[key];
+    const feats= PLAN_FEATURES[key];
+    const isCur= key === currentPlan;
+
+    html += `<div class="plan-card ${key}${isCur?' current-plan':''}">
+      <div class="plan-header">
+        <div class="plan-name pn-${key}">${P.emoji} ${P.name}</div>
+        <div class="plan-price">
+          <div class="amt">${P.price.split('/')[0]}</div>
+          <div class="per">${P.price.includes('/')?' / month':'per month'}</div>
+        </div>
+      </div>
+      <div class="plan-features">
+        ${feats.map(f => {
+          const isHighlight = f.includes('report') || f.includes('message') || f.includes('Dual');
+          return `<div class="pf ${isHighlight?'highlight':''}">
+            <span class="pf-check" style="color:${key==='premium'?'var(--plan-prem)':key==='standard'?'var(--plan-std)':key==='basic'?'var(--plan-basic)':'var(--muted)'}">&#10003;</span>
+            ${f}${f.includes('Dual')?'<span class="pf-badge">PREMIUM</span>':''}
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="selectPlan('${key}')" ${isCur?'disabled':''}>
+        ${isCur ? '&#10003; Current Plan' : key==='free'?'Downgrade to Free':'Upgrade to '+P.name}
+      </button>
+    </div>`;
+  });
+
+  // Security rules reminder
+  html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:4px;">
+    <div style="font-family:'Syne',sans-serif;font-size:11px;color:var(--sub);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase">Firebase Security Rules</div>
+    <pre style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;white-space:pre-wrap">{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "userQueries": {
+      ".write": "auth != null",
+      "$id": { ".read": "data.child('userId').val() === auth.uid" }
+    },
+    "chats": {
+      ".write": "auth != null",
+      "$id": { ".read": "data.child('userId').val() === auth.uid" }
+    }
+  }
+}</pre>
+  </div>`;
+
+  wrap.innerHTML = html;
 }
 
-/* ════════════════════════════════════════════════
-   UI HELPERS
-════════════════════════════════════════════════ */
-function showLoading(){
-  document.getElementById('idleBox').style.display='none';
-  document.getElementById('resultWrap').style.display='none';
-  document.getElementById('famBar').style.display='none';
-  document.getElementById('ptip').style.display='none';
-  document.getElementById('loadbox').style.display='flex';
-  setBadge('LOADING','a4');
-  goTab('a',document.getElementById('t-a'));
+async function selectPlan(plan) {
+  if (!currentUser) return;
+  // In production: integrate payment gateway here (Razorpay, PayU etc.)
+  // For now, directly update the plan in Firebase
+  const confirm_msg = plan === 'free'
+    ? 'Downgrade to Free plan?'
+    : `Upgrade to ${PLANS[plan].name} plan (${PLANS[plan].price})?`;
+  if (!confirm(confirm_msg)) return;
+
+  try {
+    userProfile.plan = plan;
+    await db.ref('users/'+currentUser.uid).update({plan});
+    updateNavUI();
+    updateUsageWidget();
+    renderPricing();
+    toast('Plan updated to ' + PLANS[plan].name + '!', 'ok');
+  } catch(e) { toast('Failed to update plan: '+e.message,'err'); }
 }
-function showErr(msg){
-  document.getElementById('loadbox').style.display='none';
-  const w=document.getElementById('resultWrap');
-  w.innerHTML=`<div class="ebox">&#9888; ${msg}<br><br><span style="color:var(--muted);font-size:11px">Check your connection or try a different location.</span></div>`;
-  w.style.display='block';
-  setBadge('ERROR','a3');
-  toast(msg,'err');
+
+/* ════════════════════════════════════════════════════════
+   ██████  UI UPDATES
+════════════════════════════════════════════════════════ */
+function updateNavUI() {
+  const plan   = userProfile.plan || 'free';
+  const P      = PLANS[plan];
+  const genUsed= userProfile.dailyGenerationsUsed || 0;
+  const chatUsed=userProfile.dailyMessagesUsed    || 0;
+  const name   = currentUser?.displayName || currentUser?.email?.split('@')[0] || '?';
+
+  document.getElementById('userNm').textContent  = name;
+  document.getElementById('userAv').textContent  = name.charAt(0).toUpperCase();
+
+  const badge = document.getElementById('planBadge');
+  badge.textContent = plan.toUpperCase();
+  badge.className   = `plan-badge pb-${plan}`;
+
+  document.getElementById('usageMini').textContent =
+    `Gen: ${genUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
 }
-function clearAll(){
-  document.getElementById('idleBox').style.display='flex';
-  document.getElementById('loadbox').style.display='none';
-  document.getElementById('resultWrap').style.display='none';
-  document.getElementById('resultWrap').innerHTML='';
-  document.getElementById('cpill').style.display='none';
-  document.getElementById('famBar').style.display='none';
-  document.getElementById('ptip').style.display='none';
-  if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}
-  curData={};setBadge('READY','accent');
+
+function updateUsageWidget() {
+  const plan   = userProfile.plan || 'free';
+  const P      = PLANS[plan];
+  const genUsed= userProfile.dailyGenerationsUsed || 0;
+  const chatUsed=userProfile.dailyMessagesUsed    || 0;
+
+  const genPct  = Math.min(100, (genUsed/P.genLimit)*100);
+  const chatPct = Math.min(100, (chatUsed/P.chatLimit)*100);
+
+  document.getElementById('uwContent').innerHTML = `
+    <div class="uw-row"><span class="uw-label">Reports today</span><span class="uw-val">${genUsed} / ${P.genLimit}</span></div>
+    <div class="uw-bar"><div class="uw-bar-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
+    <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat messages</span><span class="uw-val">${chatUsed} / ${P.chatLimit}</span></div>
+    <div class="uw-bar"><div class="uw-bar-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">Plan: <span style="color:var(--a4)">${P.name}</span> &mdash; Resets at midnight</div>
+  `;
 }
-function step(msg,pct){document.getElementById('lstep').textContent=msg;document.getElementById('pfill').style.width=pct+'%';}
-function setBadge(text,color){
-  const b=document.getElementById('sbadge');b.textContent=text;
-  const cm={accent:'rgba(0,229,160',a2:'rgba(79,158,255',a3:'rgba(255,107,107',a4:'rgba(255,209,102',a5:'rgba(192,132,252'};
-  const c=cm[color]||cm.accent;
-  b.style.color=`${c},1)`;b.style.borderColor=`${c},0.3)`;b.style.background=`${c},0.07)`;
+
+function showLimitReached(type) {
+  const plan = userProfile.plan || 'free';
+  const P    = PLANS[plan];
+  const isGen= type === 'generation';
+
+  document.getElementById('idleBox').style.display   = 'none';
+  document.getElementById('loadbox').style.display   = 'none';
+  document.getElementById('resultWrap').style.display= 'block';
+  document.getElementById('resultWrap').innerHTML    = `
+    <div class="limit-box">
+      <span class="lb-icon">&#9888;</span>
+      <div class="lb-title">Daily Limit Reached</div>
+      <div class="lb-desc">
+        You've used ${isGen?`${P.genLimit} AI report${P.genLimit>1?'s':''}`:`${P.chatLimit} chat messages`} today on the <strong>${P.name}</strong> plan.<br>
+        Limits reset at midnight. Upgrade for more daily access.
+      </div>
+      <button class="lb-btn" onclick="goTab('p',document.getElementById('t-p'))">&#9733; View Plans &amp; Upgrade</button>
+    </div>
+  `;
 }
-function toast(msg,type='ok'){
-  const t=document.createElement('div');
-  t.className='toast '+type;t.textContent=msg;
-  document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+
+/* ════════════════════════════════════════════════════════
+   ██████  TABS
+════════════════════════════════════════════════════════ */
+function goTab(name, btn) {
+  document.querySelectorAll('.tpanel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tp-'+name).classList.add('on');
+  btn.classList.add('on');
+  if (name==='h') loadHistory();
+  if (name==='p') renderPricing();
+}
+
+/* ════════════════════════════════════════════════════════
+   ██████  MULTILINGUAL
+════════════════════════════════════════════════════════ */
+const L10N = {
+  en:{idle:'Click map, then Send Report',desc:'GeoMind generates AI-powered exam-ready reports.'},
+  hi:{idle:'\u092e\u093e\u0928\u091a\u093f\u0924\u094d\u0930 \u092a\u0930 \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902, \u092b\u093f\u0930 Send \u0926\u092c\u093e\u090f\u0902',desc:'GeoMind \u0936\u0948\u0915\u094d\u0937\u093f\u0915 \u0930\u093f\u092a\u094b\u0930\u094d\u091f \u092c\u0928\u093e\u0924\u093e \u0939\u0948\u0964'},
+  fr:{idle:'Cliquez sur la carte, puis Envoyer',desc:'GeoMind génère des rapports éducatifs.'},
+  ar:{idle:'\u0627\u0646\u0642\u0631 \u0627\u0644\u062e\u0631\u064a\u0637\u0629 \u062b\u0645 \u0625\u0631\u0633\u0627\u0644',desc:'GeoMind \u064a\u0648\u0644\u062f \u062a\u0642\u0627\u0631\u064a\u0631.'},
+};
+function applyLang(code) {
+  curLang = code;
+  const L = L10N[code]||L10N.en;
+  const t = document.getElementById('i-title');
+  const d = document.getElementById('i-desc');
+  if(t) t.textContent = L.idle;
+  if(d) d.textContent = L.desc;
+}
+
+/* ════════════════════════════════════════════════════════
+   ██████  MISC UI HELPERS
+════════════════════════════════════════════════════════ */
+function showLoading() {
+  document.getElementById('idleBox').style.display    = 'none';
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('famBar').style.display     = 'none';
+  document.getElementById('ptip').style.display       = 'none';
+  document.getElementById('loadbox').style.display    = 'flex';
+  document.getElementById('sendBtn').disabled         = true;
+  goTab('a', document.getElementById('t-a'));
+}
+
+function showErr(msg) {
+  document.getElementById('loadbox').style.display    = 'none';
+  document.getElementById('sendBtn').disabled         = false;
+  const w = document.getElementById('resultWrap');
+  w.innerHTML = `<div class="ebox">&#9888; ${msg}<br><br><span style="color:var(--muted);font-size:11px">Check your connection or try another location.</span></div>`;
+  w.style.display = 'block';
+  toast(msg, 'err');
+}
+
+function clearAll() {
+  pendingLat = null; pendingLon = null;
+  document.getElementById('idleBox').style.display    = 'flex';
+  document.getElementById('loadbox').style.display    = 'none';
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('resultWrap').innerHTML     = '';
+  document.getElementById('cpill').style.display      = 'none';
+  document.getElementById('famBar').style.display     = 'none';
+  document.getElementById('ptip').style.display       = 'none';
+  document.getElementById('sendBtn').disabled         = false;
+  document.getElementById('sendBtn').style.boxShadow  = '';
+  document.getElementById('userQuestion').value       = '';
+  document.getElementById('countryInput').value       = '';
+  if (mapMarker) { map.removeLayer(mapMarker); mapMarker = null; }
+  curData = {};
+  updateUsageWidget();
+}
+
+function step(msg, pct) {
+  document.getElementById('lstep').textContent = msg;
+  document.getElementById('pfill').style.width = pct + '%';
+  if (pct >= 100) {
+    setTimeout(() => { document.getElementById('sendBtn').disabled = false; }, 600);
+  }
+}
+
+function toast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
 }
 </script>
 </body>

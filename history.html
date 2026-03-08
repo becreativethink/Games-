@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>WordWar — Match History</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← HOME</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="page-shell">
+  <div class="page-title"><span class="page-title-icon">📜</span> Match History</div>
+
+  <!-- Summary bar -->
+  <div class="stats-bar" style="margin-bottom:18px;">
+    <div class="stats-bar-cell">
+      <span class="stats-bar-val text-accent" id="hist-total">0</span>
+      <span class="stats-bar-lbl">Matches</span>
+    </div>
+    <div class="stats-bar-cell">
+      <span class="stats-bar-val" style="color:var(--green);" id="hist-wins">0</span>
+      <span class="stats-bar-lbl">Wins</span>
+    </div>
+    <div class="stats-bar-cell">
+      <span class="stats-bar-val" style="color:var(--red);" id="hist-losses">0</span>
+      <span class="stats-bar-lbl">Losses</span>
+    </div>
+    <div class="stats-bar-cell">
+      <span class="stats-bar-val text-gold" id="hist-wr">0%</span>
+      <span class="stats-bar-lbl">Win Rate</span>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-strip">
+    <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-pill" onclick="setFilter('online',this)">🌐 Online</button>
+    <button class="filter-pill" onclick="setFilter('daily',this)">📅 Daily</button>
+    <button class="filter-pill" onclick="setFilter('offline',this)">🤝 Offline</button>
+  </div>
+
+  <div id="hist-list" style="display:flex;flex-direction:column;gap:8px;">
+    <div class="empty-state"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn active" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user=loadSession();
+if(!user){location.href='login.html';}
+function avatarUrl(url,name){if(url&&url.startsWith('http'))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').slice(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+document.getElementById('nav-username').textContent=user.username;
+document.getElementById('nav-avatar').src=avatarUrl(user.photoURL,user.username);
+
+var _allHistory=[];
+var _filter='all';
+
+function setFilter(f,btn){
+  _filter=f;
+  document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderHistory();
+}
+window.setFilter=setFilter;
+
+async function loadHistory(){
+  var list=document.getElementById('hist-list');
+  try{
+    var snap=await db.ref('matchHistory/'+user.uid).orderByChild('date').limitToLast(100).get();
+    if(!snap.exists()){_allHistory=[];list.innerHTML=emptyHtml('No matches yet. Play your first game!');updateSummary([]);return;}
+    var arr=[];
+    snap.forEach(function(ch){arr.unshift(Object.assign({id:ch.key},ch.val()));});
+    _allHistory=arr;
+    updateSummary(arr);
+    renderHistory();
+  }catch(e){list.innerHTML=emptyHtml('Error loading history');}
+}
+
+function renderHistory(){
+  var list=document.getElementById('hist-list');
+  var filtered=_allHistory.filter(function(m){
+    if(_filter==='all')return true;
+    return (m.mode||'online')===_filter;
+  });
+  if(!filtered.length){list.innerHTML=emptyHtml('No matches for this filter');return;}
+  list.innerHTML='';
+  filtered.forEach(function(m){
+    var div=document.createElement('div');
+    div.className='hist-item';
+    var isWin=m.result==='win';
+    var isDraw=m.result==='draw';
+    var badge=isWin?'W':isDraw?'D':'L';
+    var badgeCls=isWin?'win':isDraw?'draw':'loss';
+    var scColor=m.scoreChange>0?'positive':m.scoreChange<0?'negative':'';
+    var scText=(m.scoreChange>0?'+':'')+m.scoreChange;
+    var modeIcon=m.mode==='daily'?'📅':m.mode==='offline'?'🤝':'🌐';
+    var dateStr=m.date?new Date(m.date).toLocaleDateString():'';
+    div.innerHTML=''
+      +'<div class="hist-result-badge '+badgeCls+'">'+badge+'</div>'
+      +'<div class="hist-info">'
+      +'<div class="hist-opponent">'+(m.opponent||'Unknown')+'</div>'
+      +'<div class="hist-meta">'+modeIcon+' '+(m.mode||'online')+(m.wordLength?' · '+m.wordLength+' letters':'')+(dateStr?' · '+dateStr:'')+'</div>'
+      +'</div>'
+      +'<div class="hist-score '+scColor+'">'+scText+' ⭐</div>';
+    list.appendChild(div);
+  });
+}
+
+function updateSummary(arr){
+  var wins=arr.filter(function(m){return m.result==='win';}).length;
+  var losses=arr.filter(function(m){return m.result==='loss';}).length;
+  var wr=arr.length?Math.round(wins*100/arr.length)+'%':'0%';
+  document.getElementById('hist-total').textContent=arr.length;
+  document.getElementById('hist-wins').textContent=wins;
+  document.getElementById('hist-losses').textContent=losses;
+  document.getElementById('hist-wr').textContent=wr;
+}
+
+function emptyHtml(msg){
+  return '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-title">'+msg+'</div></div>';
+}
+
+loadHistory();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

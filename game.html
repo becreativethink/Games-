@@ -94,7 +94,7 @@
           <input class="form-control" id="h-attempts" type="number" value="6" min="3" max="10" style="font-family:var(--mono);text-align:center;"/>
         </div>
         <div class="form-group">
-          <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">💰 Bet Score (<span id="h-score-cur" style="color:var(--accent);">0</span>)</label>
+          <label class="form-label" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">💰 Bet Money (have: <span id="h-money-cur" style="color:#f0b429;">0</span>)</label>
           <input class="form-control" id="h-bet" type="number" value="50" min="0" style="font-family:var(--mono);text-align:center;"/>
         </div>
       </div>
@@ -183,7 +183,7 @@
         <div class="sb-title" id="sb-mode-lbl">Game Info</div>
         <div class="sb-row"><span class="lbl">Attempts Left</span><span class="val fw-700" id="sb-attempts">—</span></div>
         <div class="sb-row"><span class="lbl">Word Length</span><span class="val" id="sb-len">—</span></div>
-        <div class="sb-row hidden" id="sb-bet-row"><span class="lbl">Bet</span><span class="val text-gold" id="sb-bet">—</span></div>
+        <div class="sb-row hidden" id="sb-bet-row"><span class="lbl">Bet</span><span class="val text-gold" id="sb-bet">—</span> 💰</div>
       </div>
       <div class="sb-card hidden" id="opp-card">
         <div class="sb-title">Opponent</div>
@@ -506,7 +506,7 @@ window.startOfflineGame = function(){
    ONLINE — HOST
 ══════════════════════════════════════════════ */
 function initOnlineScreen(){
-  $('h-score-cur').textContent = fmtNum(currentUser.score||0);
+  $('h-money-cur').textContent = fmtNum(currentUser.money||0);
   showScreen('screen-online');
 }
 window.switchOnlineTab = function(tab){
@@ -522,7 +522,7 @@ window.createRoom = async function(){
   if(secret.length<2){ toast('Enter a secret word.','warn'); return; }
   if(!/^[A-Z]+$/.test(secret)){ toast('Letters A–Z only.','warn'); return; }
   var snap=await db.ref('users/'+currentUser.uid).get(); var hd=snap.val();
-  if(bet>(hd.score||0)){ toast('Not enough score for this bet.','error'); return; }
+  if(bet>(hd.money||0)){ toast('Not enough money for this bet.','error'); return; }
   var hash=await sha256(secret.toLowerCase());
   roomId=genRoomId(); isHost=true; secretWord=secret;
   maxAttempts=attempts; wordLength=secret.length; betScore=bet;
@@ -535,7 +535,7 @@ window.createRoom = async function(){
     attempts:attempts, betScore:bet,
     status:'waiting', winner:null, createdAt:Date.now()
   });
-  if(bet>0) await db.ref('users/'+currentUser.uid).update({score:(hd.score||0)-bet});
+  if(bet>0) await db.ref('users/'+currentUser.uid).update({money:Math.max(0,(hd.money||0)-bet)});
   $('room-id-show').textContent=roomId;
   showScreen('screen-waiting');
   waitForGuest();
@@ -550,8 +550,8 @@ window.cancelRoom = async function(){
   if(guessUnsub){ db.ref('rooms/'+roomId+'/guesses').off('value',guessUnsub); guessUnsub=null; }
   if(roomUnsub){ db.ref('rooms/'+roomId).off('value',roomUnsub); roomUnsub=null; }
   if(roomId){
-    // Refund bet to host if they cancel
-    if(betScore>0){ var s=await db.ref('users/'+currentUser.uid).get(); if(s.exists()) await db.ref('users/'+currentUser.uid).update({score:(s.val().score||0)+betScore}); }
+    // Refund bet (money) to host if they cancel
+    if(betScore>0){ var s=await db.ref('users/'+currentUser.uid).get(); if(s.exists()) await db.ref('users/'+currentUser.uid).update({money:Math.max(0,(s.val().money||0)+betScore)}); }
     await db.ref('rooms/'+roomId).update({status:'cancelled'});
   }
   location.href='index.html';
@@ -633,9 +633,9 @@ function showHostResult(hostWon, word, guestGuess){
       var upd={totalGames:(ud.totalGames||0)+1};
       if(hostWon){
         upd.wins=(ud.wins||0)+1;
-        upd.score=(ud.score||0)+betScore*2;
+        upd.money=Math.max(0,(ud.money||0)+betScore*2);
         await db.ref('rooms/'+roomId).update({status:'finished',winner:currentUser.username});
-        // Deduct from guest
+        // Update guest stats (loss only — money already deducted at join)
         var rs=await db.ref('rooms/'+roomId).get();
         if(rs.exists()&&rs.val().guestUid){
           var gs=await db.ref('users/'+rs.val().guestUid).get();
@@ -655,7 +655,7 @@ function showHostResult(hostWon, word, guestGuess){
     $('res-title').textContent=hostWon?'YOU WIN!':'YOU LOSE!';
     $('res-word').textContent=word;
     $('res-msg').textContent=hostWon
-      ? 'Opponent failed to guess your word! +'+betScore*2+' ⭐'
+      ? 'Opponent failed to guess your word! +'+betScore*2+' 💰'
       : 'Opponent cracked your word: '+(guestGuess||word);
     $('result-overlay').classList.add('open');
   },700);
@@ -681,10 +681,10 @@ window.joinRoom = async function(){
 
   // Bet check
   var ms=await db.ref('users/'+currentUser.uid).get(); var md=ms.val();
-  if((room.betScore||0)>(md.score||0)){ toast('Need '+room.betScore+' ⭐ to join.','error'); return; }
+  if((room.betScore||0)>(md.money||0)){ toast('Need '+room.betScore+' 💰 to join.','error'); return; }
 
-  // Deduct bet and join
-  if(room.betScore>0) await db.ref('users/'+currentUser.uid).update({score:(md.score||0)-room.betScore});
+  // Deduct bet (money) and join
+  if(room.betScore>0) await db.ref('users/'+currentUser.uid).update({money:Math.max(0,(md.money||0)-room.betScore)});
   roomId=id; isHost=false; betScore=room.betScore||0;
   maxAttempts=room.attempts; wordLength=room.secretWordLength;
   secretWord=room.secretWord.toUpperCase();
@@ -699,7 +699,7 @@ function startGuestView(room){
   $('opp-name').textContent=room.host;
   $('opp-avatar').src=avatarUrl('',room.host);
   $('opp-status').textContent='Hosting';
-  startBoard('🌐 MULTIPLAYER','Vs '+room.host+' · Bet: '+(room.betScore||0)+' ⭐');
+  startBoard('🌐 MULTIPLAYER','Vs '+room.host+' · Bet: '+(room.betScore||0)+' 💰');
   $('sb-mode-lbl').textContent='🌐 Online · Guest';
   $('sb-bet-row').classList.remove('hidden');
   $('sb-bet').textContent=room.betScore;
@@ -712,9 +712,9 @@ function startGuestView(room){
     if(rd.status==='cancelled'){
       rRef.off('value',roomUnsub); roomUnsub=null;
       toast('Host cancelled the room.','warn');
-      // Refund bet
+      // Refund bet (money)
       if(betScore>0){
-        db.ref('users/'+currentUser.uid).get().then(function(s){ if(s.exists()) db.ref('users/'+currentUser.uid).update({score:(s.val().score||0)+betScore}); });
+        db.ref('users/'+currentUser.uid).get().then(function(s){ if(s.exists()) db.ref('users/'+currentUser.uid).update({money:Math.max(0,(s.val().money||0)+betScore)}); });
       }
       setTimeout(function(){ location.href='index.html'; },1800);
     }
@@ -883,11 +883,11 @@ async function handleGameEnd(won,finalGuess){
     if(won && !winnerWritten){
       winnerWritten=true;
       upd.wins=(ud.wins||0)+1;
-      upd.score=(ud.score||0)+betScore*2;
-      rewardMsg='+'+betScore*2+' ⭐';
+      upd.money=Math.max(0,(ud.money||0)+betScore*2);
+      rewardMsg='+'+betScore*2+' 💰';
       // Mark room finished with guest as winner
       await db.ref('rooms/'+roomId).update({status:'finished',winner:currentUser.username});
-      // Update host stats (loss)
+      // Update host stats (loss only — money already deducted at createRoom)
       try{
         var rs=await db.ref('rooms/'+roomId).get();
         if(rs.exists()&&rs.val().hostUid){
@@ -899,16 +899,19 @@ async function handleGameEnd(won,finalGuess){
     }else if(!won && !winnerWritten){
       winnerWritten=true;
       upd.losses=(ud.losses||0)+1;
-      // Mark room finished with host as winner
+      // Mark room finished with host as winner, pay host their winnings
       try{
         var rs2=await db.ref('rooms/'+roomId).get();
         if(rs2.exists()){
           var rd=rs2.val();
           await db.ref('rooms/'+roomId).update({status:'finished',winner:rd.host});
-          // Give host their winnings
           if(rd.hostUid){
             var hs2=await db.ref('users/'+rd.hostUid).get();
-            if(hs2.exists()) await db.ref('users/'+rd.hostUid).update({wins:(hs2.val().wins||0)+1,score:(hs2.val().score||0)+betScore*2,totalGames:(hs2.val().totalGames||0)+1});
+            if(hs2.exists()) await db.ref('users/'+rd.hostUid).update({
+              wins:(hs2.val().wins||0)+1,
+              money:Math.max(0,(hs2.val().money||0)+betScore*2),
+              totalGames:(hs2.val().totalGames||0)+1
+            });
           }
         }
       }catch(e){}
@@ -934,6 +937,34 @@ async function handleGameEnd(won,finalGuess){
   await uRef.update(upd);
   var fresh=(await uRef.get()).val();
   saveSession(Object.assign({},currentUser,fresh));
+
+  // ── Grant XP based on outcome ──
+  var xpGain = won ? 20 : 5;
+  if(mode==='daily') xpGain = won ? 15 : 5;
+  try{
+    var xpSnap=await uRef.get(); var xpUd=xpSnap.val();
+    var newXP=Math.max(0,(xpUd.xp||0)+xpGain);
+    var XP_LVS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+    var newLvl=1; for(var xi=0;xi<XP_LVS.length;xi++){if(newXP>=XP_LVS[xi])newLvl=xi+1;}
+    var oldLvl=xpUd.level||1;
+    await uRef.update({xp:newXP,level:newLvl});
+    if(newLvl>oldLvl) setTimeout(function(){toast('⬆️ Level Up! Now Level '+newLvl,'success');},2200);
+  }catch(e){}
+
+  // ── Save match history ──
+  try{
+    var histRef=db.ref('matchHistory/'+currentUser.uid).push();
+    var oppName='Player';
+    if(mode==='online'){try{var rs=await db.ref('rooms/'+roomId).get();oppName=rs.exists()?(isHost?rs.val().guestName||'Guest':rs.val().host||'Host'):'Opponent';}catch(e){}}
+    else if(mode==='daily') oppName='Daily Challenge';
+    else oppName='Offline Game';
+    var moneyChange=mode==='online'?(won?betScore*2:-betScore):mode==='daily'?(won?(dailyData?dailyData.rewardScore||0:0):0):0;
+    await histRef.set({
+      opponent:oppName, result:won?'win':'loss',
+      scoreChange:moneyChange, wordLength:wordLength,
+      mode:mode, date:Date.now(), word:secretWord
+    });
+  }catch(e){}
 
   // Check achievements
   var ach=await checkAchievements(fresh,currentUser.uid);

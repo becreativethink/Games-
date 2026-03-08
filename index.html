@@ -80,12 +80,16 @@ function fillUI(u){
   var wr=u.totalGames>0?Math.round((u.wins||0)*100/u.totalGames)+'%':'0%';
   document.getElementById('st-winrate').textContent=wr;
   document.getElementById('st-score').textContent=fmtNum(u.score||0);
-  var lvl=Math.floor((u.score||0)/500)+1;
-  var xp=(u.score||0)%500;
+  // Use XP-based level system
+  var XP_LVS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+  var xp=u.xp||0; var lvl=1; var nextXp=XP_LVS[1]||100;
+  for(var i=0;i<XP_LVS.length;i++){if(xp>=XP_LVS[i]){lvl=i+1;nextXp=XP_LVS[i+1]||XP_LVS[XP_LVS.length-1];}}
+  var prevXp=XP_LVS[lvl-1]||0;
+  var pct=nextXp>prevXp?Math.min(100,((xp-prevXp)/(nextXp-prevXp)*100)):100;
   document.getElementById('st-level').textContent=lvl;
   document.getElementById('lv-cur').textContent=lvl;
-  document.getElementById('lv-xp').textContent=xp;
-  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
+  document.getElementById('lv-xp').textContent=xp+' / '+nextXp;
+  document.getElementById('lv-fill').style.width=pct.toFixed(1)+'%';
 }
 
 /* ══════════════════════════════════════════════
@@ -139,28 +143,17 @@ window.startRewardedAd=function(){
   /* Trigger Qualiclicks popup ad on user click (requires user gesture) */
   try{
     window.adk_pdisp = {
-      'h' : 'xml.qualiclicks.com',
-      'f' : '',
-      'a' : '',
+      'h'  : 'xml.qualiclicks.com',
+      'f'  : 49886,
+      'a'  : '',
       'ps' : [5],
-      'cin' : 4,
-      's' : '',
-      'q' : [],
-      't' : 6
+      'cin': 4,
+      's'  : '',
+      'q'  : [],
+      't'  : 6
     };
-    /* Fire the popup — Qualiclicks uses adk_disp() or window.open via its SDK */
-    if(typeof adk_disp === 'function'){
-      adk_disp();
-    } else if(typeof window.adk_run === 'function'){
-      window.adk_run();
-    } else {
-      /* SDK not loaded yet — open popup URL directly as fallback */
-      var popup = window.open(
-        'https://xml.qualiclicks.com/disp?f=&t=6&cin=4',
-        '_blank',
-        'width=400,height=300,scrollbars=yes'
-      );
-    }
+    if(typeof adk_disp==='function') adk_disp();
+    else if(typeof window.adk_run==='function') window.adk_run();
   }catch(e){
     /* silently continue — reward regardless so user is not penalised */
   }
@@ -203,11 +196,184 @@ document.addEventListener('DOMContentLoaded', function(){
           var idx=arr.findIndex(function(x){return x.username===fresh.username;});
           document.getElementById('bar-rank').textContent=idx>=0?'#'+(idx+1):'—';
         });
+        // Check daily reward after fresh data loaded
+        checkDailyReward(fresh);
       }
     }).catch(function(){});
     checkAdCooldown();
+    checkFriendRequests();
+    listenForChallenges();
   }
 });
+
+/* ════════════════════════════════════════
+   DAILY LOGIN REWARD SYSTEM
+════════════════════════════════════════ */
+var DAILY_REWARDS = [
+  { day:1, icon:'💰', label:'Money',   type:'money', amount:10 },
+  { day:2, icon:'💰', label:'Money',   type:'money', amount:20 },
+  { day:3, icon:'💰', label:'Money',   type:'money', amount:30 },
+  { day:4, icon:'⭐', label:'Score',   type:'score', amount:5  },
+  { day:5, icon:'⭐', label:'Score',   type:'score', amount:10 },
+  { day:6, icon:'💰', label:'Money',   type:'money', amount:50 },
+  { day:7, icon:'🎲', label:'Mystery', type:'mystery',amount:0 },
+];
+
+function todayDateStr(){ return new Date().toISOString().split('T')[0]; }
+var _pendingReward = null;
+
+async function checkDailyReward(u){
+  try{
+    var snap = await db.ref('dailyRewards/'+user.uid).get();
+    var today = todayDateStr();
+    var data  = snap.exists() ? snap.val() : {lastClaimDate:'',streakDay:0};
+    if(data.lastClaimDate === today) return; // already claimed
+    // Calculate streak
+    var yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    var yStr = yesterday.toISOString().split('T')[0];
+    var streakDay;
+    if(data.lastClaimDate === yStr){
+      streakDay = ((data.streakDay||0) % 7) + 1;
+    } else {
+      streakDay = 1; // streak reset
+    }
+    _pendingReward = { streakDay: streakDay, data: data };
+    showRewardPopup(streakDay);
+  }catch(e){}
+}
+
+function showRewardPopup(day){
+  var r = DAILY_REWARDS[day-1] || DAILY_REWARDS[0];
+  // Render streak days
+  var daysHtml = '';
+  for(var i=1;i<=7;i++){
+    var cls = i<day?'done':i===day?'current':'';
+    daysHtml += '<div class="streak-day '+cls+'">D'+i+'</div>';
+  }
+  document.getElementById('rp-streak-days').innerHTML = daysHtml;
+  // Reward items
+  var itemHtml = '';
+  if(r.type === 'mystery'){
+    itemHtml = '<div class="reward-item"><span class="reward-item-label">🎲 Mystery Reward</span><span class="reward-item-value">SURPRISE!</span></div>';
+    document.getElementById('rp-icon').textContent = '🎲';
+    document.getElementById('rp-title').textContent = 'Mystery Reward!';
+  } else {
+    itemHtml = '<div class="reward-item"><span class="reward-item-label">'+r.icon+' '+r.label+'</span><span class="reward-item-value">+'+r.amount+'</span></div>';
+    document.getElementById('rp-icon').textContent = r.icon;
+    document.getElementById('rp-title').textContent = 'Day '+day+' Reward!';
+  }
+  itemHtml += '<div class="reward-item"><span class="reward-item-label">⚡ Bonus XP</span><span class="reward-item-value">+5 XP</span></div>';
+  document.getElementById('rp-items').innerHTML = itemHtml;
+  document.getElementById('rp-sub').textContent = 'Login streak: '+day+' day'+(day>1?'s':'')+'! Keep it up!';
+  document.getElementById('reward-overlay').classList.add('open');
+}
+
+window.claimDailyReward = async function(){
+  if(!_pendingReward) return;
+  document.getElementById('reward-overlay').classList.remove('open');
+  var day = _pendingReward.streakDay;
+  var r   = DAILY_REWARDS[day-1] || DAILY_REWARDS[0];
+  try{
+    var snap = await db.ref('users/'+user.uid).get();
+    var ud   = snap.val();
+    var upd  = { xp: Math.max(0,(ud.xp||0)+5) };
+    // Mystery reward = random money 20-100
+    if(r.type==='mystery'){
+      var prize = [20,30,50,75,100][Math.floor(Math.random()*5)];
+      upd.money  = Math.max(0,(ud.money||0)+prize);
+      toast('🎲 Mystery: +'+prize+' 💰 and +5 XP!','success');
+    } else if(r.type==='money'){
+      upd.money  = Math.max(0,(ud.money||0)+r.amount);
+      toast('+'+r.amount+' 💰 and +5 XP claimed!','success');
+    } else if(r.type==='score'){
+      upd.score  = Math.max(0,(ud.score||0)+r.amount);
+      toast('+'+r.amount+' ⭐ and +5 XP claimed!','success');
+    }
+    // Level up from XP
+    upd = Object.assign(upd, calcLevel(upd.xp !== undefined ? upd.xp : ud.xp||0));
+    await db.ref('users/'+user.uid).update(upd);
+    await db.ref('dailyRewards/'+user.uid).set({
+      lastClaimDate: todayDateStr(),
+      streakDay: day
+    });
+    // Refresh local session
+    var newSnap = await db.ref('users/'+user.uid).get();
+    var fresh = Object.assign({uid:user.uid},newSnap.val());
+    saveSession(fresh); user=fresh; fillUI(fresh);
+  }catch(e){ toast('Could not claim reward.','error'); }
+  _pendingReward = null;
+};
+
+/* ════════════════════════════════════════
+   XP & LEVEL SYSTEM
+════════════════════════════════════════ */
+var XP_LEVELS = [0,100,250,500,900,1400,2000,2800,3800,5000];
+function calcLevel(xp){
+  var lvl=1;
+  for(var i=0;i<XP_LEVELS.length;i++){ if(xp>=XP_LEVELS[i]) lvl=i+1; }
+  return { level: lvl };
+}
+window.grantXP = async function(uid, amount, reason){
+  try{
+    var snap = await db.ref('users/'+uid).get();
+    if(!snap.exists()) return;
+    var ud = snap.val();
+    var newXP = Math.max(0,(ud.xp||0)+amount);
+    var lvlData = calcLevel(newXP);
+    var oldLvl = ud.level||1;
+    await db.ref('users/'+uid).update({ xp: newXP, level: lvlData.level });
+    if(lvlData.level > oldLvl) toast('⬆️ Level Up! Now Level '+lvlData.level,'success');
+    if(reason) toast('+'+amount+' XP — '+reason,'info');
+  }catch(e){}
+};
+
+/* ════════════════════════════════════════
+   FRIEND REQUEST BADGE CHECK
+════════════════════════════════════════ */
+function checkFriendRequests(){
+  if(!user||!user.username) return;
+  db.ref('friendRequests').orderByChild('receiver').equalTo(user.username)
+    .on('value', function(snap){
+      var count=0;
+      if(snap.exists()){
+        snap.forEach(function(ch){
+          if((ch.val().status||'pending')==='pending') count++;
+        });
+      }
+      var badge = document.getElementById('friend-req-badge');
+      if(badge){ badge.classList.toggle('hidden', count===0); badge.textContent=count>9?'9+':count; }
+    });
+}
+
+/* ════════════════════════════════════════
+   CHALLENGE LISTENER
+════════════════════════════════════════ */
+var _activeChallId = null;
+function listenForChallenges(){
+  if(!user||!user.username) return;
+  db.ref('challenges').orderByChild('receiver').equalTo(user.username)
+    .on('value', function(snap){
+      if(!snap.exists()) return;
+      snap.forEach(function(ch){
+        var d=ch.val();
+        if(d.status==='pending' && ch.key!==_activeChallId){
+          _activeChallId=ch.key;
+          document.getElementById('chall-from').textContent=d.sender+' challenges you!';
+          document.getElementById('challenge-popup').classList.add('show');
+        }
+      });
+    });
+}
+window.respondChallenge = async function(accept){
+  if(!_activeChallId) return;
+  document.getElementById('challenge-popup').classList.remove('show');
+  await db.ref('challenges/'+_activeChallId).update({status: accept?'accepted':'rejected'});
+  if(accept){
+    sessionStorage.setItem('ww_mode','online');
+    location.href='game.html';
+  }
+  _activeChallId=null;
+};
 </script>
 </head>
 <body>
@@ -279,6 +445,24 @@ document.addEventListener('DOMContentLoaded', function(){
       <p class="mc-desc">One word per day. 60-second timer. Earn money and score.</p>
       <button class="btn btn-gold btn-full mt-16">Daily Challenge</button>
     </div>
+    <div class="mode-card" style="cursor:pointer;background:rgba(255,255,255,.04);" onclick="location.href='friends.html'">
+      <div class="mc-icon">👥</div>
+      <h3 class="mc-title">Friends</h3>
+      <p class="mc-desc">Add friends, challenge rivals, and climb together.</p>
+      <button class="btn btn-secondary btn-full mt-16">View Friends</button>
+    </div>
+    <div class="mode-card" style="cursor:pointer;background:rgba(255,255,255,.04);" onclick="location.href='achievements.html'">
+      <div class="mc-icon">🏅</div>
+      <h3 class="mc-title">Achievements</h3>
+      <p class="mc-desc">Unlock badges, earn XP, and prove your skills.</p>
+      <button class="btn btn-secondary btn-full mt-16">View Badges</button>
+    </div>
+    <div class="mode-card" style="cursor:pointer;background:rgba(255,255,255,.04);" onclick="location.href='history.html'">
+      <div class="mc-icon">📜</div>
+      <h3 class="mc-title">History</h3>
+      <p class="mc-desc">Review your past matches, wins, and performance.</p>
+      <button class="btn btn-secondary btn-full mt-16">Match History</button>
+    </div>
   </div>
 </div>
 
@@ -327,23 +511,52 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bn-btn active" onclick="bnNav('index.html')" data-page="home">
+  <button class="bn-btn active" onclick="bnNav('index.html')">
     <span class="bn-icon">🏠</span>
     <span class="bn-lbl">Home</span>
   </button>
-  <button class="bn-btn" onclick="bnNav('leaderboard.html')" data-page="leaderboard">
+  <button class="bn-btn" onclick="bnNav('leaderboard.html')">
     <span class="bn-icon">🏆</span>
     <span class="bn-lbl">Ranks</span>
   </button>
-  <button class="bn-btn" onclick="bnNav('profile.html')" data-page="profile">
+  <button class="bn-btn" onclick="bnNav('friends.html')" style="position:relative;">
+    <span class="bn-icon">👥</span>
+    <span class="bn-lbl">Friends</span>
+    <span class="bn-badge hidden" id="friend-req-badge"></span>
+  </button>
+  <button class="bn-btn" onclick="bnNav('profile.html')">
     <span class="bn-icon">👤</span>
     <span class="bn-lbl">Profile</span>
   </button>
-  <button class="bn-btn" onclick="selectMode('daily')" data-page="daily">
-    <span class="bn-icon">📅</span>
-    <span class="bn-lbl">Daily</span>
-  </button>
 </nav>
+
+<!-- Daily Reward Popup -->
+<div class="reward-popup-overlay" id="reward-overlay">
+  <div class="reward-popup">
+    <span class="reward-popup-icon" id="rp-icon">🎁</span>
+    <div class="reward-popup-title" id="rp-title">Daily Reward!</div>
+    <div class="reward-popup-sub" id="rp-sub">Welcome back! Here's your login bonus.</div>
+    <div class="reward-streak-days" id="rp-streak-days"></div>
+    <div class="reward-popup-items" id="rp-items"></div>
+    <button class="btn btn-gold btn-full" onclick="claimDailyReward()">🎁 Claim Reward</button>
+  </div>
+</div>
+
+<!-- Incoming Challenge Popup -->
+<div class="challenge-popup" id="challenge-popup">
+  <div class="challenge-popup-title">⚔️ CHALLENGE RECEIVED</div>
+  <div class="challenge-popup-from" id="chall-from">Someone challenged you!</div>
+  <div class="challenge-popup-btns">
+    <button class="btn btn-success btn-sm flex-1" onclick="respondChallenge(true)">✓ Accept</button>
+    <button class="btn btn-danger btn-sm flex-1" onclick="respondChallenge(false)">✕ Decline</button>
+  </div>
+</div>
+
+<!-- Floating Chat FAB -->
+<button class="chat-fab" onclick="location.href='friends.html'" title="Chat & Friends" id="chat-fab-btn">
+  💬
+  <span class="chat-fab-badge hidden" id="chat-fab-badge">0</span>
+</button>
 
 <script src="/pwa.js"></script>
 </body>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>WordWar — Achievements</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← HOME</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="page-shell">
+  <div class="page-title"><span class="page-title-icon">🏅</span> Achievements</div>
+
+  <!-- XP Progress -->
+  <div class="glass-card glass-card-glow" style="margin-bottom:18px;">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+      <div style="width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">⚡</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--font-display);font-size:.9rem;font-weight:800;color:#b0a0ff;margin-bottom:2px;">Level <span id="xp-level">1</span></div>
+        <div style="font-size:.72rem;color:var(--text3);">XP: <span id="xp-cur" style="color:var(--text2);font-family:var(--mono);">0</span> / <span id="xp-next" style="color:var(--text2);font-family:var(--mono);">100</span></div>
+      </div>
+      <div id="xp-unlocked-count" style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--gold);text-align:right;">
+        <div style="font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;">Unlocked</div>
+        <span id="ach-count">0</span>/<span id="ach-total">0</span>
+      </div>
+    </div>
+    <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-strip">
+    <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-pill" onclick="setFilter('earned',this)">✅ Earned</button>
+    <button class="filter-pill" onclick="setFilter('locked',this)">🔒 Locked</button>
+  </div>
+
+  <div class="ach-page-grid" id="ach-grid">
+    <div style="grid-column:1/-1;" class="empty-state"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn active" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user=loadSession();
+if(!user){location.href='login.html';}
+function avatarUrl(url,name){if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+document.getElementById('nav-username').textContent=user.username;
+document.getElementById('nav-avatar').src=avatarUrl(user.photoURL,user.username);
+
+var XP_LEVELS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+
+var ALL_ACHIEVEMENTS=[
+  {id:'first_win',    icon:'🏆',label:'First Victory',   desc:'Win your first game',            xp:15, cond:function(u){return(u.wins||0)>=1;}},
+  {id:'win5',         icon:'🔥',label:'On Fire',          desc:'Win 5 games in a row',           xp:30, cond:function(u){return(u.winStreak||0)>=5;}},
+  {id:'win10',        icon:'⚔️', label:'Veteran',         desc:'Win 10 multiplayer games',       xp:50, cond:function(u){return(u.wins||0)>=10;}},
+  {id:'win50',        icon:'👑',label:'Elite Player',     desc:'Win 50 games',                   xp:100,cond:function(u){return(u.wins||0)>=50;}},
+  {id:'daily_hero',   icon:'📅',label:'Daily Warrior',   desc:'Complete a daily challenge',      xp:10, cond:function(u){return(u.totalGames||0)>=1;}},
+  {id:'daily10',      icon:'🗓️', label:'Consistent',     desc:'Complete 10 daily challenges',   xp:40, cond:function(u){return(u.dailyWins||0)>=10;}},
+  {id:'score_500',    icon:'💰',label:'Score Hunter',    desc:'Reach 500 score',                 xp:20, cond:function(u){return(u.score||0)>=500;}},
+  {id:'score_2k',     icon:'💎',label:'Score Master',    desc:'Reach 2000 score',                xp:60, cond:function(u){return(u.score||0)>=2000;}},
+  {id:'score_5k',     icon:'🌟',label:'Legend',          desc:'Reach 5000 score',                xp:150,cond:function(u){return(u.score||0)>=5000;}},
+  {id:'games_50',     icon:'🎮',label:'Dedicated',       desc:'Play 50 total games',             xp:35, cond:function(u){return(u.totalGames||0)>=50;}},
+  {id:'games_100',    icon:'🏟️', label:'Arena Pro',      desc:'Play 100 total games',            xp:75, cond:function(u){return(u.totalGames||0)>=100;}},
+  {id:'one_try',      icon:'🎯',label:'Sharpshooter',   desc:'Guess the word on first try',     xp:50, cond:function(u){return(u.oneGuessWin||false);}},
+  {id:'social',       icon:'👥',label:'Social Butterfly',desc:'Add 5 friends',                  xp:20, cond:function(u){return(u.friendCount||0)>=5;}},
+  {id:'rich',         icon:'💸',label:'Money Bags',      desc:'Accumulate 500 money',            xp:25, cond:function(u){return(u.money||0)>=500;}},
+  {id:'streak7',      icon:'📆',label:'Weekly Warrior',  desc:'7-day login streak',              xp:40, cond:function(u){return(u.loginStreak||0)>=7;}},
+];
+
+var _filter='all';
+var _userData=null;
+
+function setFilter(f,btn){
+  _filter=f;
+  document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  if(_userData) renderAchievements(_userData);
+}
+window.setFilter=setFilter;
+
+async function loadAchievements(){
+  try{
+    var snap=await db.ref('users/'+user.uid).get();
+    if(!snap.exists())return;
+    var u=snap.val();
+    _userData=u;
+    // XP bar
+    var xp=u.xp||0;
+    var lvl=1;
+    var nextXp=XP_LEVELS[1]||100;
+    for(var i=0;i<XP_LEVELS.length;i++){if(xp>=XP_LEVELS[i]){lvl=i+1;nextXp=XP_LEVELS[i+1]||XP_LEVELS[XP_LEVELS.length-1];}}
+    var prevXp=XP_LEVELS[lvl-1]||0;
+    var pct=nextXp>prevXp?Math.min(100,((xp-prevXp)/(nextXp-prevXp)*100)):100;
+    document.getElementById('xp-level').textContent=lvl;
+    document.getElementById('xp-cur').textContent=xp;
+    document.getElementById('xp-next').textContent=nextXp;
+    document.getElementById('xp-fill').style.width=pct.toFixed(1)+'%';
+    renderAchievements(u);
+    // Auto-grant new achievements
+    await grantNewAchievements(u);
+  }catch(e){}
+}
+
+function renderAchievements(u){
+  var earned=u.achievements||{};
+  var filtered=ALL_ACHIEVEMENTS.filter(function(a){
+    if(_filter==='earned') return a.cond(u);
+    if(_filter==='locked') return !a.cond(u);
+    return true;
+  });
+  var earnedCount=ALL_ACHIEVEMENTS.filter(function(a){return a.cond(u);}).length;
+  document.getElementById('ach-count').textContent=earnedCount;
+  document.getElementById('ach-total').textContent=ALL_ACHIEVEMENTS.length;
+
+  var grid=document.getElementById('ach-grid');
+  if(!filtered.length){grid.innerHTML='<div style="grid-column:1/-1;" class="empty-state"><div class="empty-state-icon">🔒</div><div class="empty-state-title">Nothing here yet</div></div>';return;}
+  grid.innerHTML=filtered.map(function(a){
+    var isEarned=a.cond(u);
+    var earnedDate=earned[a.id]?new Date(earned[a.id]).toLocaleDateString():'';
+    return'<div class="ach-badge-card'+(isEarned?' earned':' locked')+'">'
+      +'<span class="ach-badge-icon">'+a.icon+'</span>'
+      +'<div class="ach-badge-name">'+a.label+'</div>'
+      +'<div class="ach-badge-desc">'+a.desc+'</div>'
+      +'<div style="font-size:.6rem;color:var(--accent2);font-weight:700;">+'+a.xp+' XP</div>'
+      +(isEarned?'<div class="ach-badge-earned-tag">✓ Earned'+(earnedDate?' '+earnedDate:'')+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+async function grantNewAchievements(u){
+  var earned=u.achievements||{};
+  var toGrant=[];
+  var totalXp=0;
+  ALL_ACHIEVEMENTS.forEach(function(a){
+    if(!earned[a.id]&&a.cond(u)){toGrant.push(a);totalXp+=a.xp;}
+  });
+  if(!toGrant.length)return;
+  var upd={};
+  toGrant.forEach(function(a){upd['achievements/'+a.id]=Date.now();});
+  upd.xp=Math.max(0,(u.xp||0)+totalXp);
+  // calc level
+  var newXp=upd.xp;var newLvl=1;
+  for(var i=0;i<XP_LEVELS.length;i++){if(newXp>=XP_LEVELS[i])newLvl=i+1;}
+  upd.level=newLvl;
+  await db.ref('users/'+user.uid).update(upd);
+  toGrant.forEach(function(a){ setTimeout(function(){showAchievementToast(a);},300); });
+}
+
+function showAchievementToast(a){
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='padding:13px 16px;border-radius:13px;background:#0e0e1c;border:1px solid rgba(240,180,41,.4);font-family:Outfit,sans-serif;font-size:.82rem;color:#eeeef8;transform:translateX(120%);transition:transform .3s;box-shadow:0 8px 28px rgba(0,0,0,.6);';
+  t.innerHTML='<div style="font-size:.7rem;color:var(--gold);font-weight:700;margin-bottom:4px;">🏅 ACHIEVEMENT UNLOCKED</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:1.4rem;">'+a.icon+'</span><div><div style="font-weight:700;">'+a.label+'</div><div style="font-size:.72rem;color:#7878a0;margin-top:2px;">+'+a.xp+' XP</div></div></div>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},300);},4500);
+}
+
+loadAchievements();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

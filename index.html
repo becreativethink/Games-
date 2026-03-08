@@ -342,6 +342,14 @@ function checkFriendRequests(){
       }
       var badge = document.getElementById('friend-req-badge');
       if(badge){ badge.classList.toggle('hidden', count===0); badge.textContent=count>9?'9+':count; }
+    }, function(err){
+      // Index not yet deployed — fallback: fetch all and filter
+      db.ref('friendRequests').get().then(function(snap){
+        var count=0;
+        if(snap.exists()){snap.forEach(function(ch){var d=ch.val();if(d.receiver===user.username&&(d.status||'pending')==='pending')count++;});}
+        var badge=document.getElementById('friend-req-badge');
+        if(badge){badge.classList.toggle('hidden',count===0);badge.textContent=count>9?'9+':count;}
+      });
     });
 }
 
@@ -361,6 +369,19 @@ function listenForChallenges(){
           document.getElementById('chall-from').textContent=d.sender+' challenges you!';
           document.getElementById('challenge-popup').classList.add('show');
         }
+      });
+    }, function(err){
+      // Index fallback
+      db.ref('challenges').get().then(function(snap){
+        if(!snap.exists())return;
+        snap.forEach(function(ch){
+          var d=ch.val();
+          if(d.receiver===user.username&&d.status==='pending'&&ch.key!==_activeChallId){
+            _activeChallId=ch.key;
+            document.getElementById('chall-from').textContent=d.sender+' challenges you!';
+            document.getElementById('challenge-popup').classList.add('show');
+          }
+        });
       });
     });
 }

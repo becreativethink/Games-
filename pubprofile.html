@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>WordWar — Player Profile</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a href="javascript:history.back()" class="nav-logo" style="font-size:.85rem;color:var(--text2);">← Back</a>
+  <div class="nav-links">
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+    </a>
+  </div>
+</nav>
+
+<div class="page-shell">
+  <div id="pub-loading" class="empty-state"><div class="spinner"></div></div>
+
+  <div id="pub-content" style="display:none;">
+    <!-- Hero -->
+    <div class="pub-profile-hero">
+      <div class="pub-avatar-ring">
+        <img id="pub-avatar" src="" alt="" class="pub-avatar"/>
+      </div>
+      <div class="pub-username" id="pub-username">…</div>
+      <div class="pub-tags">
+        <span class="level-badge">⚡ Lv. <span id="pub-level">1</span></span>
+        <span id="pub-online-tag" class="tag tag-green" style="display:none;">● Online</span>
+      </div>
+      <div id="pub-action-btns" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center;"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar" style="margin-bottom:16px;">
+      <div class="stats-bar-cell">
+        <span class="stats-bar-val text-accent" id="pub-score">0</span>
+        <span class="stats-bar-lbl">Score</span>
+      </div>
+      <div class="stats-bar-cell">
+        <span class="stats-bar-val text-gold" id="pub-money">0</span>
+        <span class="stats-bar-lbl">Money</span>
+      </div>
+      <div class="stats-bar-cell">
+        <span class="stats-bar-val" id="pub-wins">0</span>
+        <span class="stats-bar-lbl">Wins</span>
+      </div>
+      <div class="stats-bar-cell">
+        <span class="stats-bar-val" id="pub-games">0</span>
+        <span class="stats-bar-lbl">Games</span>
+      </div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="glass-card" style="margin-bottom:14px;">
+      <div class="xp-bar-info">
+        <span class="xp-bar-level">⚡ Level <span id="pub-lv">1</span></span>
+        <span class="xp-bar-pts"><span id="pub-xp">0</span> XP</span>
+      </div>
+      <div class="xp-bar-track"><div class="xp-bar-fill" id="pub-xp-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Achievements preview -->
+    <div class="sec-label">🏅 Achievements</div>
+    <div id="pub-ach-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+
+    <!-- Recent matches -->
+    <div class="sec-label" style="margin-top:4px;">📜 Recent Matches</div>
+    <div id="pub-hist-list" style="display:flex;flex-direction:column;gap:7px;"></div>
+  </div>
+</div>
+
+<!-- Challenge Modal -->
+<div class="modal-overlay" id="chall-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚔️ Challenge <span id="chall-name">Player</span></h2>
+      <button class="modal-close" onclick="closeModal('chall-modal')">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:16px;">Send a game challenge. They'll get a notification.</p>
+    <div id="chall-status-pub" style="margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary flex-1" onclick="doChallenge()">⚔️ Challenge!</button>
+      <button class="btn btn-ghost" onclick="closeModal('chall-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn active" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user=loadSession();
+if(!user){location.href='login.html';}
+function avatarUrl(url,name){if(url&&url.startsWith('http'))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').slice(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+var XP_LEVELS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+var ACH_DEF=[
+  {id:'first_win',icon:'🏆',label:'First Win',cond:function(u){return(u.wins||0)>=1;}},
+  {id:'win10',icon:'⚔️',label:'Veteran',cond:function(u){return(u.wins||0)>=10;}},
+  {id:'score_500',icon:'💰',label:'Score Hunter',cond:function(u){return(u.score||0)>=500;}},
+  {id:'score_2k',icon:'👑',label:'Elite',cond:function(u){return(u.score||0)>=2000;}},
+  {id:'games_50',icon:'🎮',label:'Dedicated',cond:function(u){return(u.totalGames||0)>=50;}},
+  {id:'streak_3',icon:'🔥',label:'On Fire',cond:function(u){return(u.winStreak||0)>=3;}},
+];
+
+document.getElementById('nav-username').textContent=user.username;
+document.getElementById('nav-avatar').src=avatarUrl(user.photoURL,user.username);
+
+var params=new URLSearchParams(location.search);
+var targetName=params.get('u')||'';
+var _targetData=null;
+var _targetUid=null;
+var _isFriend=false;
+
+async function loadProfile(){
+  if(!targetName){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">No user specified</div>';return;}
+  // Own profile?
+  if(targetName.toLowerCase()===user.username.toLowerCase()){location.href='profile.html';return;}
+  try{
+    var ns=await db.ref('usernames/'+targetName.toLowerCase()).get();
+    if(!ns.exists()){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">User not found</div>';return;}
+    _targetUid=ns.val();
+    var snap=await db.ref('users/'+_targetUid).get();
+    if(!snap.exists()){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">User data missing</div>';return;}
+    _targetData=snap.val();
+    // Check friendship
+    var frSnap=await db.ref('friends/'+user.uid+'/'+_targetUid).get();
+    _isFriend=frSnap.exists();
+    renderProfile(_targetData);
+  }catch(e){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">Error loading profile</div>';}
+}
+
+function renderProfile(u){
+  document.getElementById('pub-loading').style.display='none';
+  document.getElementById('pub-content').style.display='block';
+  document.getElementById('pub-avatar').src=avatarUrl(u.photoURL,u.username||targetName);
+  document.getElementById('pub-username').textContent=u.username||targetName;
+  var xp=u.xp||0;var lvl=1;
+  for(var i=0;i<XP_LEVELS.length;i++){if(xp>=XP_LEVELS[i])lvl=i+1;}
+  document.getElementById('pub-level').textContent=lvl;
+  document.getElementById('pub-lv').textContent=lvl;
+  document.getElementById('pub-xp').textContent=xp;
+  var prevXp=XP_LEVELS[lvl-1]||0;var nextXp=XP_LEVELS[lvl]||xp||1;
+  var pct=nextXp>prevXp?Math.min(100,(xp-prevXp)/(nextXp-prevXp)*100):100;
+  document.getElementById('pub-xp-fill').style.width=pct.toFixed(1)+'%';
+  if(u.isOnline) document.getElementById('pub-online-tag').style.display='inline-flex';
+  document.getElementById('pub-score').textContent=fmtNum(u.score||0);
+  document.getElementById('pub-money').textContent=fmtNum(u.money||0);
+  document.getElementById('pub-wins').textContent=fmtNum(u.wins||0);
+  document.getElementById('pub-games').textContent=fmtNum(u.totalGames||0);
+  // Action buttons
+  var btns=document.getElementById('pub-action-btns');
+  btns.innerHTML='<button class="btn btn-primary btn-sm" onclick="openChallengeModal()">⚔️ Challenge</button>';
+  if(_isFriend){
+    btns.innerHTML+='<button class="btn btn-secondary btn-sm" onclick="openChat()">💬 Chat</button>';
+  } else {
+    btns.innerHTML+='<button class="btn btn-ghost btn-sm" onclick="addFriend()">+ Add Friend</button>';
+  }
+  // Achievements
+  var achList=document.getElementById('pub-ach-list');
+  var earned=ACH_DEF.filter(function(a){return a.cond(u);});
+  if(earned.length){
+    achList.innerHTML=earned.map(function(a){
+      return'<div style="padding:6px 11px;border-radius:100px;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.22);font-size:.72rem;font-weight:700;color:var(--gold);">'+a.icon+' '+a.label+'</div>';
+    }).join('');
+  } else {
+    achList.innerHTML='<div style="font-size:.76rem;color:var(--text3);">No achievements yet.</div>';
+  }
+  // Recent matches
+  loadRecentMatches();
+}
+
+async function loadRecentMatches(){
+  var list=document.getElementById('pub-hist-list');
+  try{
+    var snap=await db.ref('matchHistory/'+_targetUid).orderByChild('date').limitToLast(5).get();
+    if(!snap.exists()){list.innerHTML='<div style="font-size:.76rem;color:var(--text3);padding:8px;">No match history.</div>';return;}
+    var arr=[];
+    snap.forEach(function(ch){arr.unshift(Object.assign({id:ch.key},ch.val()));});
+    list.innerHTML='';
+    arr.forEach(function(m){
+      var div=document.createElement('div');
+      div.className='hist-item';
+      var isWin=m.result==='win',isDraw=m.result==='draw';
+      var badge=isWin?'W':isDraw?'D':'L';
+      var badgeCls=isWin?'win':isDraw?'draw':'loss';
+      var scColor=m.scoreChange>0?'positive':m.scoreChange<0?'negative':'';
+      var scText=(m.scoreChange>0?'+':'')+m.scoreChange;
+      div.innerHTML='<div class="hist-result-badge '+badgeCls+'">'+badge+'</div>'
+        +'<div class="hist-info"><div class="hist-opponent">'+(m.opponent||'Unknown')+'</div><div class="hist-meta">'+(m.date?new Date(m.date).toLocaleDateString():'')+'</div></div>'
+        +'<div class="hist-score '+scColor+'">'+scText+' ⭐</div>';
+      list.appendChild(div);
+    });
+  }catch(e){list.innerHTML='';}
+}
+
+window.openChallengeModal=function(){
+  document.getElementById('chall-name').textContent=_targetData.username||targetName;
+  document.getElementById('chall-status-pub').innerHTML='';
+  openModal('chall-modal');
+};
+window.doChallenge=async function(){
+  var challId='ch_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  await db.ref('challenges/'+challId).set({
+    sender:user.username,senderUid:user.uid,
+    receiver:_targetData.username,receiverUid:_targetUid,
+    status:'pending',sentAt:Date.now()
+  });
+  document.getElementById('chall-status-pub').innerHTML='<div class="challenge-status pending">⏳ Challenge sent!</div>';
+};
+window.openChat=function(){
+  var chatId=[user.uid,_targetUid].sort().join('_');
+  location.href='chat.html?chatId='+chatId+'&with='+encodeURIComponent(_targetData.username);
+};
+window.addFriend=async function(){
+  var reqId='fr_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  await db.ref('friendRequests/'+reqId).set({sender:user.username,receiver:_targetData.username,status:'pending',sentAt:Date.now()});
+  var btns=document.getElementById('pub-action-btns');
+  btns.querySelectorAll('button')[1].textContent='✅ Request Sent';
+  btns.querySelectorAll('button')[1].disabled=true;
+};
+
+loadProfile();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

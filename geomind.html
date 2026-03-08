@@ -360,25 +360,71 @@ a { text-decoration:none; }
   /* Mobile bar selects */
   #mobileBar .nsel { font-size:12px; padding:6px 8px; min-width:0; height:36px; }
   
-  /* Layout: stack map on top, panel below */
+  /* ── 3-PANEL MOBILE LAYOUT ──
+     Panel 1: Map (#map fixed 38vh)
+     Panel 2: Send controls bar (auto, compact)
+     Panel 3: Tabs + content (fills remaining space)
+     
+     mapControlsBar is inside mapPanel (flex column),
+     so #map gets fixed height and controls are auto.
+  */
   #mainWrap { 
     grid-template-columns:1fr !important; 
-    grid-template-rows:42vh 1fr !important; 
+    grid-template-rows:auto 1fr !important;
+    overflow:hidden !important;
   }
-  #mapPanel { border-right:none !important; border-bottom:1px solid var(--border); }
-  
-  /* Map controls bar - stack vertically on mobile */
+  #mapPanel { 
+    border-right:none !important; 
+    border-bottom:none !important;
+    display:flex !important;
+    flex-direction:column !important;
+    flex-shrink:0 !important;
+    overflow:visible !important;
+  }
+  #map { 
+    height:38vh !important; 
+    flex:none !important;
+    min-height:140px !important;
+  }
+
+  /* Send controls: compact horizontal single-line row */
   #mapControlsBar { 
-    flex-direction:column; 
-    padding:10px 12px;
-    gap:8px;
+    flex-direction:row !important;
+    flex-wrap:nowrap !important;
+    padding:7px 10px !important;
+    gap:6px !important;
+    align-items:center !important;
+    border-top:1px solid var(--border) !important;
+    border-bottom:2px solid rgba(0,229,200,0.12) !important;
+    background:rgba(4,6,14,0.98) !important;
+    box-shadow:0 3px 16px rgba(0,0,0,0.5) !important;
+    flex-shrink:0 !important;
   }
-  #mapControlsBar .mc-group { min-width:0; width:100%; }
+  /* Hide country field on mobile — save space */
+  #mapControlsBar .mc-country { display:none !important; }
+  #mapControlsBar .mc-question { flex:1 !important; min-width:0 !important; }
+  #mapControlsBar .mc-question label { display:none !important; }
+  #mapControlsBar .mc-question input { 
+    height:36px !important; 
+    font-size:12px !important;
+    padding:0 11px !important;
+  }
   #sendBtn { 
-    width:100%; 
-    height:44px; 
-    font-size:14px;
-    border-radius:12px;
+    flex-shrink:0 !important;
+    width:auto !important;
+    padding:0 14px !important;
+    height:36px !important; 
+    font-size:12px !important;
+    border-radius:9px !important;
+    white-space:nowrap !important;
+  }
+
+  /* Right panel fills remaining space */
+  #rightPanel { 
+    min-height:0 !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
   }
   
   /* Right panel tabs - make tap targets bigger */
@@ -438,6 +484,10 @@ a { text-decoration:none; }
   
   /* Pricing cards */
   .plan-card { padding:14px; }
+  .plan-price .amt { font-size:20px; }
+  /* Ensure free plan ACTIVE badge is visible */
+  .plan-card.free.current-plan { border-color:rgba(0,229,200,0.35) !important; }
+  .pb-free-btn:disabled { background:rgba(0,229,200,0.07); color:var(--cyan); border:1px solid rgba(0,229,200,0.25); opacity:1 !important; }
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -935,14 +985,23 @@ a { text-decoration:none; }
   border-color:rgba(251,191,36,0.35); background:rgba(251,191,36,0.04);
   box-shadow:0 0 40px rgba(251,191,36,0.07);
 }
-.plan-card.current-plan::after {
-  content:'ACTIVE'; position:absolute; top:14px; right:14px;
+.plan-card.current-plan {
+  border-width:1.5px !important;
+}
+/* ACTIVE badge: sits below plan name, not overlapping price */
+.plan-active-badge {
+  display:inline-block;
   font-size:9px; font-family:var(--ff-mono); color:var(--cyan);
-  border:1px solid rgba(0,229,200,0.3); padding:2px 8px; border-radius:20px;
-  background:rgba(0,229,200,0.07); letter-spacing:1px;
+  border:1px solid rgba(0,229,200,0.4); padding:2px 9px; border-radius:20px;
+  background:rgba(0,229,200,0.09); letter-spacing:1.2px;
+  margin-top:5px;
 }
 
-.plan-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+.plan-header { 
+  display:flex; align-items:flex-start; justify-content:space-between; 
+  margin-bottom:14px; gap:10px;
+}
+.plan-name-col { display:flex; flex-direction:column; }
 .plan-name {
   font-family:var(--ff-head); font-size:15px; font-weight:800;
   text-transform:uppercase; letter-spacing:1.5px;
@@ -951,9 +1010,12 @@ a { text-decoration:none; }
 .pn-basic    { color:var(--pbasic); }
 .pn-standard { color:var(--pstd); }
 .pn-premium  { color:var(--pprem); }
-.plan-price  { text-align:right; }
-.plan-price .amt { font-family:var(--ff-head); font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
-.plan-price .per { font-size:10px; color:var(--muted); font-family:var(--ff-mono); }
+.plan-price  { text-align:right; flex-shrink:0; }
+.plan-price .amt { 
+  font-family:var(--ff-head); font-size:24px; font-weight:900; 
+  color:var(--text); letter-spacing:-0.5px; line-height:1;
+}
+.plan-price .per { font-size:10px; color:var(--muted); font-family:var(--ff-mono); margin-top:3px; }
 
 .plan-features { margin-bottom:16px; }
 .pf { display:flex; align-items:flex-start; gap:8px; margin-bottom:7px; font-size:11px; color:var(--muted); line-height:1.5; }
@@ -977,7 +1039,12 @@ a { text-decoration:none; }
 .pb-std-btn:hover      { background:linear-gradient(135deg,var(--purple),#7c3aed); color:#fff; border-color:transparent; }
 .pb-prem-btn     { background:linear-gradient(135deg,var(--pprem),#f59e0b); color:#000; box-shadow:0 6px 20px rgba(251,191,36,0.25); }
 .pb-prem-btn:hover     { transform:translateY(-1px); box-shadow:0 10px 28px rgba(251,191,36,0.4); }
-.plan-btn:disabled { opacity:0.5; cursor:default; transform:none !important; box-shadow:none !important; }
+.plan-btn:disabled { cursor:default; transform:none !important; box-shadow:none !important; }
+/* Current plan button - clearly marked, readable */
+.pb-free-btn:disabled     { background:rgba(0,229,200,0.07); color:var(--cyan); border-color:rgba(0,229,200,0.3); opacity:1; }
+.pb-basic-btn:disabled    { background:rgba(96,165,250,0.12); color:var(--pbasic); border-color:rgba(96,165,250,0.3); opacity:1; }
+.pb-std-btn:disabled      { background:rgba(192,132,252,0.12); color:var(--pstd); border-color:rgba(192,132,252,0.3); opacity:1; }
+.pb-prem-btn:disabled     { background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.15)); color:var(--pprem); border:1px solid rgba(251,191,36,0.35); opacity:1; box-shadow:none; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    FOOTER
@@ -2133,10 +2200,13 @@ function renderPricing() {
 
     html += `<div class="plan-card ${key}${isCur?' current-plan':''}">
       <div class="plan-header">
-        <div class="plan-name pn-${key}">${P.emoji} ${P.name}</div>
+        <div class="plan-name-col">
+          <div class="plan-name pn-${key}">${P.emoji} ${P.name}</div>
+          ${isCur ? '<span class="plan-active-badge">✓ ACTIVE</span>' : ''}
+        </div>
         <div class="plan-price">
-          <div class="amt">${P.price.split('/')[0]}</div>
-          <div class="per">${P.price.includes('/')?' / month':'per month'}</div>
+          <div class="amt">${P.price.replace('/mo','')}</div>
+          <div class="per">per month</div>
         </div>
       </div>
       <div class="plan-features">

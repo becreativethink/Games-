@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>WordWar — Chat</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+body { padding-bottom:0!important; }
+.chat-room-wrap { height: calc(100vh - 58px); }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="friends.html" class="nav-logo" style="font-size:.85rem;color:var(--text2);">← Back</a>
+  <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:center;">
+    <img id="chat-partner-avatar" src="" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--b2);"/>
+    <div>
+      <div id="chat-partner-name" style="font-weight:700;font-size:.88rem;color:var(--text);">…</div>
+      <div id="chat-partner-status" style="font-size:.64rem;color:var(--text3);">Loading…</div>
+    </div>
+  </div>
+  <div style="width:60px;"></div>
+</nav>
+
+<div class="chat-room-wrap">
+  <div class="chat-messages-area" id="chat-messages">
+    <div class="empty-state"><div class="spinner"></div></div>
+  </div>
+  <div class="chat-typing-indicator" id="typing-indicator" style="padding:0 16px 4px;"></div>
+  <div class="chat-input-area">
+    <input class="chat-input" id="chat-msg-input" placeholder="Type a message…" maxlength="500" autocomplete="off"/>
+    <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user=loadSession();
+if(!user){location.href='login.html';}
+function avatarUrl(url,name){if(url&&url.startsWith('http'))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').slice(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+
+// Parse URL params
+var params=new URLSearchParams(location.search);
+var chatId=params.get('chatId')||'';
+var partnerName=params.get('with')||'Unknown';
+var _partnerData=null;
+var _typingTimeout=null;
+var _lastMsgCount=0;
+
+document.getElementById('chat-partner-name').textContent=partnerName;
+
+// Load partner info
+async function loadPartner(){
+  try{
+    var ns=await db.ref('usernames/'+partnerName.toLowerCase()).get();
+    if(!ns.exists())return;
+    var snap=await db.ref('users/'+ns.val()).get();
+    if(!snap.exists())return;
+    _partnerData=snap.val();
+    document.getElementById('chat-partner-avatar').src=avatarUrl(_partnerData.photoURL,partnerName);
+    document.getElementById('chat-partner-status').textContent=_partnerData.isOnline?'🟢 Online':'⚫ Offline';
+    document.getElementById('chat-partner-status').style.color=_partnerData.isOnline?'var(--green)':'var(--text3)';
+  }catch(e){}
+}
+
+// Listen to messages
+function listenMessages(){
+  db.ref('chats/'+chatId+'/messages').orderByChild('timestamp').limitToLast(80)
+    .on('value',function(snap){
+      var area=document.getElementById('chat-messages');
+      area.innerHTML='';
+      if(!snap.exists()){area.innerHTML='<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-title">No messages yet</div><div class="empty-state-sub">Say hi!</div></div>';return;}
+      var msgs=[];
+      snap.forEach(function(ch){msgs.push(Object.assign({id:ch.key},ch.val()));});
+      msgs.forEach(function(m,idx){
+        var isMine=m.sender===user.username;
+        var wrap=document.createElement('div');
+        wrap.className='chat-bubble-wrap '+(isMine?'mine':'theirs');
+        var time=m.timestamp?new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+        wrap.innerHTML=(!isMine&&(idx===0||msgs[idx-1].sender!==m.sender)?'<div class="chat-bubble-sender">'+m.sender+'</div>':'')
+          +'<div class="chat-bubble">'+escHtml(m.text)+'</div>'
+          +'<div class="chat-bubble-time">'+time+'</div>';
+        area.appendChild(wrap);
+      });
+      area.scrollTop=area.scrollHeight;
+      // Mark read
+      db.ref('chats/'+chatId+'/unread/'+user.uid).remove();
+    });
+}
+
+// Typing indicator
+function listenTyping(){
+  db.ref('chats/'+chatId+'/typing/'+partnerName.toLowerCase()).on('value',function(snap){
+    var ind=document.getElementById('typing-indicator');
+    if(snap.exists()&&snap.val()===true){
+      ind.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div><span style="font-size:.68rem;color:var(--text3);margin-left:4px;">'+partnerName+' is typing…</span>';
+    } else {
+      ind.innerHTML='';
+    }
+  });
+}
+
+// Send
+window.sendMessage=async function(){
+  var inp=document.getElementById('chat-msg-input');
+  var text=inp.value.trim();
+  if(!text||text.length>500)return;
+  // Rate limit: max 1 msg per 500ms (client side)
+  inp.value='';
+  clearTyping();
+  try{
+    var msgId='m_'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+    await db.ref('chats/'+chatId+'/messages/'+msgId).set({
+      sender:user.username,text:text,timestamp:Date.now()
+    });
+    await db.ref('chats/'+chatId+'/participants').update({[user.uid]:true,[getPartnerId()]:true});
+    await db.ref('chats/'+chatId+'/unread/'+getPartnerId()).set(true);
+  }catch(e){}
+};
+
+function getPartnerId(){return chatId.replace(user.uid,'').replace('_','').replace('_','');}
+
+// Typing events
+document.getElementById('chat-msg-input').addEventListener('input',function(){
+  db.ref('chats/'+chatId+'/typing/'+user.username.toLowerCase()).set(true);
+  clearTimeout(_typingTimeout);
+  _typingTimeout=setTimeout(clearTyping,2000);
+});
+document.getElementById('chat-msg-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter')window.sendMessage();
+});
+function clearTyping(){
+  clearTimeout(_typingTimeout);
+  db.ref('chats/'+chatId+'/typing/'+user.username.toLowerCase()).remove();
+}
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Online status: update own
+db.ref('users/'+user.uid).update({isOnline:true});
+window.addEventListener('beforeunload',function(){clearTyping();});
+
+loadPartner();
+listenMessages();
+listenTyping();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>WordWar — Friends</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← HOME</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="page-shell">
+  <!-- ADD FRIEND -->
+  <div class="page-title"><span class="page-title-icon">👥</span> Friends</div>
+
+  <div class="glass-card" style="margin-bottom:16px;">
+    <div class="sec-label">Add a Friend</div>
+    <div style="display:flex;gap:8px;">
+      <input class="form-control" id="add-friend-input" placeholder="Enter username…" style="flex:1;" autocomplete="off"/>
+      <button class="btn btn-primary" onclick="sendFriendRequest()">+ Add</button>
+    </div>
+    <div id="add-result" style="font-size:.76rem;margin-top:8px;color:var(--text3);"></div>
+  </div>
+
+  <!-- INCOMING REQUESTS -->
+  <div id="requests-section" style="margin-bottom:16px;">
+    <div class="sec-label">📩 Incoming Requests</div>
+    <div id="requests-list"><div class="empty-state"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- SENT REQUESTS -->
+  <div id="sent-section" style="margin-bottom:16px;">
+    <div class="sec-label">📤 Sent Requests</div>
+    <div id="sent-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+  <!-- FRIENDS -->
+  <div class="sec-label">🟢 Your Friends</div>
+  <div class="search-input-wrap">
+    <input class="search-input" id="friend-search" placeholder="Search friends…" oninput="filterFriends()"/>
+  </div>
+  <div id="friends-list" style="display:flex;flex-direction:column;gap:8px;">
+    <div class="empty-state"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Challenge Modal -->
+<div class="modal-overlay" id="chall-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>⚔️ Challenge <span id="chall-target-name">Player</span></h2>
+      <button class="modal-close" onclick="closeModal('chall-modal')">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:16px;">
+      Send a game challenge. They'll get a notification and can accept or decline.
+    </p>
+    <div id="chall-status" style="margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary flex-1" onclick="sendChallenge()">⚔️ Send Challenge</button>
+      <button class="btn btn-ghost" onclick="closeModal('chall-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn active"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db=firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user=loadSession();
+if(!user){location.href='login.html';}
+
+function avatarUrl(url,name){if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='padding:11px 15px;border-radius:11px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.textContent=msg;z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},300);},3200);
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// Fill nav
+document.getElementById('nav-username').textContent=user.username;
+document.getElementById('nav-avatar').src=avatarUrl(user.photoURL,user.username);
+
+// ── All friends data ──
+var _allFriends = [];
+var _challTarget = null;
+
+// ── Load everything ──
+async function loadAll(){
+  await Promise.all([loadRequests(), loadFriends()]);
+}
+
+// FRIEND REQUESTS
+async function loadRequests(){
+  var reqList = document.getElementById('requests-list');
+  var sentList = document.getElementById('sent-list');
+  reqList.innerHTML='';sentList.innerHTML='';
+
+  try{
+    var snap = await db.ref('friendRequests').get();
+    if(!snap.exists()){reqList.innerHTML=emptyHtml('No pending requests');return;}
+    var incoming=[],sent=[];
+    snap.forEach(function(ch){
+      var d=Object.assign({id:ch.key},ch.val());
+      if(d.receiver===user.username && d.status==='pending') incoming.push(d);
+      if(d.sender===user.username && d.status==='pending') sent.push(d);
+    });
+
+    if(incoming.length===0) reqList.innerHTML=emptyHtml('No incoming requests');
+    else incoming.forEach(function(r){ reqList.appendChild(buildRequestCard(r,true)); });
+
+    if(sent.length>0){
+      sent.forEach(function(r){
+        var el=document.createElement('div');
+        el.style.cssText='font-size:.78rem;color:var(--text3);padding:8px 12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06);';
+        el.textContent='📤 Sent to '+r.receiver+'…';
+        sentList.appendChild(el);
+      });
+    }
+  }catch(e){ reqList.innerHTML=emptyHtml('Error loading requests'); }
+}
+
+function buildRequestCard(r, showActions){
+  var div=document.createElement('div');
+  div.className='req-item';
+  div.innerHTML='<div class="req-info"><div class="req-name">'+r.sender+'</div>'
+    +'<div class="req-sub">Wants to be your friend</div></div>'
+    +(showActions?'<div class="req-actions">'
+    +'<button class="btn btn-success btn-sm" onclick="acceptRequest(\''+r.id+'\',\''+r.sender+'\')">✓ Accept</button>'
+    +'<button class="btn btn-danger btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕</button>'
+    +'</div>':'');
+  return div;
+}
+
+window.sendFriendRequest=async function(){
+  var inp=document.getElementById('add-friend-input');
+  var target=inp.value.trim().toLowerCase();
+  var res=document.getElementById('add-result');
+  if(!target){return;}
+  if(target===user.username.toLowerCase()){res.textContent='❌ Cannot add yourself.';return;}
+  res.textContent='Searching…';
+  try{
+    // Check user exists
+    var ns=await db.ref('usernames/'+target).get();
+    if(!ns.exists()){res.textContent='❌ User not found.';return;}
+    // Check not already friends
+    var frSnap=await db.ref('friends/'+user.uid+'/'+ns.val()).get();
+    if(frSnap.exists()){res.textContent='✅ Already friends!';return;}
+    // Check no duplicate request
+    var existSnap=await db.ref('friendRequests').orderByChild('sender').equalTo(user.username).get();
+    var dup=false;
+    if(existSnap.exists()){existSnap.forEach(function(ch){if(ch.val().receiver.toLowerCase()===target&&ch.val().status==='pending')dup=true;});}
+    if(dup){res.textContent='⏳ Request already sent.';return;}
+    // Get target username (correct case)
+    var targetUid=ns.val();
+    var tSnap=await db.ref('users/'+targetUid).get();
+    var targetUser=tSnap.val();
+    // Send request
+    var reqId='fr_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+    await db.ref('friendRequests/'+reqId).set({sender:user.username,receiver:targetUser.username,status:'pending',sentAt:Date.now()});
+    res.textContent='✅ Friend request sent to '+targetUser.username+'!';
+    res.style.color='var(--green)';
+    inp.value='';
+    loadRequests();
+  }catch(e){res.textContent='Error: '+e.message;}
+};
+
+window.acceptRequest=async function(reqId, senderName){
+  try{
+    var ns=await db.ref('usernames/'+senderName.toLowerCase()).get();
+    if(!ns.exists()){toast('User not found','error');return;}
+    var senderUid=ns.val();
+    // Add mutual friendship
+    var updates={};
+    updates['friends/'+user.uid+'/'+senderUid]=true;
+    updates['friends/'+senderUid+'/'+user.uid]=true;
+    updates['friendRequests/'+reqId+'/status']='accepted';
+    await db.ref().update(updates);
+    toast('You and '+senderName+' are now friends! 🎉','success');
+    loadAll();
+  }catch(e){toast('Error: '+e.message,'error');}
+};
+
+window.rejectRequest=async function(reqId){
+  await db.ref('friendRequests/'+reqId).update({status:'rejected'});
+  toast('Request declined','info');
+  loadRequests();
+};
+
+// FRIENDS LIST
+async function loadFriends(){
+  var list=document.getElementById('friends-list');
+  list.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';
+  try{
+    var snap=await db.ref('friends/'+user.uid).get();
+    if(!snap.exists()||Object.keys(snap.val()||{}).length===0){list.innerHTML=emptyHtml('No friends yet. Add some!');_allFriends=[];return;}
+    var uids=Object.keys(snap.val());
+    var promises=uids.map(function(uid){return db.ref('users/'+uid).get().then(function(s){return s.exists()?Object.assign({uid:uid},s.val()):null;});});
+    var users=(await Promise.all(promises)).filter(Boolean);
+    _allFriends=users;
+    renderFriends(users);
+  }catch(e){list.innerHTML=emptyHtml('Error loading friends');}
+}
+
+function renderFriends(users){
+  var list=document.getElementById('friends-list');
+  if(!users.length){list.innerHTML=emptyHtml('No friends match search');return;}
+  list.innerHTML='';
+  users.sort(function(a,b){return (b.isOnline?1:0)-(a.isOnline?1:0);});
+  users.forEach(function(u){
+    var div=document.createElement('div');
+    div.className='friend-item';
+    div.innerHTML=''
+      +'<div class="friend-avatar-wrap">'
+      +'<img class="friend-avatar" src="'+avatarUrl(u.photoURL,u.username)+'" alt=""/>'
+      +'<div class="friend-online-dot'+(u.isOnline?' online':'')+'"></div>'
+      +'</div>'
+      +'<div class="friend-info">'
+      +'<div class="friend-name">'+u.username+'</div>'
+      +'<div class="friend-status'+(u.isOnline?' online-txt':'')+'">'+( u.isOnline?'🟢 Online':'⚫ Offline')+'</div>'
+      +'</div>'
+      +'<div class="friend-actions">'
+      +'<button class="btn btn-sm btn-secondary" onclick="openChat(\''+u.uid+'\',\''+u.username+'\')">💬</button>'
+      +'<button class="btn btn-sm btn-primary" onclick="openChallenge(\''+u.uid+'\',\''+u.username+'\')">⚔️</button>'
+      +'<button class="btn btn-sm btn-ghost" onclick="viewProfile(\''+u.username+'\')">👤</button>'
+      +'</div>';
+    list.appendChild(div);
+  });
+}
+
+function filterFriends(){
+  var q=document.getElementById('friend-search').value.toLowerCase();
+  renderFriends(_allFriends.filter(function(u){return u.username.toLowerCase().includes(q);}));
+}
+
+window.openChat=function(uid,name){
+  var chatId=[user.uid,uid].sort().join('_');
+  location.href='chat.html?chatId='+chatId+'&with='+encodeURIComponent(name);
+};
+
+window.viewProfile=function(username){
+  location.href='pubprofile.html?u='+encodeURIComponent(username);
+};
+
+// CHALLENGE
+window.openChallenge=function(uid,name){
+  _challTarget={uid:uid,name:name};
+  document.getElementById('chall-target-name').textContent=name;
+  document.getElementById('chall-status').innerHTML='';
+  openModal('chall-modal');
+};
+
+window.sendChallenge=async function(){
+  if(!_challTarget) return;
+  var challId='ch_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  await db.ref('challenges/'+challId).set({
+    sender:user.username, senderUid:user.uid,
+    receiver:_challTarget.name, receiverUid:_challTarget.uid,
+    status:'pending', sentAt:Date.now()
+  });
+  document.getElementById('chall-status').innerHTML='<div class="challenge-status pending">⏳ Challenge sent! Waiting for response…</div>';
+  // Listen for acceptance
+  db.ref('challenges/'+challId).on('value',function(snap){
+    if(!snap.exists())return;
+    var d=snap.val();
+    if(d.status==='accepted'){
+      toast(_challTarget.name+' accepted! Starting game…','success');
+      closeModal('chall-modal');
+      sessionStorage.setItem('ww_mode','online');
+      setTimeout(function(){location.href='game.html';},800);
+    } else if(d.status==='rejected'){
+      document.getElementById('chall-status').innerHTML='<div class="challenge-status" style="background:rgba(240,64,96,.1);border:1px solid rgba(240,64,96,.2);color:var(--red);">✕ '+_challTarget.name+' declined.</div>';
+    }
+  });
+};
+
+window.removeFriend=async function(uid){
+  if(!confirm('Remove this friend?'))return;
+  var updates={};
+  updates['friends/'+user.uid+'/'+uid]=null;
+  updates['friends/'+uid+'/'+user.uid]=null;
+  await db.ref().update(updates);
+  toast('Friend removed','info');
+  loadFriends();
+};
+
+function emptyHtml(msg){
+  return '<div class="empty-state"><div class="empty-state-icon">🫥</div><div class="empty-state-title">'+msg+'</div></div>';
+}
+
+loadAll();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

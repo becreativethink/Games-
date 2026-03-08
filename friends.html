@@ -130,7 +130,7 @@ async function loadRequests(){
 
   try{
     var snap = await db.ref('friendRequests').get();
-    if(!snap.exists()){reqList.innerHTML=emptyHtml('No pending requests');return;}
+    if(!snap.exists()){reqList.innerHTML=emptyHtml('No incoming requests');return;}
     var incoming=[],sent=[];
     snap.forEach(function(ch){
       var d=Object.assign({id:ch.key},ch.val());
@@ -179,9 +179,9 @@ window.sendFriendRequest=async function(){
     var frSnap=await db.ref('friends/'+user.uid+'/'+ns.val()).get();
     if(frSnap.exists()){res.textContent='✅ Already friends!';return;}
     // Check no duplicate request
-    var existSnap=await db.ref('friendRequests').orderByChild('sender').equalTo(user.username).get();
+    var existSnap=await db.ref('friendRequests').get();
     var dup=false;
-    if(existSnap.exists()){existSnap.forEach(function(ch){if(ch.val().receiver.toLowerCase()===target&&ch.val().status==='pending')dup=true;});}
+    if(existSnap.exists()){existSnap.forEach(function(ch){var d=ch.val();if(d.sender===user.username&&d.receiver.toLowerCase()===target&&d.status==='pending')dup=true;});}
     if(dup){res.textContent='⏳ Request already sent.';return;}
     // Get target username (correct case)
     var targetUid=ns.val();

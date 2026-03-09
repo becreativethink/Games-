@@ -640,7 +640,7 @@ a{text-decoration:none;}
           <span id="apiStatusText">No API key configured. Add your key above or purchase a plan.</span>
         </div>
         <div class="info-box">
-          <strong>Free Plan:</strong> Add your own API key. Supports Gemini, OpenAI, Anthropic, Mistral, and OpenRouter models.<br><br>
+          <strong>Free Plan:</strong> Add your own API key. Supports Gemini, ChatGPT / OpenAI, Anthropic, Z.ai, Mistral, and OpenRouter models.<br><br>
           <strong>Paid Plans:</strong> Admin-managed API keys are assigned — no key needed from you. Model overrides apply.
         </div>
         <button class="save-btn" style="margin-top:16px" onclick="saveSettings()">💾 Save Settings</button>
@@ -714,43 +714,61 @@ const db   = firebase.database();
 let isAdmin = false;
 
 /* ── AI MODELS CATALOG ───────────────────────────────── */
-/* Provider types: gemini | openai | anthropic | mistral | openrouter */
+/* Provider types: gemini | openai | anthropic | mistral | openrouter | zai */
 const AI_MODELS = [
   // ── Google Gemini ──
-  { id:'gemini-2.0-flash',          provider:'gemini',     label:'Gemini 2.0 Flash',          desc:'Latest Google model — fast & powerful' },
-  { id:'gemini-1.5-flash',          provider:'gemini',     label:'Gemini 1.5 Flash',           desc:'Fast, efficient — recommended for most users' },
-  { id:'gemini-1.5-flash-8b',       provider:'gemini',     label:'Gemini 1.5 Flash-8B',        desc:'Lightweight, ultra-fast' },
-  { id:'gemini-1.5-pro',            provider:'gemini',     label:'Gemini 1.5 Pro',             desc:'High accuracy — best for detailed reports' },
-  { id:'gemini-pro',                provider:'gemini',     label:'Gemini Pro (Classic)',        desc:'Reliable classic Gemini model' },
-  { id:'gemini-2.0-flash-thinking-exp', provider:'gemini', label:'Gemini 2.0 Flash Thinking',  desc:'Experimental reasoning model' },
-  // ── OpenAI ──
-  { id:'gpt-4o',                    provider:'openai',     label:'GPT-4o',                     desc:'OpenAI flagship — fast & multimodal' },
-  { id:'gpt-4o-mini',               provider:'openai',     label:'GPT-4o Mini',                desc:'Affordable OpenAI model — great balance' },
-  { id:'gpt-4-turbo',               provider:'openai',     label:'GPT-4 Turbo',                desc:'High accuracy, long context' },
-  { id:'gpt-3.5-turbo',             provider:'openai',     label:'GPT-3.5 Turbo',              desc:'Fast and cost-effective' },
+  { id:'gemini-2.0-flash',              provider:'gemini',     label:'Gemini 2.0 Flash',           desc:'Latest Google model — fast & powerful' },
+  { id:'gemini-2.0-flash-thinking-exp', provider:'gemini',     label:'Gemini 2.0 Flash Thinking',   desc:'Experimental reasoning model' },
+  { id:'gemini-1.5-flash',              provider:'gemini',     label:'Gemini 1.5 Flash',            desc:'Fast, efficient — recommended for most users' },
+  { id:'gemini-1.5-flash-8b',           provider:'gemini',     label:'Gemini 1.5 Flash-8B',         desc:'Lightweight, ultra-fast' },
+  { id:'gemini-1.5-pro',                provider:'gemini',     label:'Gemini 1.5 Pro',              desc:'High accuracy — best for detailed reports' },
+  { id:'gemini-pro',                    provider:'gemini',     label:'Gemini Pro (Classic)',         desc:'Reliable classic Gemini model' },
+  // ── ChatGPT / OpenAI ──
+  { id:'gpt-4.1',                       provider:'openai',     label:'GPT-4.1',                     desc:'OpenAI latest — most capable model' },
+  { id:'gpt-4.1-mini',                  provider:'openai',     label:'GPT-4.1 Mini',                desc:'Fast & affordable GPT-4.1 variant' },
+  { id:'gpt-4.1-nano',                  provider:'openai',     label:'GPT-4.1 Nano',                desc:'Smallest, fastest GPT-4.1 model' },
+  { id:'gpt-4o',                        provider:'openai',     label:'GPT-4o',                      desc:'OpenAI flagship — fast & multimodal' },
+  { id:'gpt-4o-mini',                   provider:'openai',     label:'GPT-4o Mini',                 desc:'Affordable OpenAI model — great balance' },
+  { id:'o4-mini',                       provider:'openai',     label:'o4-mini',                     desc:'OpenAI reasoning model — fast & smart' },
+  { id:'o3',                            provider:'openai',     label:'o3',                          desc:'OpenAI advanced reasoning — high accuracy' },
+  { id:'o3-mini',                       provider:'openai',     label:'o3-mini',                     desc:'Compact reasoning model — efficient' },
+  { id:'o1',                            provider:'openai',     label:'o1',                          desc:'OpenAI deep reasoning model' },
+  { id:'o1-mini',                       provider:'openai',     label:'o1-mini',                     desc:'Compact o1 — fast reasoning' },
+  { id:'gpt-4-turbo',                   provider:'openai',     label:'GPT-4 Turbo',                 desc:'High accuracy, long context' },
+  { id:'gpt-3.5-turbo',                 provider:'openai',     label:'GPT-3.5 Turbo',               desc:'Fast and cost-effective' },
+  // ── Z.ai (Yi models) ──
+  { id:'yi-lightning',                  provider:'zai',        label:'Yi Lightning',                desc:'Z.ai fastest model — ultra-low latency' },
+  { id:'yi-lightning-lite',             provider:'zai',        label:'Yi Lightning Lite',           desc:'Z.ai lightweight — fastest responses' },
+  { id:'yi-large',                      provider:'zai',        label:'Yi Large',                    desc:'Z.ai flagship — highest quality' },
+  { id:'yi-large-turbo',                provider:'zai',        label:'Yi Large Turbo',              desc:'Z.ai large model optimised for speed' },
+  { id:'yi-large-preview',              provider:'zai',        label:'Yi Large Preview',            desc:'Z.ai latest preview model' },
+  { id:'yi-medium',                     provider:'zai',        label:'Yi Medium',                   desc:'Z.ai balanced model — speed & quality' },
+  { id:'yi-medium-200k',                provider:'zai',        label:'Yi Medium 200K',              desc:'Z.ai 200K context window model' },
+  { id:'yi-spark',                      provider:'zai',        label:'Yi Spark',                    desc:'Z.ai compact everyday model' },
+  { id:'yi-vision',                     provider:'zai',        label:'Yi Vision',                   desc:'Z.ai multimodal model with image support' },
   // ── Anthropic ──
-  { id:'claude-3-5-sonnet-20241022',provider:'anthropic',  label:'Claude 3.5 Sonnet',          desc:'Anthropic flagship — excellent reasoning' },
-  { id:'claude-3-haiku-20240307',   provider:'anthropic',  label:'Claude 3 Haiku',             desc:'Fast, efficient Anthropic model' },
-  { id:'claude-3-sonnet-20240229',  provider:'anthropic',  label:'Claude 3 Sonnet',            desc:'Balanced Anthropic model' },
-  { id:'claude-3-opus-20240229',    provider:'anthropic',  label:'Claude 3 Opus',              desc:'Most powerful Anthropic model' },
+  { id:'claude-3-5-sonnet-20241022',    provider:'anthropic',  label:'Claude 3.5 Sonnet',           desc:'Anthropic flagship — excellent reasoning' },
+  { id:'claude-3-haiku-20240307',       provider:'anthropic',  label:'Claude 3 Haiku',              desc:'Fast, efficient Anthropic model' },
+  { id:'claude-3-sonnet-20240229',      provider:'anthropic',  label:'Claude 3 Sonnet',             desc:'Balanced Anthropic model' },
+  { id:'claude-3-opus-20240229',        provider:'anthropic',  label:'Claude 3 Opus',               desc:'Most powerful Anthropic model' },
   // ── Mistral ──
-  { id:'mistral-large-latest',      provider:'mistral',    label:'Mistral Large',              desc:'Flagship Mistral — high accuracy' },
-  { id:'mistral-small-latest',      provider:'mistral',    label:'Mistral Small',              desc:'Fast, efficient Mistral model' },
-  { id:'open-mistral-7b',           provider:'mistral',    label:'Mistral 7B',                 desc:'Compact open Mistral model' },
-  { id:'open-mixtral-8x7b',         provider:'mistral',    label:'Mixtral 8x7B',               desc:'Mixture-of-experts architecture' },
-  // ── OpenRouter (routes to various providers) ──
-  { id:'meta-llama/llama-3-70b-instruct',    provider:'openrouter', label:'Llama 3 70B',       desc:'Meta open-source flagship via OpenRouter' },
-  { id:'meta-llama/llama-3-8b-instruct',     provider:'openrouter', label:'Llama 3 8B',        desc:'Compact Meta model via OpenRouter' },
-  { id:'google/gemma-2-9b-it',               provider:'openrouter', label:'Gemma 2 9B',        desc:'Google Gemma via OpenRouter' },
-  { id:'deepseek/deepseek-chat',             provider:'openrouter', label:'DeepSeek Chat',      desc:'High-performance Chinese AI via OpenRouter' },
-  { id:'qwen/qwen-2.5-72b-instruct',         provider:'openrouter', label:'Qwen 2.5 72B',      desc:'Alibaba large model via OpenRouter' },
-  { id:'microsoft/phi-3-medium-128k-instruct',provider:'openrouter',label:'Phi-3 Medium',      desc:'Microsoft Phi-3 via OpenRouter' },
-  { id:'cohere/command-r-plus',              provider:'openrouter', label:'Command R+',         desc:'Cohere retrieval-optimized via OpenRouter' },
+  { id:'mistral-large-latest',          provider:'mistral',    label:'Mistral Large',               desc:'Flagship Mistral — high accuracy' },
+  { id:'mistral-small-latest',          provider:'mistral',    label:'Mistral Small',               desc:'Fast, efficient Mistral model' },
+  { id:'open-mistral-7b',               provider:'mistral',    label:'Mistral 7B',                  desc:'Compact open Mistral model' },
+  { id:'open-mixtral-8x7b',             provider:'mistral',    label:'Mixtral 8x7B',                desc:'Mixture-of-experts architecture' },
+  // ── OpenRouter ──
+  { id:'meta-llama/llama-3-70b-instruct',     provider:'openrouter', label:'Llama 3 70B',           desc:'Meta open-source flagship via OpenRouter' },
+  { id:'meta-llama/llama-3-8b-instruct',      provider:'openrouter', label:'Llama 3 8B',            desc:'Compact Meta model via OpenRouter' },
+  { id:'google/gemma-2-9b-it',                provider:'openrouter', label:'Gemma 2 9B',            desc:'Google Gemma via OpenRouter' },
+  { id:'deepseek/deepseek-chat',              provider:'openrouter', label:'DeepSeek Chat',          desc:'High-performance Chinese AI via OpenRouter' },
+  { id:'qwen/qwen-2.5-72b-instruct',          provider:'openrouter', label:'Qwen 2.5 72B',          desc:'Alibaba large model via OpenRouter' },
+  { id:'microsoft/phi-3-medium-128k-instruct',provider:'openrouter', label:'Phi-3 Medium',          desc:'Microsoft Phi-3 via OpenRouter' },
+  { id:'cohere/command-r-plus',               provider:'openrouter', label:'Command R+',            desc:'Cohere retrieval-optimized via OpenRouter' },
 ];
 
 const PROVIDER_LABELS = {
-  gemini:'🔵 Google Gemini', openai:'🟢 OpenAI', anthropic:'🟠 Anthropic',
-  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter'
+  gemini:'🔵 Google Gemini', openai:'🟢 ChatGPT / OpenAI', anthropic:'🟠 Anthropic',
+  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi Models)'
 };
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
@@ -1006,6 +1024,8 @@ async function callAI(prompt, apiKey, modelId) {
     return callMistral(prompt, apiKey, modelId);
   } else if (provider === 'openrouter') {
     return callOpenRouter(prompt, apiKey, modelId);
+  } else if (provider === 'zai') {
+    return callZAI(prompt, apiKey, modelId);
   } else {
     return callGemini(prompt, apiKey, modelId); // fallback
   }
@@ -1084,6 +1104,24 @@ async function callOpenRouter(prompt, apiKey, model) {
     const errBody = await resp.text();
     if (resp.status === 401) throw new Error('Invalid OpenRouter API key. Check your key in Settings.');
     throw new Error(`OpenRouter API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callZAI(prompt, apiKey, model) {
+  /* Z.ai uses an OpenAI-compatible chat completions endpoint */
+  const resp = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body: JSON.stringify({ model, messages:[{role:'user',content:prompt}], max_tokens:4096, temperature:0.3 })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid Z.ai API key. Get your key from platform.z.ai and check Settings.');
+    if (resp.status === 429) throw new Error('Z.ai quota exceeded. Try again later.');
+    if (resp.status === 404) throw new Error(`Z.ai model "${model}" not found. Try a different Yi model.`);
+    throw new Error(`Z.ai API error ${resp.status}: ${errBody.substring(0,120)}`);
   }
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || '';

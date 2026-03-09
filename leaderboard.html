@@ -422,9 +422,9 @@ body { background: var(--bg); }
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
-  <button class="bn-btn active" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn active"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
   <button class="bn-btn" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
-  <button class="bn-btn" onclick="selectDailyMode()"><span class="bn-icon">📅</span><span class="bn-lbl">Daily</span></button>
 </nav>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -442,23 +442,67 @@ function avatarUrl(url,name){
   return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
 }
 function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function calcLevel(xp){
+  var XP_LVS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+  var lvl=1;
+  for(var i=0;i<XP_LVS.length;i++){if((xp||0)>=XP_LVS[i])lvl=i+1;}
+  return lvl;
+}
 
 if(user){
   document.getElementById('nav-username').textContent = user.username||'…';
   document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
 }
 
-var allPlayers   = [];
-var currentSort  = 'score';
+var allPlayers  = [];
+var currentSort = 'score';
+var _dbListener = null;
 
-/* ── Live data ── */
-db.ref('users').on('value', function(snap){
-  if(!snap.exists())return;
-  allPlayers = Object.entries(snap.val())
-    .filter(function(e){ return e[1].username; })
-    .map(function(e){ return Object.assign({uid:e[0]}, e[1]); });
-  render();
-});
+/* ── Show error state ── */
+function showError(msg){
+  document.getElementById('lb-list').innerHTML =
+    '<div class="lb-empty">⚠️ '+msg+'<br><br>'
+    +'<button onclick="loadData()" style="margin-top:8px;padding:8px 20px;border-radius:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:var(--font);font-weight:700;">Retry</button>'
+    +'</div>';
+  document.getElementById('podium-stage').innerHTML =
+    '<div style="text-align:center;color:var(--text3);font-size:.8rem;padding:20px;">—</div>';
+}
+
+/* ── Load data ── */
+function loadData(){
+  // Show skeletons while loading
+  var list = document.getElementById('lb-list');
+  list.innerHTML = [1,2,3,4,5].map(function(){
+    return '<div class="lb-loading-row"></div>';
+  }).join('');
+
+  // Detach old listener if any
+  if(_dbListener){ db.ref('users').off('value', _dbListener); }
+
+  _dbListener = function(snap){
+    if(!snap.exists()){
+      showError('No players found yet.');
+      return;
+    }
+    try{
+      allPlayers = [];
+      snap.forEach(function(child){
+        var d = child.val();
+        if(d && d.username){
+          allPlayers.push(Object.assign({uid: child.key}, d));
+        }
+      });
+      render();
+    }catch(e){
+      showError('Error loading data. Please retry.');
+    }
+  };
+
+  db.ref('users').on('value', _dbListener, function(error){
+    // Firebase permission/index error handler
+    showError('Could not load leaderboard: ' + (error.message || 'Permission denied'));
+  });
+}
 
 /* ── Sort tabs ── */
 window.sortBy = function(field){
@@ -470,50 +514,52 @@ window.sortBy = function(field){
 };
 
 /* ── Search filter ── */
-window.filterList = function(){
-  render();
-};
+window.filterList = function(){ render(); };
 
 /* ── Render ── */
 function render(){
-  var q = (document.getElementById('lb-search').value||'').toLowerCase();
+  var q = (document.getElementById('lb-search').value||'').toLowerCase().trim();
+
   var sorted = allPlayers.slice().sort(function(a,b){
     return (b[currentSort]||0) - (a[currentSort]||0);
   });
 
-  /* My rank */
-  var myIdx = user ? sorted.findIndex(function(p){ return p.username===user.username; }) : -1;
+  /* My rank pill */
+  var myIdx = user ? sorted.findIndex(function(p){ return p.uid===user.uid || p.username===user.username; }) : -1;
   var pill = document.getElementById('my-rank-pill');
-  var pillTxt = document.getElementById('my-rank-text');
   if(myIdx >= 0){
     pill.style.display = 'flex';
-    pillTxt.textContent = 'Your rank: #'+(myIdx+1)+' of '+sorted.length;
+    document.getElementById('my-rank-text').textContent = 'Your rank: #'+(myIdx+1)+' of '+sorted.length;
   }
 
-  /* Podium — top 3 */
   renderPodium(sorted);
 
-  /* List — filtered */
-  var filtered = q ? sorted.filter(function(p){ return p.username.toLowerCase().includes(q); }) : sorted;
+  var filtered = q ? sorted.filter(function(p){
+    return p.username.toLowerCase().includes(q);
+  }) : sorted;
+
   renderList(filtered, sorted);
 }
 
 function renderPodium(sorted){
   var stage = document.getElementById('podium-stage');
-  if(sorted.length < 1){ stage.innerHTML=''; return; }
+  if(!sorted.length){ stage.innerHTML=''; return; }
 
+  // Order: 2nd, 1st, 3rd  (visual podium layout)
   var slots = [
-    { player: sorted[1]||null, rank: 2, label:'2nd' },
-    { player: sorted[0]||null, rank: 1, label:'1st' },
-    { player: sorted[2]||null, rank: 3, label:'3rd' }
+    { player: sorted[1]||null, rank: 2 },
+    { player: sorted[0]||null, rank: 1 },
+    { player: sorted[2]||null, rank: 3 }
   ];
 
   stage.innerHTML = slots.map(function(s){
-    if(!s.player) return '<div class="pod-slot rank-'+s.rank+'"><div class="pod-base"></div></div>';
-    var p   = s.player;
-    var isMe = user && p.username === user.username;
-    var val = fmtNum(p[currentSort]||0);
+    if(!s.player){
+      return '<div class="pod-slot rank-'+s.rank+'"><div class="pod-base"></div></div>';
+    }
+    var p    = s.player;
+    var isMe = user && (p.uid===user.uid || p.username===user.username);
     var icon = currentSort==='score'?'⭐':currentSort==='wins'?'🏆':'💰';
+    var val  = icon+' '+fmtNum(p[currentSort]||0);
     return '<div class="pod-slot rank-'+s.rank+'">'
       + (isMe ? '<div class="pod-me-tag">YOU</div>' : '')
       + '<div class="pod-avatar-wrap">'
@@ -521,8 +567,8 @@ function renderPodium(sorted){
       +   '<img class="pod-avatar" src="'+avatarUrl(p.photoURL,p.username)+'" alt=""/>'
       +   '<div class="pod-medal-badge">'+s.rank+'</div>'
       + '</div>'
-      + '<div class="pod-name">'+p.username+'</div>'
-      + '<div class="pod-val">'+icon+' '+val+'</div>'
+      + '<div class="pod-name">'+escHtml(p.username)+'</div>'
+      + '<div class="pod-val">'+val+'</div>'
       + '<div class="pod-base"></div>'
       + '</div>';
   }).join('');
@@ -536,30 +582,30 @@ function renderList(filtered, sorted){
   }
 
   list.innerHTML = filtered.map(function(p){
-    var globalRank = sorted.indexOf(p) + 1;
-    var isMe  = user && p.username === user.username;
-    var isTop = globalRank <= 3;
-    var wr    = p.totalGames > 0 ? Math.round((p.wins||0)*100/p.totalGames)+'%' : '—';
-    var lvl   = Math.floor((p.score||0)/500) + 1;
+    var globalRank = sorted.findIndex(function(x){ return x.uid===p.uid; }) + 1;
+    var isMe   = user && (p.uid===user.uid || p.username===user.username);
+    var isTop  = globalRank <= 3;
+    var wr     = p.totalGames > 0 ? Math.round((p.wins||0)*100/p.totalGames)+'%' : '—';
+    var lvl    = calcLevel(p.xp);
 
-    var numClass = 'lb-num';
+    var numClass  = 'lb-num';
     var rankLabel = '#'+globalRank;
     if(globalRank===1){ numClass+=' gold';   rankLabel='🥇'; }
     else if(globalRank===2){ numClass+=' silver'; rankLabel='🥈'; }
     else if(globalRank===3){ numClass+=' bronze'; rankLabel='🥉'; }
 
-    var primaryVal = fmtNum(p[currentSort]||0);
     var primaryIcon = currentSort==='score'?'⭐':currentSort==='wins'?'🏆':'💰';
+    var primaryVal  = primaryIcon+' '+fmtNum(p[currentSort]||0);
     var secondaryVal = currentSort==='score'
       ? fmtNum(p.wins||0)+' wins'
       : fmtNum(p.score||0)+' pts';
 
-    return '<div class="lb-card'+(isMe?' me':'')+(isTop?' top3':'')+'">'
+    return '<div class="lb-card'+(isMe?' me':'')+(isTop?' top3':'')+'" onclick="viewProfile(\''+escHtml(p.username)+'\')" style="cursor:pointer;">'
       + '<div class="'+numClass+'">'+rankLabel+'</div>'
       + '<img class="lb-avatar" src="'+avatarUrl(p.photoURL,p.username)+'" alt=""/>'
       + '<div class="lb-info">'
       +   '<div class="lb-uname">'
-      +     p.username
+      +     escHtml(p.username)
       +     (p.isOnline ? '<span class="online-dot" style="display:inline-block;"></span>' : '')
       +     '<span class="lb-level">Lv.'+lvl+'</span>'
       +   '</div>'
@@ -569,40 +615,36 @@ function renderList(filtered, sorted){
       +   '</div>'
       + '</div>'
       + '<div class="lb-right">'
-      +   '<span class="lb-primary-val">'+primaryIcon+' '+primaryVal+'</span>'
+      +   '<span class="lb-primary-val">'+primaryVal+'</span>'
       +   '<span class="lb-secondary-val">'+secondaryVal+'</span>'
       + '</div>'
       + '</div>';
   }).join('');
 }
 
-function selectDailyMode(){
-  if(!loadSession()){ location.href='login.html'; return; }
-  sessionStorage.setItem('ww_mode','daily');
-  location.href='game.html';
-}
+function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-/* ── Qualiclicks Pop Ad — fires on first user interaction ── */
+window.viewProfile = function(username){
+  if(user && username === user.username) location.href = 'profile.html';
+  else location.href = 'pubprofile.html?u=' + encodeURIComponent(username);
+};
+
+/* ── Qualiclicks Pop Ad ── */
 var _popFired = false;
 document.addEventListener('click', function(){
   if(_popFired) return;
   _popFired = true;
   try{
-    window.adk_pdisp = {
-      'h'  : 'xml.qualiclicks.com',
-      'f'  : 49886,
-      'a'  : '',
-      'ps' : [5],
-      'cin': 4,
-      's'  : '',
-      'q'  : [],
-      't'  : 6
-    };
+    window.adk_pdisp = {'h':'xml.qualiclicks.com','f':49886,'a':'','ps':[5],'cin':4,'s':'','q':[],'t':6};
     if(typeof adk_disp==='function') adk_disp();
     else if(typeof window.adk_run==='function') window.adk_run();
   }catch(e){}
 }, {once:false});
+
+// Boot
+loadData();
 </script>
+
 <script src="/pwa.js"></script>
 </body>
 </html>

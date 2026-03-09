@@ -123,15 +123,15 @@ a{text-decoration:none;}
 .mob-tab.admin-mob.active{color:var(--amber);border-bottom-color:var(--amber);}
 
 /* ══ PAGES ══ */
-.page{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0;}
 .page.active{display:flex;}
 .page-header{padding:24px 24px 0;flex-shrink:0;}
 .page-header h2{font-family:var(--ff-head);font-size:20px;font-weight:700;}
 .page-header p{color:var(--muted);font-size:12px;margin-top:4px;}
 
 /* ══ MAP PAGE ══ */
-#mapPage{flex-direction:row;}
-#mainWrap{display:flex;flex:1;overflow:hidden;}
+#mapPage{flex-direction:row;flex:1;min-height:0;}
+#mainWrap{display:flex;flex:1;overflow:hidden;min-height:0;}
 #mapPanel{flex:1;display:flex;flex-direction:column;position:relative;min-width:0;}
 #map{flex:1;min-height:0;}
 .map-controls-bar{display:flex;gap:8px;align-items:center;padding:8px 10px;background:rgba(7,11,20,0.95);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
@@ -374,19 +374,101 @@ a{text-decoration:none;}
 
 /* ══ RESPONSIVE ══ */
 @media(max-width:900px){
+  /* Hide desktop tabs, show mobile bar */
   #topNav .page-tabs{display:none;}
   .nvbtn-logout-text{display:none;}
-  #mobileBar{display:flex;}
-  #mapPage{flex-direction:column;}
-  #mainWrap{flex-direction:column;}
-  #map{height:38vh;}
-  #rightPanel{width:100%;border-left:none;border-top:1px solid var(--border);height:calc(62vh - 120px);}
   .usage-mini{display:none;}
+  #mobileBar{display:flex;}
+
+  /* Top nav compact */
+  #topNav{height:48px;min-height:48px;padding:0 12px;}
+  .nav-logo-gem{width:28px;height:28px;font-size:14px;}
+  .nav-logo-name{font-size:15px;}
+  .user-chip{padding:3px 8px 3px 3px;}
+  .user-av{width:22px;height:22px;font-size:10px;}
+  .user-nm{font-size:11px;}
+  .nvbtn{padding:4px 9px;font-size:10px;}
+  .plan-badge{font-size:8px;padding:2px 7px;}
+
+  /* Mobile bar */
+  #mobileBar{padding:0 4px;}
+  .mob-tab{padding:8px 10px;font-size:11px;gap:3px;}
+
+  /* Map page stacks vertically, fills all remaining space */
+  #mapPage{flex-direction:column;}
+  #mainWrap{flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+
+  /* Map panel: map + controls + sendbar */
+  #mapPanel{flex-shrink:0;height:auto;}
+
+  /* Map controls bar: single scrollable row, no wrap */
+  .map-controls-bar{
+    flex-wrap:nowrap;overflow-x:auto;padding:6px 8px;gap:6px;
+    scrollbar-width:none;
+  }
+  .map-controls-bar::-webkit-scrollbar{display:none;}
+  .nc-group label{display:none;} /* hide labels on mobile — saves space */
+  .nsel{padding:5px 6px;font-size:10px;min-width:80px;}
+  #langPick{min-width:80px;}
+
+  /* Map itself: fixed height */
+  #map{height:32vh;min-height:160px;flex:none;}
+
+  /* Send bar: stack on mobile */
+  .send-bar{padding:6px 8px;gap:6px;flex-wrap:nowrap;align-items:center;}
+  .mc-country{flex:0 0 100px;}
+  .mc-group label{font-size:9px;}
+  .mc-group input{padding:5px 8px;font-size:11px;}
+  .mc-question{flex:1;min-width:0;}
+  #sendBtn{padding:8px 14px;font-size:12px;white-space:nowrap;}
+
+  /* Right panel: takes ALL remaining space — no fixed calc */
+  #rightPanel{
+    flex:1;width:100%;border-left:none;border-top:1px solid var(--border);
+    min-height:0;overflow:hidden;
+  }
+
+  /* Tabs in right panel */
+  .tabs{flex-shrink:0;}
+  .tab{padding:8px 2px;font-size:10px;}
+
+  /* Tab panel content fills remaining */
+  .tpanel{flex:1;min-height:0;}
+  .tpanel.on{display:flex;}
+  .scroll{flex:1;}
+
+  /* Chat */
+  .cmsgs{flex:1;}
+
+  /* History items compact */
+  .hitem{padding:10px 12px;}
+  .hname{font-size:12px;}
+
+  /* Idle box */
+  .idle{padding:20px 16px;}
+  .idle-icon{font-size:36px;margin-bottom:10px;}
+  .idle h3{font-size:14px;}
+  .idle p{font-size:11px;}
+  .usage-widget{margin-top:14px;}
+
+  /* Pills */
+  #cpill{font-size:9px;padding:3px 10px;top:42px;}
 }
+
 @media(max-width:600px){
   .plans-grid{grid-template-columns:1fr;}
-  #topNav{padding:0 10px;}
-  .nav-logo-name{font-size:15px;}
+  #topNav{padding:0 8px;}
+  .nav-logo-name{font-size:14px;}
+  .user-nm{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* Send bar: country hidden on very small screens */
+  .mc-country{display:none;}
+  .send-bar{gap:5px;padding:5px 8px;}
+  .tab{font-size:9px;padding:7px 2px;}
+}
+
+@media(max-width:360px){
+  .mob-tab{padding:7px 7px;font-size:10px;}
+  #map{height:28vh;}
 }
 </style>
 </head>
@@ -736,7 +818,7 @@ const AI_MODELS = [
   { id:'o1-mini',                       provider:'openai',     label:'o1-mini',                     desc:'Compact o1 — fast reasoning' },
   { id:'gpt-4-turbo',                   provider:'openai',     label:'GPT-4 Turbo',                 desc:'High accuracy, long context' },
   { id:'gpt-3.5-turbo',                 provider:'openai',     label:'GPT-3.5 Turbo',               desc:'Fast and cost-effective' },
-  // ── Z.ai (Yi models) ──
+  // ── Z.ai (Yi + GLM models) ──
   { id:'yi-lightning',                  provider:'zai',        label:'Yi Lightning',                desc:'Z.ai fastest model — ultra-low latency' },
   { id:'yi-lightning-lite',             provider:'zai',        label:'Yi Lightning Lite',           desc:'Z.ai lightweight — fastest responses' },
   { id:'yi-large',                      provider:'zai',        label:'Yi Large',                    desc:'Z.ai flagship — highest quality' },
@@ -746,6 +828,13 @@ const AI_MODELS = [
   { id:'yi-medium-200k',                provider:'zai',        label:'Yi Medium 200K',              desc:'Z.ai 200K context window model' },
   { id:'yi-spark',                      provider:'zai',        label:'Yi Spark',                    desc:'Z.ai compact everyday model' },
   { id:'yi-vision',                     provider:'zai',        label:'Yi Vision',                   desc:'Z.ai multimodal model with image support' },
+  { id:'glm-5',                         provider:'zai',        label:'GLM-5',                       desc:'Zhipu AI GLM-5 — latest flagship GLM' },
+  { id:'glm-4.7',                       provider:'zai',        label:'GLM-4.7',                     desc:'Zhipu AI GLM-4.7 — high capability' },
+  { id:'glm-4.6',                       provider:'zai',        label:'GLM-4.6',                     desc:'Zhipu AI GLM-4.6 — balanced' },
+  { id:'glm-4.5',                       provider:'zai',        label:'GLM-4.5',                     desc:'Zhipu AI GLM-4.5 — efficient' },
+  { id:'glm-4.7-flash',                 provider:'zai',        label:'GLM-4.7 Flash',               desc:'Zhipu AI GLM-4.7 Flash — ultra-fast' },
+  { id:'glm-4-6v',                      provider:'zai',        label:'GLM-4.6V',                    desc:'Zhipu AI GLM-4.6V — vision + language' },
+  { id:'glm-4-32b',                     provider:'zai',        label:'GLM-4 32B',                   desc:'Zhipu AI GLM-4 32B — large context model' },
   // ── Anthropic ──
   { id:'claude-3-5-sonnet-20241022',    provider:'anthropic',  label:'Claude 3.5 Sonnet',           desc:'Anthropic flagship — excellent reasoning' },
   { id:'claude-3-haiku-20240307',       provider:'anthropic',  label:'Claude 3 Haiku',              desc:'Fast, efficient Anthropic model' },
@@ -768,7 +857,7 @@ const AI_MODELS = [
 
 const PROVIDER_LABELS = {
   gemini:'🔵 Google Gemini', openai:'🟢 ChatGPT / OpenAI', anthropic:'🟠 Anthropic',
-  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi Models)'
+  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi + GLM Models)'
 };
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */

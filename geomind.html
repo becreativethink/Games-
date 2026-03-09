@@ -1728,6 +1728,9 @@ function renderPlansInto(wrap) {
   const planOrder=['free','basic','standard','premium'];
   planOrder.forEach(key=>{
     const P=PLANS[key]; const feats=PLAN_FEATURES[key]; const isCur=key===currentPlan;
+    const btnClick = key==='free' ? `goPage('settings')` : `openPlanModal('${key}')`;
+    const btnLabel = (isCur && key!=='free') ? '✓ Current Plan' : (key==='free' ? '⚙ Add API Key' : 'Purchase ' + P.name);
+    const btnDisabled = (isCur && key!=='free') ? 'disabled' : '';
     html+=`<div class="plan-card ${key}${isCur?' current-plan':''}">
       <div class="plan-header">
         <div>
@@ -1742,8 +1745,8 @@ function renderPlansInto(wrap) {
       <div class="plan-features">
         ${feats.map(f=>`<div class="pf ${f.includes('report')||f.includes('message')||f.includes('Dual')?'highlight':''}"><span class="pf-check">✓</span>${f}</div>`).join('')}
       </div>
-      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="${key==='free'?'goPage(\'settings\')':'openPlanModal(\''+key+'\'')" ${isCur&&key!=='free'?'disabled':''}>
-        ${isCur&&key!=='free'?'✓ Current Plan':key==='free'?'⚙ Add API Key':'Purchase '+P.name}
+      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="${btnClick}" ${btnDisabled}>
+        ${btnLabel}
       </button>
     </div>`;
   });

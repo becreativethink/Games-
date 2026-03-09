@@ -8,681 +8,436 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ══ DESIGN TOKENS ════════════════════════════════════ */
 :root {
-  --bg:       #04060e;
-  --bg1:      #070b14;
-  --bg2:      #0a0f1c;
-  --surface:  #0d1424;
-  --card:     #111929;
-  --card2:    #16203a;
-  --lift:     #1c2a46;
-  --border:   rgba(255,255,255,0.07);
-  --border2:  rgba(255,255,255,0.11);
-  --border3:  rgba(255,255,255,0.05);
-  --cyan:     #00e5c8;
-  --cyan2:    #00c4ab;
-  --cyan-glow:rgba(0,229,200,0.18);
-  --blue:     #4a9eff;
-  --blue2:    #2563eb;
-  --purple:   #9d7aff;
-  --red:      #ff6b7a;
-  --amber:    #ffca45;
-  --green:    #34d399;
-  --pfree:    #94a3b8;
-  --pbasic:   #60a5fa;
-  --pstd:     #c084fc;
-  --pprem:    #fbbf24;
-  --text:     #e8edf8;
-  --text2:    #b8c4d8;
-  --muted:    #5a6a88;
-  --dim:      #3a4a68;
-  --ff-head:  'Outfit', sans-serif;
-  --ff-body:  'Instrument Sans', sans-serif;
-  --ff-mono:  'JetBrains Mono', monospace;
-  --r:        12px;
-  --r2:       8px;
-  --shadow:   0 8px 40px rgba(0,0,0,0.6);
-  --glow-c:   0 0 28px rgba(0,229,200,0.2);
-  --glow-b:   0 0 28px rgba(74,158,255,0.2);
+  --bg:#04060e; --bg1:#070b14; --bg2:#0a0f1c;
+  --surface:#0d1424; --card:#111929; --card2:#16203a; --lift:#1c2a46;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.11); --border3:rgba(255,255,255,0.05);
+  --cyan:#00e5c8; --cyan2:#00c4ab; --cyan-glow:rgba(0,229,200,0.18);
+  --blue:#4a9eff; --blue2:#2563eb; --purple:#9d7aff; --red:#ff6b7a;
+  --amber:#ffca45; --green:#34d399;
+  --pfree:#94a3b8; --pbasic:#60a5fa; --pstd:#c084fc; --pprem:#fbbf24;
+  --text:#e8edf8; --text2:#b8c4d8; --muted:#5a6a88; --dim:#3a4a68;
+  --ff-head:'Outfit',sans-serif; --ff-body:'Instrument Sans',sans-serif; --ff-mono:'JetBrains Mono',monospace;
+  --r:12px; --r2:8px;
+  --shadow:0 8px 40px rgba(0,0,0,0.6);
+  --glow-c:0 0 28px rgba(0,229,200,0.2); --glow-b:0 0 28px rgba(74,158,255,0.2);
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);
+  background-image:linear-gradient(rgba(0,229,200,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,200,0.015) 1px,transparent 1px);
+  background-size:40px 40px;}
+button{cursor:pointer;font-family:var(--ff-body);border:none;outline:none;}
+input,select,textarea{font-family:var(--ff-body);outline:none;}
+a{text-decoration:none;}
 
-/* ══ RESET ════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; }
-body {
-  background:var(--bg); color:var(--text); font-family:var(--ff-body);
-  background-image:
-    linear-gradient(rgba(0,229,200,0.015) 1px, transparent 1px),
-    linear-gradient(90deg,rgba(0,229,200,0.015) 1px, transparent 1px);
-  background-size:40px 40px;
-}
-button { cursor:pointer; font-family:var(--ff-body); border:none; outline:none; }
-input, select, textarea { font-family:var(--ff-body); outline:none; }
-a { text-decoration:none; }
+/* ══ AUTH ══ */
+#authScreen{position:fixed;inset:0;z-index:9999;overflow:auto;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;}
+#authScreen::before,#authScreen::after{content:'';position:fixed;border-radius:50%;pointer-events:none;animation:orb 10s ease-in-out infinite;}
+#authScreen::before{width:700px;height:700px;background:radial-gradient(circle,rgba(0,229,200,0.055) 0%,transparent 65%);top:-200px;left:-200px;}
+#authScreen::after{width:600px;height:600px;background:radial-gradient(circle,rgba(74,158,255,0.04) 0%,transparent 65%);bottom:-150px;right:-150px;animation-delay:-5s;animation-direction:reverse;}
+@keyframes orb{0%,100%{transform:scale(1) translate(0,0);}50%{transform:scale(1.12) translate(20px,15px);}}
+.auth-card{position:relative;z-index:10;background:linear-gradient(160deg,rgba(17,25,41,0.97) 0%,rgba(10,15,28,0.97) 100%);border:1px solid var(--border2);border-radius:20px;padding:40px 38px;width:100%;max-width:430px;box-shadow:0 40px 100px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.06);animation:authIn 0.45s cubic-bezier(0.22,1,0.36,1);}
+.auth-card::before{content:'';position:absolute;inset:0;border-radius:20px;pointer-events:none;background:linear-gradient(135deg,rgba(0,229,200,0.04) 0%,transparent 50%);}
+@keyframes authIn{from{opacity:0;transform:translateY(24px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.auth-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:32px;}
+.auth-logo-gem{width:44px;height:44px;background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--glow-c);}
+.auth-logo-text{font-family:var(--ff-head);font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.auth-title{font-family:var(--ff-head);font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.auth-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
+.afield{margin-bottom:14px;}
+.afield label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.afield input,.afield select{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;transition:border-color 0.2s,box-shadow 0.2s;}
+.afield input:focus,.afield select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,200,0.1);}
+.abtn{width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:11px;font-weight:700;font-size:14px;color:#04060e;margin-top:6px;transition:opacity 0.2s,transform 0.1s;position:relative;}
+.abtn:hover{opacity:0.92;transform:translateY(-1px);}
+.abtn:disabled{opacity:0.5;cursor:not-allowed;}
+.alink{background:none;border:none;color:var(--cyan);font-size:12px;font-weight:600;cursor:pointer;width:100%;padding:10px;border-radius:8px;transition:background 0.2s;}
+.alink:hover{background:rgba(0,229,200,0.07);}
+.alink-g{color:var(--text2);}
+.adiv{text-align:center;color:var(--muted);font-size:11px;margin:10px 0;position:relative;}
+.adiv::before,.adiv::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border2);}
+.adiv::before{left:0;}.adiv::after{right:0;}
+.aerr{background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.25);color:var(--red);padding:9px 12px;border-radius:8px;font-size:12px;margin-top:10px;display:none;}
+.aok{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);color:var(--green);padding:9px 12px;border-radius:8px;font-size:12px;margin-top:10px;display:none;}
+.pwd-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--lift);transition:width 0.3s,background 0.3s;width:20%;}
+.pwd-bar.w{width:50%;background:var(--amber);}
+.pwd-bar.m{width:75%;background:var(--blue);}
+.pwd-bar.s{width:100%;background:var(--green);}
+.spin-xs{width:14px;height:14px;border:2px solid rgba(0,0,0,0.2);border-top-color:#04060e;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-/* ══ AUTH SCREEN ══════════════════════════════════════ */
-#authScreen {
-  position:fixed; inset:0; z-index:9999; overflow:auto;
-  background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px;
-}
-#authScreen::before, #authScreen::after {
-  content:''; position:fixed; border-radius:50%; pointer-events:none;
-  animation:orb 10s ease-in-out infinite;
-}
-#authScreen::before {
-  width:700px; height:700px;
-  background:radial-gradient(circle, rgba(0,229,200,0.055) 0%, transparent 65%);
-  top:-200px; left:-200px;
-}
-#authScreen::after {
-  width:600px; height:600px;
-  background:radial-gradient(circle, rgba(74,158,255,0.04) 0%, transparent 65%);
-  bottom:-150px; right:-150px;
-  animation-delay:-5s; animation-direction:reverse;
-}
-@keyframes orb { 0%,100%{transform:scale(1) translate(0,0);} 50%{transform:scale(1.12) translate(20px,15px);} }
+/* ══ APP SCREEN ══ */
+#appScreen{display:none;flex-direction:column;height:100vh;overflow:hidden;}
 
-.auth-card {
-  position:relative; z-index:10;
-  background:linear-gradient(160deg, rgba(17,25,41,0.97) 0%, rgba(10,15,28,0.97) 100%);
-  border:1px solid var(--border2); border-radius:20px;
-  padding:40px 38px; width:100%; max-width:430px;
-  box-shadow:0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
-  animation:authIn 0.45s cubic-bezier(0.22,1,0.36,1);
+/* ══ TOP NAV — improved ══ */
+#topNav{
+  display:flex;align-items:center;gap:0;height:54px;min-height:54px;
+  background:rgba(7,11,20,0.95);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  padding:0 16px;
+  position:relative;z-index:100;
+  flex-shrink:0;
 }
-.auth-card::before {
-  content:''; position:absolute; inset:0; border-radius:20px; pointer-events:none;
-  background:linear-gradient(135deg,rgba(0,229,200,0.04) 0%,transparent 50%);
+.nav-logo{display:flex;align-items:center;gap:9px;cursor:pointer;margin-right:16px;flex-shrink:0;}
+.nav-logo-gem{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px rgba(0,229,200,0.25);}
+.nav-logo-name{font-family:var(--ff-head);font-size:17px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.page-tabs{display:flex;gap:2px;align-items:center;flex:1;}
+.page-tab{
+  background:none;border:none;color:var(--muted);
+  padding:6px 13px;border-radius:8px;font-size:12px;font-weight:600;
+  transition:all 0.2s;cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;
 }
-@keyframes authIn { from{opacity:0;transform:translateY(24px) scale(0.98);} to{opacity:1;transform:translateY(0) scale(1);} }
+.page-tab:hover{color:var(--text2);background:rgba(255,255,255,0.05);}
+.page-tab.active{
+  color:var(--cyan);background:rgba(0,229,200,0.09);
+  border-color:rgba(0,229,200,0.2);
+  box-shadow:0 0 16px rgba(0,229,200,0.08);
+}
+.page-tab.admin-tab{color:var(--amber);display:none;}
+.page-tab.admin-tab:hover{background:rgba(255,202,69,0.1);color:var(--amber);}
+.page-tab.admin-tab.active{color:var(--amber);background:rgba(255,202,69,0.09);border-color:rgba(255,202,69,0.2);}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.usage-mini{font-size:10px;color:var(--muted);font-family:var(--ff-mono);}
+.plan-badge{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:0.06em;}
+.pb-free{background:rgba(148,163,184,0.12);color:var(--pfree);}
+.pb-basic{background:rgba(96,165,250,0.12);color:var(--pbasic);}
+.pb-standard{background:rgba(192,132,252,0.12);color:var(--pstd);}
+.pb-premium{background:rgba(251,191,36,0.12);color:var(--pprem);}
+.user-chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 4px;}
+.user-av{width:24px;height:24px;background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#04060e;}
+.user-nm{font-size:12px;font-weight:600;color:var(--text2);}
+.nvbtn{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--muted);padding:5px 11px;border-radius:8px;font-size:11px;font-weight:600;transition:all 0.2s;}
+.nvbtn:hover{background:rgba(255,107,122,0.1);border-color:rgba(255,107,122,0.3);color:var(--red);}
+.nvbtn-logout-text{display:inline;}
 
-.auth-logo { display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:32px; }
-.auth-logo-gem {
-  width:46px; height:46px; border-radius:14px;
-  background:linear-gradient(135deg, var(--cyan), var(--blue));
-  display:flex; align-items:center; justify-content:center; font-size:22px;
-  box-shadow:0 0 0 1px rgba(0,229,200,0.3), 0 12px 28px rgba(0,229,200,0.3);
-  position:relative;
-}
-.auth-logo-gem::after {
-  content:''; position:absolute; inset:0; border-radius:14px;
-  background:linear-gradient(135deg,rgba(255,255,255,0.15) 0%,transparent 60%);
-}
-.auth-logo-name {
-  font-family:var(--ff-head); font-weight:800; font-size:26px; letter-spacing:-0.5px;
-  background:linear-gradient(90deg, var(--cyan) 0%, #7dd3fc 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
-.auth-title { font-family:var(--ff-head); font-size:20px; font-weight:700; color:var(--text); text-align:center; margin-bottom:6px; }
-.auth-sub { font-size:13px; color:var(--muted); text-align:center; margin-bottom:28px; line-height:1.6; }
+/* ══ MOBILE NAV ══ */
+#mobileBar{display:none;overflow-x:auto;white-space:nowrap;background:rgba(7,11,20,0.98);border-bottom:1px solid var(--border);padding:0 8px;scrollbar-width:none;flex-shrink:0;}
+#mobileBar::-webkit-scrollbar{display:none;}
+.mob-tab{display:inline-flex;align-items:center;gap:5px;padding:10px 12px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.mob-tab:hover{color:var(--text2);}
+.mob-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.mob-tab.admin-mob{color:var(--amber);display:none;}
+.mob-tab.admin-mob.active{color:var(--amber);border-bottom-color:var(--amber);}
 
-.afield { margin-bottom:16px; }
-.afield label { display:block; font-size:10px; color:var(--muted); margin-bottom:7px; letter-spacing:1.2px; text-transform:uppercase; font-family:var(--ff-mono); }
-.afield input, .afield select {
-  width:100%; padding:12px 16px;
-  background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:10px; color:var(--text); font-size:14px; transition:all 0.2s;
-}
-.afield input:focus, .afield select:focus { border-color:var(--cyan); background:rgba(0,229,200,0.04); box-shadow:0 0 0 3px rgba(0,229,200,0.1); }
-.afield input::placeholder { color:var(--dim); }
-.afield select option { background:#111929; }
-.row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+/* ══ PAGES ══ */
+.page{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.page.active{display:flex;}
+.page-header{padding:24px 24px 0;flex-shrink:0;}
+.page-header h2{font-family:var(--ff-head);font-size:20px;font-weight:700;}
+.page-header p{color:var(--muted);font-size:12px;margin-top:4px;}
 
-.abtn { width:100%; padding:13px; border-radius:10px; font-family:var(--ff-head); font-size:14px; font-weight:700; letter-spacing:0.3px; transition:all 0.2s; margin-top:6px; }
-.abtn-g { background:linear-gradient(135deg, var(--cyan) 0%, var(--cyan2) 100%); color:#000; box-shadow:0 8px 28px rgba(0,229,200,0.32); }
-.abtn-g:hover { transform:translateY(-1px); box-shadow:0 14px 36px rgba(0,229,200,0.42); }
-.abtn-b { background:linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%); color:#fff; box-shadow:0 8px 28px rgba(74,158,255,0.28); }
-.abtn-b:hover { transform:translateY(-1px); box-shadow:0 14px 36px rgba(74,158,255,0.38); }
-.abtn:disabled { opacity:0.45; cursor:not-allowed; transform:none !important; }
+/* ══ MAP PAGE ══ */
+#mapPage{flex-direction:row;}
+#mainWrap{display:flex;flex:1;overflow:hidden;}
+#mapPanel{flex:1;display:flex;flex-direction:column;position:relative;min-width:0;}
+#map{flex:1;min-height:0;}
+.map-controls-bar{display:flex;gap:8px;align-items:center;padding:8px 10px;background:rgba(7,11,20,0.95);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.nc-group{display:flex;flex-direction:column;gap:2px;}
+.nc-group label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;}
+.nsel{background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text2);padding:5px 8px;font-size:11px;cursor:pointer;}
+.nsel:focus{border-color:var(--cyan);}
+#cpill{position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(0,229,200,0.12);border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:4px 14px;border-radius:20px;font-size:10px;font-family:var(--ff-mono);display:none;z-index:500;pointer-events:none;}
+#famBar{position:absolute;bottom:58px;left:0;right:0;overflow-x:auto;white-space:nowrap;padding:6px 10px;background:rgba(4,6,14,0.85);display:none;z-index:400;scrollbar-width:none;}
+#famBar::-webkit-scrollbar{display:none;}
+.fi-chip{display:inline-block;padding:3px 10px;margin-right:6px;background:rgba(157,122,255,0.12);border:1px solid rgba(157,122,255,0.2);border-radius:12px;font-size:10px;color:var(--purple);}
+#ptip{position:absolute;top:56px;left:10px;background:rgba(7,11,20,0.92);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;display:none;z-index:500;max-width:200px;}
+#ptName{font-weight:700;color:var(--text);font-size:13px;}
+#ptLoc{color:var(--muted);margin-top:2px;}
+#ptLang{color:var(--purple);margin-top:2px;font-size:10px;}
+.send-bar{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;background:rgba(7,11,20,0.96);border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.mc-group{display:flex;flex-direction:column;gap:3px;}
+.mc-group label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;}
+.mc-group input{background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:8px;color:var(--text2);padding:6px 10px;font-size:12px;transition:border-color 0.2s;}
+.mc-group input:focus{border-color:var(--cyan);}
+.mc-country{flex:0 0 130px;}
+.mc-question{flex:1;min-width:160px;}
+#sendBtn{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060e;font-weight:800;font-size:13px;padding:10px 20px;border-radius:10px;transition:all 0.2s;flex-shrink:0;align-self:flex-end;}
+#sendBtn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,200,0.35);}
+#sendBtn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 
-.adiv { display:flex; align-items:center; gap:12px; margin:18px 0; }
-.adiv::before, .adiv::after { content:''; flex:1; height:1px; background:var(--border); }
-.adiv span { font-size:11px; color:var(--muted); font-family:var(--ff-mono); }
-.alink { width:100%; padding:12px; background:transparent; border:1px solid var(--border); border-radius:10px; color:var(--text2); font-size:13px; transition:all 0.2s; }
-.alink-g:hover { border-color:rgba(0,229,200,0.35); color:var(--cyan); background:rgba(0,229,200,0.04); }
+/* ══ RIGHT PANEL ══ */
+#rightPanel{width:360px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:var(--bg1);flex-shrink:0;}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.tab{flex:1;padding:10px 4px;background:none;font-size:11px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;border-radius:0;transition:all 0.2s;}
+.tab.on{color:var(--cyan);border-bottom-color:var(--cyan);}
+.tab.ht.on{color:var(--blue);border-bottom-color:var(--blue);}
+.tab.ct.on{color:var(--purple);border-bottom-color:var(--purple);}
+.tab.pt.on{color:var(--amber);border-bottom-color:var(--amber);}
+.tpanel{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.tpanel.on{display:flex;}
+.scroll{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.scroll::-webkit-scrollbar{width:3px;}
+.scroll::-webkit-scrollbar-track{background:transparent;}
+.scroll::-webkit-scrollbar-thumb{background:var(--lift);border-radius:2px;}
 
-.amsg { border-radius:9px; padding:11px 14px; font-size:12px; margin-bottom:14px; display:none; line-height:1.5; }
-.amsg.err { background:rgba(255,107,122,0.08); border:1px solid rgba(255,107,122,0.28); color:var(--red); }
-.amsg.ok  { background:rgba(0,229,200,0.08); border:1px solid rgba(0,229,200,0.28); color:var(--cyan); }
+/* ══ IDLE / LOAD ══ */
+.idle{text-align:center;padding:30px 20px;}
+.idle-icon{font-size:48px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(0,229,200,0.3));}
+.idle h3{font-family:var(--ff-head);font-size:16px;font-weight:700;margin-bottom:8px;}
+.idle p{font-size:12px;color:var(--muted);line-height:1.6;}
+.usage-widget{margin-top:20px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.uw-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:10px;}
+.uw-row{display:flex;justify-content:space-between;font-size:11px;}
+.uw-label{color:var(--muted);}
+.uw-val{font-family:var(--ff-mono);color:var(--text2);}
+.uw-bar{height:3px;background:var(--lift);border-radius:2px;margin:4px 0 10px;overflow:hidden;}
+.uw-bar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:2px;transition:width 0.5s ease;}
+.uw-bar-fill.danger{background:linear-gradient(90deg,var(--amber),var(--red));}
+.loadbox{display:none;flex-direction:column;align-items:center;padding:40px 20px;gap:16px;}
+.spin-lg{width:44px;height:44px;border:3px solid rgba(0,229,200,0.15);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite;}
+.lstep{font-size:12px;color:var(--cyan);font-family:var(--ff-mono);}
+.pbar{width:180px;height:3px;background:var(--lift);border-radius:2px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:2px;transition:width 0.4s ease;width:0%;}
+.result-wrap{display:none;}
+.ebox{background:rgba(255,107,122,0.07);border:1px solid rgba(255,107,122,0.2);border-radius:10px;padding:16px;font-size:12px;color:var(--red);line-height:1.6;margin-bottom:10px;}
+.limit-box{background:rgba(255,202,69,0.06);border:1px solid rgba(255,202,69,0.2);border-radius:12px;padding:20px;text-align:center;}
+.lb-icon{font-size:28px;display:block;margin-bottom:10px;}
+.lb-title{font-family:var(--ff-head);font-size:15px;font-weight:700;color:var(--amber);margin-bottom:8px;}
+.lb-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px;}
+.lb-btn{background:rgba(255,202,69,0.12);border:1px solid rgba(255,202,69,0.3);color:var(--amber);padding:9px 20px;border-radius:9px;font-weight:700;font-size:12px;transition:all 0.2s;}
+.lb-btn:hover{background:rgba(255,202,69,0.2);}
 
-.pwd-bar { height:3px; border-radius:2px; margin-top:6px; background:var(--border); transition:all 0.3s; }
-.pwd-bar.w { background:linear-gradient(90deg,var(--red) 30%,var(--border) 30%); }
-.pwd-bar.m { background:linear-gradient(90deg,var(--amber) 60%,var(--border) 60%); }
-.pwd-bar.s { background:var(--cyan); }
+/* ══ REPORT SECTIONS ══ */
+.loc-badge{display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(135deg,rgba(0,229,200,0.07),rgba(74,158,255,0.07));border:1px solid rgba(0,229,200,0.15);border-radius:12px;padding:14px;margin-bottom:10px;}
+.loc-name{font-family:var(--ff-head);font-size:16px;font-weight:700;}
+.loc-sub{color:var(--muted);font-size:11px;margin-top:3px;}
+.loc-lang{color:var(--purple);font-size:10px;margin-top:4px;}
+.cbadge{font-family:var(--ff-mono);font-size:9px;color:var(--muted);text-align:right;line-height:1.7;}
+.wiki-box{background:rgba(74,158,255,0.05);border:1px solid rgba(74,158,255,0.12);border-radius:9px;padding:10px 12px;font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px;}
+.epill{background:rgba(0,229,200,0.05);border:1px solid rgba(0,229,200,0.12);border-radius:7px;padding:7px 10px;font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.5;}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:11px;margin-bottom:7px;overflow:hidden;}
+.shdr{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;transition:background 0.2s;user-select:none;}
+.shdr:hover{background:rgba(255,255,255,0.03);}
+.snum{font-family:var(--ff-mono);font-size:10px;color:var(--muted);width:22px;flex-shrink:0;}
+.stitle{font-size:12px;font-weight:700;flex:1;}
+.chev{color:var(--muted);font-size:12px;transition:transform 0.2s;}
+.chev.o{transform:rotate(180deg);}
+.sbody{padding:0 14px 12px;border-top:1px solid var(--border3);}
+.sbody.hid{display:none;}
+.srow{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border3);font-size:11px;}
+.srow:last-child{border-bottom:none;}
+.slbl{min-width:90px;color:var(--muted);flex-shrink:0;}
+.sval{color:var(--text2);line-height:1.5;}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin:2px;}
+.tp{background:rgba(157,122,255,0.12);color:var(--purple);}
+.tb{background:rgba(74,158,255,0.12);color:var(--blue);}
+.tg{background:rgba(52,211,153,0.12);color:var(--green);}
+.ty{background:rgba(255,202,69,0.12);color:var(--amber);}
+.tr{background:rgba(255,107,122,0.12);color:var(--red);}
+.tl{padding:6px 0;}
+.tli{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border3);}
+.tli:last-child{border-bottom:none;}
+.tldot{width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-top:3px;flex-shrink:0;}
+.tlyear{font-family:var(--ff-mono);font-size:10px;color:var(--cyan);min-width:40px;}
+.tltext{font-size:11px;color:var(--text2);line-height:1.5;}
+.mcqi{background:rgba(255,255,255,0.025);border-radius:8px;padding:10px;margin-bottom:6px;}
+.mcqq{font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5;}
+.mcqo{display:inline-block;padding:4px 10px;margin:3px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:7px;font-size:10px;color:var(--text2);cursor:pointer;transition:all 0.2s;}
+.mcqo:hover{border-color:var(--cyan);color:var(--cyan);}
+.mcqo.ok{background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.3);color:var(--green);}
+.mcqo.no{background:rgba(255,107,122,0.1);border-color:rgba(255,107,122,0.25);color:var(--red);}
+.dl-row{display:flex;gap:8px;padding:14px 0 4px;flex-wrap:wrap;}
+.dl-btn{padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;transition:all 0.2s;border:1px solid;}
+.dl-txt{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.2);color:var(--green);}
+.dl-txt:hover{background:rgba(52,211,153,0.15);}
+.dl-json{background:rgba(74,158,255,0.08);border-color:rgba(74,158,255,0.2);color:var(--blue);}
+.dl-json:hover{background:rgba(74,158,255,0.15);}
+.dl-pdf{background:rgba(255,107,122,0.08);border-color:rgba(255,107,122,0.2);color:var(--red);}
+.dl-pdf:hover{background:rgba(255,107,122,0.15);}
+.dl-docx{background:rgba(157,122,255,0.08);border-color:rgba(157,122,255,0.2);color:var(--purple);}
+.dl-docx:hover{background:rgba(157,122,255,0.15);}
 
-.spin-xs { display:inline-block; width:13px; height:13px; border:2px solid rgba(0,0,0,0.2); border-top-color:rgba(0,0,0,0.8); border-radius:50%; animation:spin 0.65s linear infinite; vertical-align:middle; margin-right:5px; }
-.spin-xs.w { border-color:rgba(255,255,255,0.2); border-top-color:#fff; }
-@keyframes spin { to { transform:rotate(360deg); } }
+/* ══ CHAT ══ */
+.cmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.cmsgs::-webkit-scrollbar{width:3px;}
+.cnoloc{padding:20px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6;border:1px dashed var(--border2);border-radius:10px;}
+.cmsg{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.cmq{font-size:12px;font-weight:600;color:var(--cyan);margin-bottom:6px;}
+.cma{font-size:11px;color:var(--text2);line-height:1.6;}
+.cmts{font-size:9px;color:var(--dim);margin-top:6px;font-family:var(--ff-mono);}
+.cbar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);flex-shrink:0;}
+.cbar input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:12px;}
+.cbar input:focus{border-color:var(--cyan);}
+.sbtn{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060e;font-weight:800;font-size:11px;padding:9px 16px;border-radius:8px;}
 
-/* ══ APP SHELL ════════════════════════════════════════ */
-#appScreen { display:none; flex-direction:column; height:100vh; overflow:hidden; }
+/* ══ HISTORY INLINE ══ */
+.hitem{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all 0.2s;margin-bottom:7px;}
+.hitem:hover{border-color:var(--border2);background:var(--card2);transform:translateX(3px);}
+.hname{font-weight:700;font-size:13px;margin-bottom:4px;}
+.hmeta{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.hcoord{font-family:var(--ff-mono);font-size:9px;color:var(--dim);margin-top:6px;}
+.hts{font-size:9px;color:var(--dim);margin-top:2px;}
+.hclr{background:rgba(255,107,122,0.07);border:1px solid rgba(255,107,122,0.2);color:var(--red);padding:6px 14px;border-radius:7px;font-size:11px;font-weight:700;margin-bottom:10px;transition:all 0.2s;}
+.hclr:hover{background:rgba(255,107,122,0.14);}
+.hempty{text-align:center;padding:40px 20px;color:var(--muted);font-size:12px;}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
 
-/* ══ TOP NAV ══════════════════════════════════════════ */
-#topNav {
-  flex-shrink:0; height:52px;
-  background:rgba(7,11,20,0.96); border-bottom:1px solid var(--border);
-  display:flex; align-items:center; padding:0 14px; gap:8px;
-  position:relative; z-index:600; backdrop-filter:blur(24px);
-  box-shadow:0 1px 0 rgba(0,229,200,0.06), 0 4px 20px rgba(0,0,0,0.4);
-}
-.nav-logo { display:flex; align-items:center; gap:9px; flex-shrink:0; cursor:pointer; }
-.nav-logo-gem {
-  width:30px; height:30px; border-radius:9px;
-  background:linear-gradient(135deg, var(--cyan), var(--blue));
-  display:flex; align-items:center; justify-content:center; font-size:15px;
-  box-shadow:0 0 0 1px rgba(0,229,200,0.25), 0 4px 14px rgba(0,229,200,0.25);
-}
-.nav-logo-name {
-  font-family:var(--ff-head); font-weight:800; font-size:17px; letter-spacing:-0.5px;
-  background:linear-gradient(90deg, var(--cyan) 0%, #93c5fd 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
-/* Page nav tabs */
-.page-tabs { display:flex; gap:2px; margin-left:16px; }
-.page-tab {
-  padding:5px 12px; border-radius:7px; font-size:11px; font-family:var(--ff-head); font-weight:700;
-  color:var(--muted); background:transparent; border:1px solid transparent;
-  transition:all 0.18s; letter-spacing:0.5px; text-transform:uppercase;
-}
-.page-tab:hover { color:var(--text2); background:rgba(255,255,255,0.04); }
-.page-tab.active { color:var(--cyan); background:rgba(0,229,200,0.07); border-color:rgba(0,229,200,0.2); }
+/* ══ HISTORY PAGE ══ */
+#historyPage{background:var(--bg1);}
+.hcontent{flex:1;overflow-y:auto;padding:16px 24px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.hcontent::-webkit-scrollbar{width:4px;}
 
-.plan-badge {
-  font-size:9px; padding:3px 10px; border-radius:20px;
-  font-family:var(--ff-mono); font-weight:500; letter-spacing:1px; text-transform:uppercase; border:1px solid; flex-shrink:0;
-}
-.pb-free     { background:rgba(148,163,184,0.1); border-color:rgba(148,163,184,0.3); color:var(--pfree); }
-.pb-basic    { background:rgba(96,165,250,0.1);  border-color:rgba(96,165,250,0.3);  color:var(--pbasic); }
-.pb-standard { background:rgba(192,132,252,0.1); border-color:rgba(192,132,252,0.3); color:var(--pstd); }
-.pb-premium  { background:rgba(251,191,36,0.1);  border-color:rgba(251,191,36,0.35); color:var(--pprem); }
+/* ══ PLANS PAGE ══ */
+#plansPage{flex-direction:column;background:var(--bg1);overflow:hidden;}
+.plans-scroll{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.plans-scroll::-webkit-scrollbar{width:3px;}
+.pricing-title{font-family:var(--ff-head);font-size:22px;font-weight:800;margin-bottom:6px;}
+.pricing-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:24px;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;transition:transform 0.2s,border-color 0.2s;}
+.plan-card:hover{transform:translateY(-3px);}
+.plan-card.current-plan{border-color:var(--cyan);box-shadow:0 0 24px rgba(0,229,200,0.1);}
+.plan-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.plan-name{font-family:var(--ff-head);font-size:15px;font-weight:700;}
+.pn-free{color:var(--pfree);}.pn-basic{color:var(--pbasic);}.pn-standard{color:var(--pstd);}.pn-premium{color:var(--pprem);}
+.plan-active-badge{background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-top:4px;display:block;}
+.plan-price .amt{font-family:var(--ff-head);font-size:20px;font-weight:800;color:var(--text);}
+.plan-price .per{font-size:10px;color:var(--muted);}
+.plan-features{margin-bottom:14px;}
+.pf{font-size:11px;color:var(--text2);padding:4px 0;display:flex;align-items:flex-start;gap:6px;border-bottom:1px solid var(--border3);}
+.pf:last-child{border-bottom:none;}
+.pf-check{color:var(--cyan);flex-shrink:0;font-weight:700;}
+.pf.highlight .pf-check{color:var(--amber);}
+.pf.highlight{color:var(--text);}
+.plan-btn{width:100%;padding:10px;border-radius:9px;font-size:12px;font-weight:700;transition:all 0.2s;border:1px solid;}
+.pb-free-btn{background:rgba(148,163,184,0.08);border-color:rgba(148,163,184,0.2);color:var(--pfree);}
+.pb-free-btn:hover{background:rgba(148,163,184,0.15);}
+.pb-basic-btn{background:rgba(96,165,250,0.1);border-color:rgba(96,165,250,0.25);color:var(--pbasic);}
+.pb-basic-btn:hover{background:rgba(96,165,250,0.18);}
+.pb-std-btn{background:rgba(192,132,252,0.1);border-color:rgba(192,132,252,0.25);color:var(--pstd);}
+.pb-std-btn:hover{background:rgba(192,132,252,0.18);}
+.pb-premium-btn{background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.25);color:var(--pprem);}
+.pb-premium-btn:hover{background:rgba(251,191,36,0.18);}
+.pay-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.pay-box h3{font-family:var(--ff-head);font-size:15px;font-weight:700;margin-bottom:16px;color:var(--cyan);}
+.pay-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+.pay-num{width:24px;height:24px;background:var(--cyan);color:#04060e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.pay-text{font-size:12px;color:var(--text2);line-height:1.6;padding-top:2px;}
+.pay-number{font-family:var(--ff-mono);font-size:18px;font-weight:700;color:var(--amber);padding:8px 14px;background:rgba(255,202,69,0.07);border:1px solid rgba(255,202,69,0.2);border-radius:8px;display:inline-block;margin:6px 0;letter-spacing:0.1em;}
 
-.nav-right { margin-left:auto; display:flex; align-items:center; gap:7px; flex-shrink:0; }
-.usage-mini { font-size:9.5px; color:var(--muted); font-family:var(--ff-mono); white-space:nowrap; }
-.user-chip {
-  display:flex; align-items:center; gap:7px;
-  background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:22px; padding:3px 11px 3px 4px;
-}
-.user-av {
-  width:26px; height:26px; border-radius:50%;
-  background:linear-gradient(135deg, var(--cyan), var(--blue));
-  display:flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:700; color:#000; font-family:var(--ff-head);
-  box-shadow:0 0 0 2px rgba(0,229,200,0.2);
-}
-.user-nm { font-size:12px; color:var(--text2); max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.nvbtn {
-  background:rgba(255,255,255,0.04); border:1px solid var(--border);
-  color:var(--muted); padding:5px 11px; border-radius:7px; font-size:11px; transition:all 0.18s;
-}
-.nvbtn:hover { border-color:rgba(255,107,122,0.4); color:var(--red); background:rgba(255,107,122,0.05); }
+/* ══ PROFILE PAGE ══ */
+#profilePage{background:var(--bg1);}
+.profile-scroll{flex:1;overflow-y:auto;padding:24px;max-width:520px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.profile-avatar-section{text-align:center;padding:20px 0 28px;}
+.profile-av-big{width:72px;height:72px;background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#04060e;margin:0 auto 14px;}
+.profile-user-name{font-family:var(--ff-head);font-size:20px;font-weight:700;}
+.profile-user-email{color:var(--muted);font-size:13px;margin-top:4px;}
+.profile-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
+.profile-section h3{font-family:var(--ff-head);font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text2);}
+.pf-field{margin-bottom:12px;}
+.pf-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+.pf-field input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:9px;padding:10px 12px;color:var(--text);font-size:13px;}
+.pf-field input:focus{border-color:var(--cyan);}
+.plan-info-card{display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border);}
+.plan-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
+.plan-val{font-weight:700;font-size:15px;font-family:var(--ff-head);}
+.save-btn{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060e;font-weight:800;font-size:13px;padding:11px 24px;border-radius:10px;transition:all 0.2s;margin-top:6px;}
+.save-btn:hover{opacity:0.9;transform:translateY(-1px);}
 
-/* ══ MOBILE NAV BAR ══════════════════════════════════ */
-#mobileBar { display:none; gap:4px; padding:6px 10px; background:var(--surface); border-bottom:1px solid var(--border); flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; }
-.mob-tab {
-  padding:5px 10px; border-radius:6px; font-size:10px; font-family:var(--ff-head); font-weight:700;
-  color:var(--muted); background:transparent; border:1px solid transparent;
-  white-space:nowrap; transition:all 0.18s; letter-spacing:0.5px; text-transform:uppercase;
-}
-.mob-tab.active { color:var(--cyan); background:rgba(0,229,200,0.07); border-color:rgba(0,229,200,0.2); }
+/* ══ SETTINGS PAGE ══ */
+#settingsPage{background:var(--bg1);}
+.settings-scroll{flex:1;overflow-y:auto;padding:24px;max-width:580px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;}
+.settings-section h3{font-family:var(--ff-head);font-size:14px;font-weight:700;margin-bottom:6px;}
+.settings-section p{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;}
+.sf-field{margin-bottom:14px;}
+.sf-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+.sf-field input,.sf-field select{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;color:var(--text);font-size:13px;transition:border-color 0.2s;}
+.sf-field input:focus,.sf-field select:focus{border-color:var(--cyan);}
+.sf-field select option{background:#0d1424;}
+.model-desc{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5;}
+.api-status{display:flex;align-items:center;gap:8px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:9px;padding:10px 12px;font-size:11px;color:var(--green);margin-bottom:12px;}
+.api-status.no-key{background:rgba(255,202,69,0.06);border-color:rgba(255,202,69,0.2);color:var(--amber);}
+.api-status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.info-box{background:rgba(74,158,255,0.05);border:1px solid rgba(74,158,255,0.12);border-radius:9px;padding:12px;font-size:11px;color:var(--text2);line-height:1.7;}
 
-/* ══ PAGES ════════════════════════════════════════════ */
-.page { display:none; flex:1; overflow:hidden; }
-.page.active { display:flex; }
+/* ══ FOOTER ══ */
+#footer{flex-shrink:0;padding:5px 16px;font-size:10px;color:var(--dim);border-top:1px solid var(--border3);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;}
+#footer span{color:var(--green);font-family:var(--ff-mono);}
 
-/* ══ MAP PAGE ════════════════════════════════════════ */
-#mapPage {
-  flex-direction:column; overflow:hidden;
-}
-#mainWrap {
-  flex:1; display:grid; grid-template-columns:55% 45%;
-  min-height:0; overflow:hidden;
-}
-#mapPanel {
-  border-right:1px solid var(--border); display:flex; flex-direction:column; position:relative; min-height:0; overflow:hidden;
-}
-#map { flex:1; min-height:0; }
+/* ══ MODAL ══ */
+#planModal{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+#planModal.open{opacity:1;pointer-events:all;}
+.modal-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:380px;position:relative;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
+.modal-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.07);border:none;color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:rgba(255,107,122,0.15);color:var(--red);}
 
-/* Controls bar above map */
-.map-controls-bar {
-  flex-shrink:0; padding:8px 12px; background:rgba(7,11,20,0.97);
-  border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-}
-.nc-group { display:flex; flex-direction:column; gap:2px; }
-.nc-group label { font-size:7px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--ff-mono); padding-left:2px; }
-.nsel {
-  background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--text2);
-  padding:5px 8px; border-radius:7px; font-size:11px; transition:all 0.18s; min-width:82px;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%235a6a88' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:calc(100% - 7px) center; padding-right:22px;
-}
-.nsel:hover, .nsel:focus { border-color:rgba(0,229,200,0.4); color:var(--text); background-color:rgba(0,229,200,0.04); }
-.nsel option { background:#111929; }
-#langPick {
-  background:rgba(157,122,255,0.06); border:1px solid rgba(157,122,255,0.22); color:var(--purple);
-  padding:5px 22px 5px 8px; border-radius:7px; font-size:11px;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239d7aff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat; background-position:calc(100% - 7px) center; transition:all 0.18s;
-}
-#langPick option { background:#111929; }
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;z-index:99999;animation:toastIn 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.toast.ok{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);color:var(--green);}
+.toast.err{background:rgba(255,107,122,0.15);border:1px solid rgba(255,107,122,0.3);color:var(--red);}
+.toast.warn{background:rgba(255,202,69,0.15);border:1px solid rgba(255,202,69,0.3);color:var(--amber);}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 
-/* Send row */
-.send-bar {
-  flex-shrink:0; padding:8px 12px; background:var(--surface);
-  border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px;
+/* ══ RESPONSIVE ══ */
+@media(max-width:900px){
+  #topNav .page-tabs{display:none;}
+  .nvbtn-logout-text{display:none;}
+  #mobileBar{display:flex;}
+  #mapPage{flex-direction:column;}
+  #mainWrap{flex-direction:column;}
+  #map{height:38vh;}
+  #rightPanel{width:100%;border-left:none;border-top:1px solid var(--border);height:calc(62vh - 120px);}
+  .usage-mini{display:none;}
 }
-.mc-group { display:flex; flex-direction:column; gap:3px; flex:1; }
-.mc-group label { font-size:8px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--ff-mono); }
-.mc-group input, .mc-group select {
-  width:100%; padding:7px 10px;
-  background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:7px; color:var(--text); font-size:12px; transition:all 0.18s;
-}
-.mc-group input:focus, .mc-group select:focus { border-color:rgba(0,229,200,0.5); background:rgba(0,229,200,0.03); box-shadow:0 0 0 3px rgba(0,229,200,0.08); }
-.mc-group input::placeholder { color:var(--dim); }
-.mc-group select option { background:#111929; }
-
-#sendBtn {
-  flex-shrink:0; padding:0 24px; height:38px;
-  background:linear-gradient(135deg, var(--cyan) 0%, var(--cyan2) 100%);
-  color:#000; border-radius:10px;
-  font-family:var(--ff-head); font-size:13px; font-weight:800; letter-spacing:0.5px;
-  box-shadow:0 0 0 1px rgba(0,229,200,0.4), 0 8px 24px rgba(0,229,200,0.35);
-  transition:all 0.2s; white-space:nowrap; position:relative; overflow:hidden;
-}
-#sendBtn::before { content:''; position:absolute; inset:0; border-radius:10px; background:linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 60%); }
-#sendBtn:hover { transform:translateY(-2px); box-shadow:0 0 0 1px rgba(0,229,200,0.5), 0 14px 36px rgba(0,229,200,0.45); }
-#sendBtn:active { transform:translateY(0); }
-#sendBtn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
-
-/* Map overlays */
-#cpill {
-  position:absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:500;
-  background:rgba(0,0,0,0.85); border:1px solid var(--border2); color:var(--cyan);
-  padding:5px 14px; border-radius:20px; font-size:11px; font-family:var(--ff-mono);
-  pointer-events:none; display:none; backdrop-filter:blur(10px);
-}
-#famBar {
-  position:absolute; bottom:44px; left:8px; right:8px; z-index:499; display:none;
-  background:rgba(0,0,0,0.82); border:1px solid var(--border); border-radius:9px;
-  padding:6px 10px; font-size:10px; color:var(--amber); font-family:var(--ff-body);
-  backdrop-filter:blur(8px); overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
-}
-.fi-chip { background:rgba(255,202,69,0.1); border:1px solid rgba(255,202,69,0.2); padding:2px 7px; border-radius:10px; margin-left:5px; font-size:9px; white-space:nowrap; }
-#ptip {
-  position:absolute; top:10px; left:10px; z-index:498; display:none;
-  background:rgba(4,6,14,0.9); border:1px solid rgba(0,229,200,0.25); border-radius:11px;
-  padding:8px 12px; backdrop-filter:blur(10px);
-  box-shadow:0 4px 20px rgba(0,0,0,0.5);
-}
-#ptName { font-family:var(--ff-head); font-size:14px; font-weight:700; color:var(--text); }
-#ptLoc  { font-size:10px; color:var(--muted); margin-top:1px; }
-#ptLang { font-size:10px; color:var(--purple); margin-top:3px; }
-
-/* ══ RIGHT PANEL TABS ════════════════════════════════ */
-#rightPanel { display:flex; flex-direction:column; min-height:0; overflow:hidden; background:var(--bg1); }
-.tabs { display:flex; flex-shrink:0; background:rgba(7,11,20,0.97); border-bottom:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,0.3); }
-.tab {
-  flex:1; padding:11px 0; font-size:9.5px; background:none; border:none;
-  color:var(--muted); border-bottom:2px solid transparent;
-  transition:all 0.2s; font-family:var(--ff-head); font-weight:700;
-  letter-spacing:1.2px; text-transform:uppercase; position:relative;
-}
-.tab:hover { color:var(--text2); background:rgba(255,255,255,0.02); }
-.tab.on { color:var(--cyan); border-bottom-color:var(--cyan); }
-.tab.on::after { content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:20px; height:2px; background:var(--cyan); box-shadow:0 0 8px var(--cyan-glow); border-radius:2px; }
-.tab.ht.on  { color:var(--blue);   border-bottom-color:var(--blue); }
-.tab.ct.on  { color:var(--amber);  border-bottom-color:var(--amber); }
-.tab.pt.on  { color:var(--pprem);  border-bottom-color:var(--pprem); }
-
-.tpanel { display:none; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
-.tpanel.on { display:flex; }
-.scroll { flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin; scrollbar-color:var(--lift) transparent; }
-.scroll::-webkit-scrollbar { width:3px; }
-.scroll::-webkit-scrollbar-thumb { background:var(--lift); border-radius:3px; }
-
-/* ══ IDLE / LOADING / RESULT ═════════════════════════ */
-.idle { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:16px; padding:24px; }
-.idle-icon { width:72px; height:72px; border-radius:50%; background:radial-gradient(circle, rgba(0,229,200,0.1) 0%, transparent 70%); border:1px solid rgba(0,229,200,0.12); display:flex; align-items:center; justify-content:center; font-size:32px; opacity:0.7; }
-.idle h3 { font-family:var(--ff-head); font-size:19px; font-weight:700; color:var(--text); opacity:0.6; }
-.idle p { font-size:12px; color:var(--muted); max-width:250px; line-height:1.8; }
-.usage-widget { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; width:100%; max-width:270px; }
-.uw-title { font-size:9px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--ff-mono); margin-bottom:12px; }
-.uw-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
-.uw-label { font-size:11px; color:var(--text2); }
-.uw-val   { font-size:11px; color:var(--cyan); font-family:var(--ff-mono); }
-.uw-bar   { height:2px; background:var(--border); border-radius:2px; margin-bottom:10px; overflow:hidden; }
-.uw-bar-fill { height:100%; background:linear-gradient(90deg,var(--cyan),var(--blue)); border-radius:2px; transition:width 0.5s ease; }
-.uw-bar-fill.danger { background:linear-gradient(90deg,var(--red),#dc2626); }
-
-.loadbox { display:none; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:18px; }
-.spin-lg { width:46px; height:46px; border:2px solid var(--border); border-top-color:var(--cyan); border-right-color:rgba(0,229,200,0.4); border-radius:50%; animation:spin 0.75s linear infinite; }
-.lstep { font-size:11px; color:var(--cyan); font-family:var(--ff-mono); letter-spacing:0.5px; }
-.pbar  { width:220px; height:2px; background:var(--border); border-radius:2px; overflow:hidden; }
-.pfill { height:100%; width:0; background:linear-gradient(90deg,var(--cyan) 0%,var(--blue) 100%); transition:width 0.5s ease; box-shadow:0 0 8px var(--cyan-glow); }
-
-.result-wrap { display:none; animation:resultIn 0.35s ease; }
-@keyframes resultIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-
-.loc-badge {
-  background:linear-gradient(135deg,rgba(0,229,200,0.06) 0%,rgba(74,158,255,0.04) 100%);
-  border:1px solid rgba(0,229,200,0.2); border-radius:14px; padding:14px 16px; margin-bottom:13px;
-  display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
-}
-.loc-name { font-family:var(--ff-head); font-size:20px; font-weight:700; color:var(--text); line-height:1.2; }
-.loc-sub  { font-size:10px; color:var(--muted); margin-top:3px; font-family:var(--ff-mono); }
-.loc-lang { font-size:10px; color:var(--purple); margin-top:4px; }
-.cbadge   { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:10px; color:var(--cyan); text-align:right; flex-shrink:0; font-family:var(--ff-mono); line-height:1.6; }
-
-.wiki-box { background:rgba(74,158,255,0.04); border:1px solid rgba(74,158,255,0.12); border-radius:10px; padding:10px 14px; font-size:11px; color:var(--muted); line-height:1.8; font-style:italic; margin-bottom:13px; border-left:3px solid rgba(74,158,255,0.3); }
-
-.scard { background:var(--card); border:1px solid var(--border); border-radius:11px; margin-bottom:9px; overflow:hidden; transition:border-color 0.2s; }
-.scard:hover { border-color:rgba(0,229,200,0.18); }
-.shdr { display:flex; align-items:center; gap:9px; padding:10px 14px; background:rgba(255,255,255,0.015); border-bottom:1px solid var(--border); cursor:pointer; user-select:none; }
-.snum { font-family:var(--ff-mono); font-size:9px; color:var(--muted); width:20px; }
-.stitle { font-size:11px; font-weight:700; color:var(--text2); font-family:var(--ff-head); letter-spacing:0.3px; flex:1; text-transform:uppercase; }
-.chev { font-size:9px; color:var(--muted); transition:transform 0.2s; }
-.chev.o { transform:rotate(-180deg); }
-.sbody { padding:12px 14px; }
-.sbody.hid { display:none; }
-.srow { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-.slbl { font-size:9px; color:var(--muted); min-width:80px; letter-spacing:1px; text-transform:uppercase; font-family:var(--ff-mono); padding-top:2px; flex-shrink:0; }
-.sval { font-size:12px; color:var(--text2); line-height:1.6; flex:1; }
-.tag { font-size:10px; padding:2px 9px; border-radius:10px; }
-.tp { background:rgba(157,122,255,0.1); border:1px solid rgba(157,122,255,0.2); color:var(--purple); }
-.tb { background:rgba(74,158,255,0.08); border:1px solid rgba(74,158,255,0.18); color:var(--blue); }
-.ty { background:rgba(255,202,69,0.08); border:1px solid rgba(255,202,69,0.18); color:var(--amber); }
-.tg { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.18); color:var(--green); }
-.tr { background:rgba(255,107,122,0.08); border:1px solid rgba(255,107,122,0.18); color:var(--red); }
-.epill { background:rgba(0,229,200,0.04); border:1px solid rgba(0,229,200,0.15); border-radius:8px; padding:8px 11px; font-size:11px; color:var(--text2); margin-bottom:6px; line-height:1.5; }
-.tl { padding:4px 0; }
-.tli { display:flex; gap:10px; margin-bottom:12px; align-items:flex-start; }
-.tldot { width:8px; height:8px; border-radius:50%; background:var(--cyan); flex-shrink:0; margin-top:3px; }
-.tlyear { font-family:var(--ff-mono); font-size:10px; color:var(--cyan); min-width:52px; flex-shrink:0; }
-.tltext { font-size:11px; color:var(--text2); line-height:1.5; }
-.mcqi { background:var(--card2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px; }
-.mcqq { font-size:11px; color:var(--text); font-weight:600; margin-bottom:8px; line-height:1.5; }
-.mcqo { display:inline-block; background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:6px; padding:3px 10px; font-size:10px; color:var(--text2); margin:2px; cursor:pointer; transition:all 0.15s; }
-.mcqo:hover { border-color:rgba(0,229,200,0.3); color:var(--cyan); }
-.mcqo.ok { background:rgba(52,211,153,0.12); border-color:var(--green); color:var(--green); }
-.mcqo.no { background:rgba(255,107,122,0.1); border-color:var(--red); color:var(--red); }
-.ebox { background:rgba(255,107,122,0.06); border:1px solid rgba(255,107,122,0.25); border-radius:11px; padding:16px; color:var(--red); font-size:12px; line-height:1.6; }
-.limit-box { text-align:center; padding:28px 20px; }
-.lb-icon { font-size:36px; display:block; margin-bottom:12px; }
-.lb-title { font-family:var(--ff-head); font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px; }
-.lb-desc { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:16px; }
-.lb-btn { background:linear-gradient(135deg,var(--pprem),#f59e0b); color:#000; padding:9px 24px; border-radius:8px; font-weight:700; font-size:12px; }
-
-/* Download buttons */
-.dl-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:12px; }
-.dl-btn {
-  padding:7px 14px; border-radius:8px; font-size:11px; font-family:var(--ff-head); font-weight:700;
-  border:1px solid; transition:all 0.18s; letter-spacing:0.3px;
-}
-.dl-txt  { color:var(--text2); border-color:var(--border2); background:rgba(255,255,255,0.04); }
-.dl-txt:hover  { color:var(--text); background:rgba(255,255,255,0.07); }
-.dl-json { color:var(--amber); border-color:rgba(255,202,69,0.3); background:rgba(255,202,69,0.05); }
-.dl-json:hover { background:rgba(255,202,69,0.1); }
-.dl-pdf  { color:var(--red); border-color:rgba(255,107,122,0.3); background:rgba(255,107,122,0.05); }
-.dl-pdf:hover  { background:rgba(255,107,122,0.1); }
-
-/* ══ CHAT PANEL ══════════════════════════════════════ */
-.cmsgs { flex:1; overflow-y:auto; padding:12px; scrollbar-width:thin; scrollbar-color:var(--lift) transparent; display:flex; flex-direction:column; gap:10px; }
-.cmsgs::-webkit-scrollbar { width:3px; }
-.cmsgs::-webkit-scrollbar-thumb { background:var(--lift); border-radius:3px; }
-.cnoloc { text-align:center; color:var(--muted); font-size:11px; padding:24px; line-height:1.7; }
-.cmsg { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:11px 13px; }
-.cmq { font-size:11px; color:var(--cyan); margin-bottom:7px; line-height:1.5; }
-.cma { font-size:12px; color:var(--text2); line-height:1.7; }
-.cmts { font-size:9px; color:var(--muted); font-family:var(--ff-mono); margin-top:5px; }
-.cbar { flex-shrink:0; display:flex; gap:8px; padding:10px 12px; background:var(--surface); border-top:1px solid var(--border); }
-.cbar input { flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:8px; color:var(--text); padding:9px 12px; font-size:12px; }
-.cbar input:focus { border-color:rgba(0,229,200,0.4); }
-.sbtn { background:rgba(0,229,200,0.12); border:1px solid rgba(0,229,200,0.3); color:var(--cyan); padding:9px 16px; border-radius:8px; font-size:12px; font-weight:700; transition:all 0.18s; }
-.sbtn:hover { background:rgba(0,229,200,0.2); }
-
-/* ══ HISTORY PAGE ════════════════════════════════════ */
-#historyPage { flex-direction:column; background:var(--bg1); overflow:hidden; }
-.page-header { flex-shrink:0; padding:20px 24px; border-bottom:1px solid var(--border); }
-.page-header h2 { font-family:var(--ff-head); font-size:22px; font-weight:800; background:linear-gradient(90deg,var(--cyan),var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.page-header p { font-size:12px; color:var(--muted); margin-top:4px; }
-.hcontent { flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin; scrollbar-color:var(--lift) transparent; }
-.hcontent::-webkit-scrollbar { width:3px; }
-.hcontent::-webkit-scrollbar-thumb { background:var(--lift); border-radius:3px; }
-.hgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
-.hitem {
-  background:var(--card); border:1px solid var(--border); border-radius:12px;
-  padding:14px 16px; cursor:pointer; transition:all 0.2s;
-}
-.hitem:hover { border-color:rgba(0,229,200,0.25); background:var(--card2); transform:translateY(-1px); }
-.hname { font-family:var(--ff-head); font-size:14px; font-weight:700; color:var(--text); margin-bottom:5px; }
-.hmeta { font-size:10px; color:var(--muted); line-height:1.6; }
-.hcoord { font-size:9px; color:var(--dim); font-family:var(--ff-mono); margin-top:5px; }
-.hts { font-size:9px; color:var(--dim); font-family:var(--ff-mono); margin-top:3px; }
-.hclr { background:rgba(255,107,122,0.08); border:1px solid rgba(255,107,122,0.25); color:var(--red); padding:8px 16px; border-radius:8px; font-size:11px; margin-bottom:14px; transition:all 0.18s; }
-.hclr:hover { background:rgba(255,107,122,0.15); }
-.hempty { text-align:center; padding:60px 20px; }
-.hempty p { font-size:13px; color:var(--muted); margin-top:12px; }
-
-/* ══ PLANS PAGE ══════════════════════════════════════ */
-#plansPage { flex-direction:column; background:var(--bg1); overflow:hidden; }
-.plans-scroll { flex:1; overflow-y:auto; padding:24px; scrollbar-width:thin; scrollbar-color:var(--lift) transparent; }
-.plans-scroll::-webkit-scrollbar { width:3px; }
-.pricing-title { font-family:var(--ff-head); font-size:26px; font-weight:800; text-align:center; margin-bottom:6px; background:linear-gradient(90deg,var(--cyan),var(--pprem)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.pricing-sub { font-size:13px; color:var(--muted); text-align:center; margin-bottom:24px; line-height:1.6; }
-.plans-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-bottom:24px; }
-.plan-card {
-  background:var(--card); border:1px solid var(--border); border-radius:16px;
-  padding:20px; transition:all 0.2s; position:relative;
-}
-.plan-card.premium { border-color:rgba(251,191,36,0.35); background:linear-gradient(160deg,rgba(251,191,36,0.04),var(--card)); }
-.plan-card.standard { border-color:rgba(192,132,252,0.25); }
-.plan-card.current-plan { box-shadow:inset 0 0 0 1px rgba(0,229,200,0.3), 0 0 30px rgba(0,229,200,0.08); }
-.plan-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
-.plan-name { font-family:var(--ff-head); font-size:18px; font-weight:800; }
-.pn-free { color:var(--pfree); }
-.pn-basic { color:var(--pbasic); }
-.pn-standard { color:var(--pstd); }
-.pn-premium { color:var(--pprem); }
-.plan-active-badge { font-size:9px; color:var(--cyan); background:rgba(0,229,200,0.1); border:1px solid rgba(0,229,200,0.25); border-radius:10px; padding:2px 8px; font-family:var(--ff-mono); }
-.plan-price .amt { font-family:var(--ff-head); font-size:22px; font-weight:800; color:var(--text); }
-.plan-price .per { font-size:9px; color:var(--muted); font-family:var(--ff-mono); }
-.plan-features { margin-bottom:16px; }
-.pf { font-size:11px; color:var(--text2); padding:4px 0; display:flex; align-items:flex-start; gap:7px; line-height:1.5; }
-.pf.highlight { color:var(--text); font-weight:600; }
-.pf-check { flex-shrink:0; font-size:12px; margin-top:1px; }
-.pf-badge { font-size:8px; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.3); color:var(--pprem); border-radius:8px; padding:1px 6px; margin-left:4px; font-family:var(--ff-mono); }
-.plan-btn { width:100%; padding:11px; border-radius:10px; font-family:var(--ff-head); font-size:12px; font-weight:700; transition:all 0.2s; border:1px solid; }
-.pb-free-btn    { background:rgba(148,163,184,0.08); border-color:rgba(148,163,184,0.25); color:var(--pfree); }
-.pb-basic-btn   { background:rgba(96,165,250,0.1);   border-color:rgba(96,165,250,0.3);   color:var(--pbasic); }
-.pb-std-btn     { background:rgba(192,132,252,0.1);  border-color:rgba(192,132,252,0.3);  color:var(--pstd); }
-.pb-premium-btn { background:rgba(251,191,36,0.12);  border-color:rgba(251,191,36,0.4);   color:var(--pprem); }
-.plan-btn:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.1); }
-.plan-btn:disabled { opacity:0.5; cursor:not-allowed; }
-
-/* Payment instructions */
-.pay-box {
-  background:var(--card); border:1px solid var(--border2); border-radius:14px; padding:20px; margin-bottom:14px;
-}
-.pay-box h3 { font-family:var(--ff-head); font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px; }
-.pay-step { display:flex; gap:12px; margin-bottom:12px; align-items:flex-start; }
-.pay-num { width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,var(--cyan),var(--blue)); color:#000; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; margin-top:1px; font-family:var(--ff-head); }
-.pay-text { font-size:12px; color:var(--text2); line-height:1.6; }
-.pay-text strong { color:var(--cyan); }
-.pay-number { font-family:var(--ff-mono); font-size:20px; font-weight:600; color:var(--pprem); background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:10px; padding:10px 16px; margin:10px 0; text-align:center; letter-spacing:2px; }
-
-/* ══ PROFILE PAGE ════════════════════════════════════ */
-#profilePage { flex-direction:column; background:var(--bg1); overflow:hidden; }
-.profile-scroll { flex:1; overflow-y:auto; padding:24px; max-width:600px; margin:0 auto; width:100%; scrollbar-width:thin; }
-.profile-scroll::-webkit-scrollbar { width:3px; }
-.profile-avatar-section { text-align:center; padding:20px 0 28px; }
-.profile-av-big {
-  width:72px; height:72px; border-radius:50%; margin:0 auto 12px;
-  background:linear-gradient(135deg, var(--cyan), var(--blue));
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--ff-head); font-size:28px; font-weight:800; color:#000;
-  box-shadow:0 0 0 3px rgba(0,229,200,0.2), 0 0 30px rgba(0,229,200,0.15);
-}
-.profile-user-name { font-family:var(--ff-head); font-size:22px; font-weight:800; color:var(--text); }
-.profile-user-email { font-size:12px; color:var(--muted); margin-top:4px; }
-.profile-section { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
-.profile-section h3 { font-family:var(--ff-head); font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:16px; }
-.pf-field { margin-bottom:14px; }
-.pf-field label { display:block; font-size:10px; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase; font-family:var(--ff-mono); margin-bottom:6px; }
-.pf-field input { width:100%; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:9px; color:var(--text); font-size:13px; transition:all 0.2s; }
-.pf-field input:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,200,0.08); }
-.save-btn { background:linear-gradient(135deg,var(--cyan),var(--cyan2)); color:#000; padding:10px 28px; border-radius:9px; font-family:var(--ff-head); font-weight:800; font-size:13px; transition:all 0.2s; }
-.save-btn:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(0,229,200,0.35); }
-.plan-info-card { background:rgba(0,229,200,0.05); border:1px solid rgba(0,229,200,0.2); border-radius:10px; padding:14px; display:flex; justify-content:space-between; align-items:center; }
-.plan-info-left .plan-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1.2px; font-family:var(--ff-mono); }
-.plan-info-left .plan-val { font-family:var(--ff-head); font-size:20px; font-weight:800; color:var(--cyan); margin-top:2px; }
-
-/* ══ SETTINGS PAGE ═══════════════════════════════════ */
-#settingsPage { flex-direction:column; background:var(--bg1); overflow:hidden; }
-.settings-scroll { flex:1; overflow-y:auto; padding:24px; max-width:600px; margin:0 auto; width:100%; scrollbar-width:thin; }
-.settings-scroll::-webkit-scrollbar { width:3px; }
-.settings-section { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:16px; }
-.settings-section h3 { font-family:var(--ff-head); font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:4px; }
-.settings-section p { font-size:11px; color:var(--dim); margin-bottom:16px; line-height:1.5; }
-.sf-field { margin-bottom:14px; }
-.sf-field label { display:block; font-size:10px; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase; font-family:var(--ff-mono); margin-bottom:6px; }
-.sf-field input, .sf-field select {
-  width:100%; padding:10px 14px; background:rgba(255,255,255,0.04); border:1px solid var(--border2); border-radius:9px; color:var(--text); font-size:13px; transition:all 0.2s;
-}
-.sf-field input:focus, .sf-field select:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,229,200,0.08); }
-.sf-field input::placeholder { color:var(--dim); }
-.sf-field select option { background:#111929; }
-.api-status {
-  display:flex; align-items:center; gap:8px; padding:10px 14px;
-  background:rgba(0,229,200,0.05); border:1px solid rgba(0,229,200,0.18); border-radius:9px; margin-top:8px; font-size:11px; color:var(--text2);
-}
-.api-status .dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); flex-shrink:0; }
-.api-status.no-key { background:rgba(255,202,69,0.05); border-color:rgba(255,202,69,0.2); color:var(--amber); }
-.api-status.no-key .dot { background:var(--amber); box-shadow:0 0 6px var(--amber); }
-.info-box { background:rgba(74,158,255,0.05); border:1px solid rgba(74,158,255,0.18); border-radius:10px; padding:12px 14px; font-size:11px; color:var(--text2); line-height:1.6; margin-top:10px; }
-.info-box strong { color:var(--blue); }
-
-/* ══ FOOTER ══════════════════════════════════════════ */
-#footer {
-  flex-shrink:0; padding:6px 14px; background:var(--surface); border-top:1px solid var(--border3);
-  font-size:9px; color:var(--dim); display:flex; justify-content:space-between; align-items:center;
-  font-family:var(--ff-mono);
-}
-#footer span { color:var(--green); }
-
-/* ══ TOAST ═══════════════════════════════════════════ */
-.toast {
-  position:fixed; bottom:24px; right:20px; z-index:9000;
-  padding:10px 18px; border-radius:10px; font-size:12px; color:#fff;
-  animation:toastIn 0.3s ease; pointer-events:none;
-  box-shadow:0 8px 30px rgba(0,0,0,0.5);
-}
-.toast.ok   { background:rgba(0,100,80,0.95); border:1px solid rgba(0,229,200,0.3); }
-.toast.err  { background:rgba(100,30,40,0.95); border:1px solid rgba(255,107,122,0.3); }
-.toast.warn { background:rgba(80,60,10,0.95); border:1px solid rgba(255,202,69,0.3); }
-@keyframes toastIn { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
-
-/* ══ PLAN MODAL ══════════════════════════════════════ */
-#planModal {
-  position:fixed; inset:0; z-index:8000; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px);
-  display:none; align-items:center; justify-content:center; padding:20px;
-}
-#planModal.open { display:flex; }
-.modal-card {
-  background:var(--card); border:1px solid var(--border2); border-radius:18px;
-  padding:28px; width:100%; max-width:420px;
-  box-shadow:0 40px 80px rgba(0,0,0,0.7);
-  animation:authIn 0.3s cubic-bezier(0.22,1,0.36,1);
-}
-.modal-card h3 { font-family:var(--ff-head); font-size:18px; font-weight:800; color:var(--text); margin-bottom:8px; }
-.modal-card p { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:16px; }
-.modal-close { float:right; background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; margin-top:-4px; }
-.modal-close:hover { color:var(--text); }
-
-/* ══ RESPONSIVE ══════════════════════════════════════ */
-@media (max-width:900px) {
-  .page-tabs { display:none; }
-  #mobileBar { display:flex; }
-  #topNav { padding:0 10px; gap:6px; height:48px; }
-  .nav-logo-name { font-size:15px; }
-  .usage-mini { display:none; }
-  .user-nm { display:none; }
-  .user-chip { padding:3px 6px 3px 4px; }
-  .nvbtn-logout-text { display:none; }
-}
-@media (max-width:768px) {
-  #mainWrap { grid-template-columns:1fr !important; grid-template-rows:auto 1fr !important; overflow:hidden !important; }
-  #mapPanel { border-right:none !important; border-bottom:none !important; display:flex !important; flex-direction:column !important; flex-shrink:0 !important; overflow:hidden !important; }
-  #map { height:38vh !important; flex:none !important; min-height:140px !important; }
-  .map-controls-bar { display:none; }
-  #rightPanel { border-left:none; }
-  .hgrid { grid-template-columns:1fr; }
-  .plans-grid { grid-template-columns:1fr; }
+@media(max-width:600px){
+  .plans-grid{grid-template-columns:1fr;}
+  #topNav{padding:0 10px;}
+  .nav-logo-name{font-size:15px;}
 }
 </style>
 </head>
 <body>
 
-<!-- ══ AUTH SCREEN ════════════════════════════════════════════ -->
+<!-- ══ AUTH SCREEN ══ -->
 <div id="authScreen">
-  <!-- Login Card -->
-  <div class="auth-card" id="loginCard">
+  <div id="loginCard" class="auth-card">
     <div class="auth-logo">
       <div class="auth-logo-gem">🌍</div>
-      <div class="auth-logo-name">GeoMind</div>
+      <div class="auth-logo-text">GeoMind</div>
     </div>
-    <div class="auth-title">Welcome Back</div>
-    <div class="auth-sub">Sign in to continue your geo-intelligence journey</div>
-    <div class="amsg err" id="lerr"></div>
-    <div class="amsg ok"  id="lok"></div>
-    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@example.com"/></div>
-    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="••••••••"/></div>
-    <button class="abtn abtn-g" id="lbtn" onclick="doLogin()">Sign In</button>
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Sign in to your geo-intelligence platform</div>
+    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@email.com"/></div>
+    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="Your password"/></div>
+    <div class="aerr" id="lerr"></div>
+    <div class="aok"  id="lok"></div>
+    <button class="abtn" id="lbtn" onclick="doLogin()">Sign In</button>
     <div class="adiv"><span>or</span></div>
-    <button class="alink alink-g" onclick="showCard('signup')">Create Free Account →</button>
+    <button class="alink" onclick="showCard('signup')">Create free account →</button>
   </div>
-
-  <!-- Signup Card -->
-  <div class="auth-card" id="signupCard" style="display:none">
+  <div id="signupCard" class="auth-card" style="display:none">
     <div class="auth-logo">
       <div class="auth-logo-gem">🌍</div>
-      <div class="auth-logo-name">GeoMind</div>
+      <div class="auth-logo-text">GeoMind</div>
     </div>
-    <div class="auth-title">Create Account</div>
-    <div class="auth-sub">Join thousands of geography learners</div>
-    <div class="amsg err" id="serr"></div>
-    <div class="amsg ok"  id="sok"></div>
+    <div class="auth-title">Create account</div>
+    <div class="auth-sub">Start exploring AI geo-intelligence</div>
     <div class="afield"><label>Full Name</label><input type="text" id="sname" placeholder="Your name"/></div>
-    <div class="afield"><label>Email</label><input type="email" id="semail" placeholder="you@example.com"/></div>
-    <div class="row2">
-      <div class="afield"><label>Class / Level</label>
-        <select id="scls">
-          <option value="Competitive">Competitive</option>
-          <option value="Class 6-8">Class 6-8</option>
-          <option value="Class 9-10">Class 9-10</option>
-          <option value="Class 11-12">Class 11-12</option>
-        </select>
-      </div>
-      <div class="afield"><label>Exam Focus</label>
-        <select id="sexam">
-          <option value="UPSC">UPSC</option>
-          <option value="SSC">SSC</option>
-          <option value="State PCS">State PCS</option>
-          <option value="NEET">NEET</option>
-          <option value="JEE">JEE</option>
-          <option value="General">General</option>
-        </select>
-      </div>
+    <div class="afield"><label>Email</label><input type="email" id="semail" placeholder="you@email.com"/></div>
+    <div class="afield"><label>Password</label>
+      <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)"/>
+      <div class="pwd-bar" id="pwdBar"></div>
     </div>
-    <div class="afield"><label>Password</label><input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)"/><div class="pwd-bar" id="pwdBar"></div></div>
     <div class="afield"><label>Confirm Password</label><input type="password" id="scpwd" placeholder="Repeat password"/></div>
-    <button class="abtn abtn-g" id="sbtn" onclick="doSignup()">Create Free Account</button>
+    <div class="afield"><label>Class Level</label>
+      <select id="scls"><option>Competitive</option><option>Class 6-8</option><option>Class 9-10</option><option>Class 11-12</option></select>
+    </div>
+    <div class="afield"><label>Exam Type</label>
+      <select id="sexam"><option>UPSC</option><option>SSC</option><option>State PCS</option><option>NEET</option><option>JEE</option><option>General</option></select>
+    </div>
+    <div class="aerr" id="serr"></div>
+    <div class="aok"  id="sok"></div>
+    <button class="abtn" id="sbtn" onclick="doSignup()">Create Free Account</button>
     <div class="adiv"><span>or</span></div>
     <button class="alink alink-g" onclick="showCard('login')">← Back to Sign In</button>
   </div>
 </div>
 
-<!-- ══ APP SCREEN ══════════════════════════════════════════════ -->
+<!-- ══ APP SCREEN ══ -->
 <div id="appScreen">
 
   <!-- TOP NAV -->
@@ -691,13 +446,13 @@ a { text-decoration:none; }
       <div class="nav-logo-gem">🌍</div>
       <div class="nav-logo-name">GeoMind</div>
     </div>
-    <!-- Desktop page tabs -->
     <div class="page-tabs">
       <button class="page-tab active" id="pt-map"      onclick="goPage('map')">🗺 Map</button>
       <button class="page-tab"        id="pt-history"  onclick="goPage('history')">📋 History</button>
       <button class="page-tab"        id="pt-plans"    onclick="goPage('plans')">⭐ Plans</button>
       <button class="page-tab"        id="pt-profile"  onclick="goPage('profile')">👤 Profile</button>
       <button class="page-tab"        id="pt-settings" onclick="goPage('settings')">⚙ Settings</button>
+      <button class="page-tab admin-tab" id="pt-admin" onclick="goAdminDash()">🔐 Admin</button>
     </div>
     <div class="nav-right">
       <span class="usage-mini" id="usageMini"></span>
@@ -717,15 +472,13 @@ a { text-decoration:none; }
     <button class="mob-tab"        id="mpt-plans"    onclick="goPage('plans')">⭐ Plans</button>
     <button class="mob-tab"        id="mpt-profile"  onclick="goPage('profile')">👤 Profile</button>
     <button class="mob-tab"        id="mpt-settings" onclick="goPage('settings')">⚙ Settings</button>
+    <button class="mob-tab admin-mob" id="mpt-admin" onclick="goAdminDash()">🔐 Admin</button>
   </div>
 
-  <!-- ══ PAGE: MAP ══════════════════════════════════════════════ -->
+  <!-- ══ PAGE: MAP ══ -->
   <div class="page active" id="mapPage">
     <div id="mainWrap">
-
-      <!-- Left: Map Panel -->
       <div id="mapPanel">
-        <!-- Map controls (desktop) -->
         <div class="map-controls-bar">
           <div class="nc-group"><label>Class</label>
             <select class="nsel" id="classLevel">
@@ -753,21 +506,17 @@ a { text-decoration:none; }
               <option value="Timeline Mode">Timeline Mode</option>
             </select>
           </div>
-          <select id="langPick" onchange="applyLang(this.value)">
+          <select id="langPick" class="nsel" onchange="applyLang(this.value)">
             <option value="en">🌐 English</option>
             <option value="hi">🇮🇳 Hindi</option>
             <option value="fr">🇫🇷 French</option>
             <option value="ar">🇸🇦 Arabic</option>
           </select>
         </div>
-
-        <!-- Map -->
         <div id="map"></div>
         <div id="cpill"></div>
         <div id="famBar"></div>
         <div id="ptip"><div id="ptName"></div><div id="ptLoc"></div><div id="ptLang"></div></div>
-
-        <!-- Send bar -->
         <div class="send-bar">
           <div class="mc-group mc-country">
             <label>Country / Region</label>
@@ -781,7 +530,6 @@ a { text-decoration:none; }
         </div>
       </div>
 
-      <!-- Right Panel -->
       <div id="rightPanel">
         <div class="tabs">
           <button class="tab on" id="t-a" onclick="goTab('a',this)">📊 Analysis</button>
@@ -789,15 +537,13 @@ a { text-decoration:none; }
           <button class="tab ct"  id="t-c" onclick="goTab('c',this)">💬 Chat</button>
           <button class="tab pt"  id="t-p" onclick="goTab('p',this)">⭐ Plans</button>
         </div>
-
-        <!-- Analysis Tab -->
         <div class="tpanel on" id="tp-a">
           <div class="scroll">
             <div class="idle" id="idleBox">
               <div class="idle-icon">🌍</div>
               <h3 id="i-title">Click map, then Send Report</h3>
               <p id="i-desc">GeoMind generates AI-powered exam-ready reports on geography, history, agriculture &amp; economy.</p>
-              <div class="usage-widget"><div class="uw-title">Today's Usage</div><div id="uwContent"></div></div>
+              <div class="usage-widget"><div class="uw-title">Monthly Usage</div><div id="uwContent"></div></div>
             </div>
             <div class="loadbox" id="loadbox">
               <div class="spin-lg"></div>
@@ -807,13 +553,9 @@ a { text-decoration:none; }
             <div class="result-wrap" id="resultWrap"></div>
           </div>
         </div>
-
-        <!-- History Tab (inline) -->
         <div class="tpanel" id="tp-h">
           <div class="scroll"><div id="hcontent"></div></div>
         </div>
-
-        <!-- Chat Tab -->
         <div class="tpanel" id="tp-c">
           <div class="cmsgs" id="cmsgs">
             <div class="cnoloc" id="cnoloc">💬 Click a map location first, then ask follow-up questions here.</div>
@@ -823,8 +565,6 @@ a { text-decoration:none; }
             <button class="sbtn" id="chatSendBtn" onclick="sendChat()">Send</button>
           </div>
         </div>
-
-        <!-- Plans Tab (inline) -->
         <div class="tpanel" id="tp-p">
           <div class="scroll"><div id="pricingContent"></div></div>
         </div>
@@ -832,25 +572,23 @@ a { text-decoration:none; }
     </div>
   </div>
 
-  <!-- ══ PAGE: HISTORY ══════════════════════════════════════════ -->
+  <!-- ══ PAGE: HISTORY ══ -->
   <div class="page" id="historyPage">
     <div class="page-header">
       <h2>📋 Search History</h2>
-      <p>Revisit your past geo-intelligence reports</p>
+      <p>Revisit your past geo-intelligence reports — stored reports open instantly without AI calls</p>
     </div>
     <div class="hcontent" id="historyPageContent">
       <div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading your history…</p></div>
     </div>
   </div>
 
-  <!-- ══ PAGE: PLANS ════════════════════════════════════════════ -->
+  <!-- ══ PAGE: PLANS ══ -->
   <div class="page" id="plansPage">
-    <div class="plans-scroll" id="plansPageContent">
-      <!-- Rendered by JS -->
-    </div>
+    <div class="plans-scroll" id="plansPageContent"></div>
   </div>
 
-  <!-- ══ PAGE: PROFILE ══════════════════════════════════════════ -->
+  <!-- ══ PAGE: PROFILE ══ -->
   <div class="page" id="profilePage">
     <div class="profile-scroll">
       <div class="profile-avatar-section">
@@ -878,56 +616,45 @@ a { text-decoration:none; }
     </div>
   </div>
 
-  <!-- ══ PAGE: SETTINGS ═════════════════════════════════════════ -->
+  <!-- ══ PAGE: SETTINGS ══ -->
   <div class="page" id="settingsPage">
     <div class="settings-scroll">
       <div class="page-header" style="padding:0 0 20px">
         <h2>⚙ Settings</h2>
         <p>Configure your AI model and API access</p>
       </div>
-
       <div class="settings-section">
         <h3>AI Configuration</h3>
-        <p>Connect your own Gemini API key to use the free plan. Paid plan users get API keys managed by the admin.</p>
-
+        <p>Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
         <div class="sf-field">
-          <label>Your Gemini API Key</label>
-          <input type="password" id="settingsApiKey" placeholder="AIzaSy…  (paste your Google AI Studio key)"/>
+          <label>Your API Key</label>
+          <input type="password" id="settingsApiKey" placeholder="Paste your API key here…"/>
         </div>
-
         <div class="sf-field">
           <label>AI Model</label>
-          <select id="settingsModel">
-            <option value="gemini-1.5-flash">gemini-1.5-flash (Fast, Recommended)</option>
-            <option value="gemini-1.5-pro">gemini-1.5-pro (Advanced)</option>
-            <option value="gemini-pro">gemini-pro (Classic)</option>
-            <option value="gemini-2.0-flash">gemini-2.0-flash (Latest)</option>
-          </select>
+          <select id="settingsModel" onchange="showModelDesc()"></select>
+          <div class="model-desc" id="modelDesc">Fast and efficient — great for most reports.</div>
         </div>
-
         <div id="apiStatusBox" class="api-status no-key">
           <div class="dot"></div>
           <span id="apiStatusText">No API key configured. Add your key above or purchase a plan.</span>
         </div>
-
         <div class="info-box">
-          <strong>Free Plan:</strong> Add your own Gemini API key from <strong>aistudio.google.com</strong> to generate reports. Your key is stored securely and never shared.<br><br>
-          <strong>Paid Plans:</strong> Admin-managed API keys are assigned — no key needed from you.
+          <strong>Free Plan:</strong> Add your own API key. Supports Gemini, OpenAI, Anthropic, Mistral, and OpenRouter models.<br><br>
+          <strong>Paid Plans:</strong> Admin-managed API keys are assigned — no key needed from you. Model overrides apply.
         </div>
-
         <button class="save-btn" style="margin-top:16px" onclick="saveSettings()">💾 Save Settings</button>
       </div>
-
       <div class="settings-section">
         <h3>Danger Zone</h3>
-        <p>Permanently delete all your data from GeoMind.</p>
+        <p>Permanently delete all your search history from GeoMind.</p>
         <button onclick="clearHistory(true)" style="background:rgba(255,107,122,0.1);border:1px solid rgba(255,107,122,0.3);color:var(--red);padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;">🗑 Clear My History</button>
       </div>
     </div>
   </div>
 
   <!-- FOOTER -->
-  <div id="footer">GeoMind v4.0 — Gemini AI · OpenStreetMap · Nominatim · REST Countries · Wikipedia · Firebase<span>● ONLINE</span></div>
+  <div id="footer">GeoMind v5.0 — Multi-Provider AI · OpenStreetMap · Nominatim · REST Countries · Wikipedia · Firebase<span>● ONLINE</span></div>
 </div>
 
 <!-- Plan upgrade modal -->
@@ -935,8 +662,8 @@ a { text-decoration:none; }
   <div class="modal-card">
     <button class="modal-close" onclick="closePlanModal()">✕</button>
     <h3 id="modalTitle">Upgrade Plan</h3>
-    <p id="modalBody"></p>
-    <div style="margin-top:8px">
+    <p id="modalBody" style="font-size:12px;color:var(--muted);margin:8px 0 14px"></p>
+    <div>
       <div class="pay-number" id="modalPayNumber">7814917668</div>
       <div class="pay-step"><div class="pay-num">1</div><div class="pay-text">Send payment to the number above via UPI / PhonePe / GPay</div></div>
       <div class="pay-step"><div class="pay-num">2</div><div class="pay-text">Fill the <strong><a href="#" id="modalFormLink" target="_blank" style="color:var(--cyan)">Google Form</a></strong> with your details and payment screenshot</div></div>
@@ -952,17 +679,19 @@ a { text-decoration:none; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <!-- Leaflet -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<!-- jsPDF for PDF download -->
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- docx.js for DOCX generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/docx.umd.min.js"></script>
 
 <script>
 /* ════════════════════════════════════════════════════════════════
-   GEOMIND v4 — REFACTORED ARCHITECTURE
-   • All API keys removed from client code
-   • User provides own Gemini key (free plan) OR admin assigns (paid)
-   • Firebase adminAPI/ path stores keys — users cannot read them
-   • Dual API system: reportAPIKey + chatAPIKey per user (admin-set)
-   • 5-page SPA with full download support
+   GEOMIND v5 — MULTI-MODEL · ADMIN DASHBOARD · IMPROVED NAV
+   Architecture:
+   • Admin dashboard → separate admin-dashboard.html (password gated)
+   • Multi-provider AI: Gemini, OpenAI, Anthropic, Mistral, OpenRouter
+   • Monthly limits, DOCX downloads, 10+ model options
+   • Firebase adminAPI/ stores keys — users cannot read/write
 ════════════════════════════════════════════════════════════════ */
 
 /* ── FIREBASE CONFIG ─────────────────────────────────── */
@@ -979,28 +708,70 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.database();
 
-/* ── PLAN DEFINITIONS ────────────────────────────────── */
-const PLANS = {
-  free:     { name:'Free',     price:'₹0',      genLimit:999, chatLimit:999, emoji:'○',  color:'--pfree'  },
-  basic:    { name:'Basic',    price:'₹199/mo',  genLimit:30,  chatLimit:60,  emoji:'★',  color:'--pbasic' },
-  standard: { name:'Standard', price:'₹249/mo',  genLimit:60,  chatLimit:150, emoji:'✦',  color:'--pstd'   },
-  premium:  { name:'Premium',  price:'₹399/mo',  genLimit:120, chatLimit:300, emoji:'♛',  color:'--pprem'  }
+/* ── ADMIN UID WHITELIST ─────────────────────────────── */
+/* Admin UID is stored in Firebase at adminConfig/adminUid  */
+/* On load we compare currentUser.uid to this value         */
+let isAdmin = false;
+
+/* ── AI MODELS CATALOG ───────────────────────────────── */
+/* Provider types: gemini | openai | anthropic | mistral | openrouter */
+const AI_MODELS = [
+  // ── Google Gemini ──
+  { id:'gemini-2.0-flash',          provider:'gemini',     label:'Gemini 2.0 Flash',          desc:'Latest Google model — fast & powerful' },
+  { id:'gemini-1.5-flash',          provider:'gemini',     label:'Gemini 1.5 Flash',           desc:'Fast, efficient — recommended for most users' },
+  { id:'gemini-1.5-flash-8b',       provider:'gemini',     label:'Gemini 1.5 Flash-8B',        desc:'Lightweight, ultra-fast' },
+  { id:'gemini-1.5-pro',            provider:'gemini',     label:'Gemini 1.5 Pro',             desc:'High accuracy — best for detailed reports' },
+  { id:'gemini-pro',                provider:'gemini',     label:'Gemini Pro (Classic)',        desc:'Reliable classic Gemini model' },
+  { id:'gemini-2.0-flash-thinking-exp', provider:'gemini', label:'Gemini 2.0 Flash Thinking',  desc:'Experimental reasoning model' },
+  // ── OpenAI ──
+  { id:'gpt-4o',                    provider:'openai',     label:'GPT-4o',                     desc:'OpenAI flagship — fast & multimodal' },
+  { id:'gpt-4o-mini',               provider:'openai',     label:'GPT-4o Mini',                desc:'Affordable OpenAI model — great balance' },
+  { id:'gpt-4-turbo',               provider:'openai',     label:'GPT-4 Turbo',                desc:'High accuracy, long context' },
+  { id:'gpt-3.5-turbo',             provider:'openai',     label:'GPT-3.5 Turbo',              desc:'Fast and cost-effective' },
+  // ── Anthropic ──
+  { id:'claude-3-5-sonnet-20241022',provider:'anthropic',  label:'Claude 3.5 Sonnet',          desc:'Anthropic flagship — excellent reasoning' },
+  { id:'claude-3-haiku-20240307',   provider:'anthropic',  label:'Claude 3 Haiku',             desc:'Fast, efficient Anthropic model' },
+  { id:'claude-3-sonnet-20240229',  provider:'anthropic',  label:'Claude 3 Sonnet',            desc:'Balanced Anthropic model' },
+  { id:'claude-3-opus-20240229',    provider:'anthropic',  label:'Claude 3 Opus',              desc:'Most powerful Anthropic model' },
+  // ── Mistral ──
+  { id:'mistral-large-latest',      provider:'mistral',    label:'Mistral Large',              desc:'Flagship Mistral — high accuracy' },
+  { id:'mistral-small-latest',      provider:'mistral',    label:'Mistral Small',              desc:'Fast, efficient Mistral model' },
+  { id:'open-mistral-7b',           provider:'mistral',    label:'Mistral 7B',                 desc:'Compact open Mistral model' },
+  { id:'open-mixtral-8x7b',         provider:'mistral',    label:'Mixtral 8x7B',               desc:'Mixture-of-experts architecture' },
+  // ── OpenRouter (routes to various providers) ──
+  { id:'meta-llama/llama-3-70b-instruct',    provider:'openrouter', label:'Llama 3 70B',       desc:'Meta open-source flagship via OpenRouter' },
+  { id:'meta-llama/llama-3-8b-instruct',     provider:'openrouter', label:'Llama 3 8B',        desc:'Compact Meta model via OpenRouter' },
+  { id:'google/gemma-2-9b-it',               provider:'openrouter', label:'Gemma 2 9B',        desc:'Google Gemma via OpenRouter' },
+  { id:'deepseek/deepseek-chat',             provider:'openrouter', label:'DeepSeek Chat',      desc:'High-performance Chinese AI via OpenRouter' },
+  { id:'qwen/qwen-2.5-72b-instruct',         provider:'openrouter', label:'Qwen 2.5 72B',      desc:'Alibaba large model via OpenRouter' },
+  { id:'microsoft/phi-3-medium-128k-instruct',provider:'openrouter',label:'Phi-3 Medium',      desc:'Microsoft Phi-3 via OpenRouter' },
+  { id:'cohere/command-r-plus',              provider:'openrouter', label:'Command R+',         desc:'Cohere retrieval-optimized via OpenRouter' },
+];
+
+const PROVIDER_LABELS = {
+  gemini:'🔵 Google Gemini', openai:'🟢 OpenAI', anthropic:'🟠 Anthropic',
+  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter'
 };
 
+/* ── PLAN DEFINITIONS ────────────────────────────────── */
+const PLANS = {
+  free:     { name:'Free',     price:'₹0',       genLimit:999, chatLimit:999, emoji:'○',  color:'--pfree'  },
+  basic:    { name:'Basic',    price:'₹199/mo',   genLimit:30,  chatLimit:60,  emoji:'★',  color:'--pbasic' },
+  standard: { name:'Standard', price:'₹249/mo',   genLimit:60,  chatLimit:150, emoji:'✦',  color:'--pstd'   },
+  premium:  { name:'Premium',  price:'₹399/mo',   genLimit:120, chatLimit:300, emoji:'♛',  color:'--pprem'  }
+};
 const PLAN_FEATURES = {
-  free:     ['Own API key required','Unlimited reports (your quota)','All learning modes','Map history','Download reports'],
+  free:     ['Own API key required','Unlimited reports (your quota)','25+ AI model options','Map history','Download TXT/JSON/PDF/DOCX'],
   basic:    ['30 AI reports / month','60 chat messages / month','No API key needed','All learning modes','History & download'],
   standard: ['60 AI reports / month','150 chat messages / month','No API key needed','Priority AI responses','Full history'],
   premium:  ['120 AI reports / month','300 chat messages / month','No API key needed','Dual API — max reliability','Priority support','All features']
 };
 
-const PLAN_PRICES = { basic:'₹199', standard:'₹249', premium:'₹399' };
-
 /* ── STATE ───────────────────────────────────────────── */
 let currentUser  = null;
 let userProfile  = { plan:'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0, lastResetMonth:'' };
 let userSettings = { apiKey:'', model:'gemini-1.5-flash' };
-let adminAPIConfig = null;  // Loaded from Firebase adminAPI/<uid> — keys never shown to user
+let adminAPIConfig = null;
 let curLang  = 'en';
 let curData  = {};
 
@@ -1017,11 +788,63 @@ auth.onAuthStateChanged(async user => {
   await loadUserProfile();
   await loadUserSettings();
   await loadAdminAPIConfig();
+  await checkAdminStatus();
+  buildModelSelector();
   initMap();
+  updateNavUI();
+  updateUsageWidget();
 });
 
+/* ── ADMIN CHECK ─────────────────────────────────────── */
+async function checkAdminStatus() {
+  try {
+    const snap = await db.ref('adminConfig/adminUids/' + currentUser.uid).once('value');
+    isAdmin = snap.exists() && snap.val() === true;
+    // Show/hide admin nav buttons
+    document.querySelectorAll('.admin-tab, .admin-mob').forEach(el => {
+      el.style.display = isAdmin ? (el.classList.contains('admin-mob') ? 'inline-flex' : 'inline-flex') : 'none';
+    });
+  } catch(e) { isAdmin = false; }
+}
+
+function goAdminDash() {
+  // Open admin dashboard in new tab
+  window.open('admin-dashboard.html', '_blank');
+}
+
+/* ── MODEL SELECTOR BUILD ────────────────────────────── */
+function buildModelSelector() {
+  const sel = document.getElementById('settingsModel');
+  sel.innerHTML = '';
+  const groups = {};
+  AI_MODELS.forEach(m => {
+    if (!groups[m.provider]) groups[m.provider] = [];
+    groups[m.provider].push(m);
+  });
+  Object.entries(groups).forEach(([prov, models]) => {
+    const og = document.createElement('optgroup');
+    og.label = PROVIDER_LABELS[prov] || prov;
+    models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.label;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  sel.value = userSettings.model || 'gemini-1.5-flash';
+  showModelDesc();
+}
+
+function showModelDesc() {
+  const sel = document.getElementById('settingsModel');
+  const m = AI_MODELS.find(x => x.id === sel.value);
+  const desc = document.getElementById('modelDesc');
+  if (m && desc) desc.textContent = (PROVIDER_LABELS[m.provider]||m.provider) + ' — ' + m.desc;
+}
+
+/* ── USER PROFILE ────────────────────────────────────── */
 async function loadUserProfile() {
-  if (!currentUser) return;
   try {
     const snap = await db.ref('users/' + currentUser.uid).once('value');
     if (snap.exists()) {
@@ -1029,47 +852,36 @@ async function loadUserProfile() {
     } else {
       userProfile = {
         name: currentUser.displayName || currentUser.email.split('@')[0],
-        email: currentUser.email, phone: '',
+        email: currentUser.email,
+        phone: '',
         plan: 'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
         lastResetMonth: monthStr(), signupDate: new Date().toISOString()
       };
       await db.ref('users/' + currentUser.uid).set(userProfile);
     }
-    checkMonthlyReset();
+    await checkMonthlyReset();
     updateNavUI();
     updateUsageWidget();
-    updateProfilePage();
   } catch(e) { console.error('loadUserProfile:', e); }
 }
 
 async function loadUserSettings() {
-  if (!currentUser) return;
   try {
     const snap = await db.ref('users/' + currentUser.uid + '/settings').once('value');
-    if (snap.exists()) {
-      userSettings = { ...userSettings, ...snap.val() };
-    }
+    if (snap.exists()) userSettings = { ...userSettings, ...snap.val() };
     updateSettingsUI();
   } catch(e) { console.warn('loadUserSettings:', e); }
 }
 
-/* Admin API config — loaded server-side via Firebase rules.
-   Users can read their own adminAPI node but cannot write.
-   Admin writes to adminAPI/<uid>/reportAPIKey, reportModel, chatAPIKey, chatModel */
 async function loadAdminAPIConfig() {
-  if (!currentUser) return;
   try {
     const snap = await db.ref('adminAPI/' + currentUser.uid).once('value');
-    if (snap.exists()) {
-      adminAPIConfig = snap.val();
-    }
-  } catch(e) {
-    // Normal — admin may not have assigned yet
-    adminAPIConfig = null;
-  }
+    if (snap.exists()) adminAPIConfig = snap.val();
+    else adminAPIConfig = null;
+  } catch(e) { adminAPIConfig = null; }
 }
 
-function monthStr() { return new Date().toISOString().substring(0,7); } // YYYY-MM
+function monthStr() { return new Date().toISOString().substring(0,7); }
 
 async function checkMonthlyReset() {
   const m = monthStr();
@@ -1095,28 +907,19 @@ async function saveUserProfile() {
   } catch(e) { console.warn('saveUserProfile error:', e); }
 }
 
-/* ── USAGE CHECKS ────────────────────────────────────── */
 function canGenerate() {
   const plan = userProfile.plan || 'free';
-  if (plan === 'free') {
-    // Free plan: must have own API key, unlimited (within their quota)
-    return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  }
+  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
   return userProfile.monthlyGenerationsUsed < (PLANS[plan]?.genLimit ?? 30);
 }
-
 function canChat() {
   const plan = userProfile.plan || 'free';
-  if (plan === 'free') {
-    return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  }
+  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
   return userProfile.monthlyMessagesUsed < (PLANS[plan]?.chatLimit ?? 60);
 }
-
 function getNoKeyMessage() {
   return `Please add your API key in <strong>Settings</strong> or <a href="#" onclick="goPage('plans');return false;" style="color:var(--cyan)">purchase a plan</a>.`;
 }
-
 async function incrementGeneration() {
   userProfile.monthlyGenerationsUsed = (userProfile.monthlyGenerationsUsed||0) + 1;
   await saveUserProfile(); updateNavUI(); updateUsageWidget();
@@ -1140,32 +943,29 @@ async function saveSettings() {
 }
 
 function updateSettingsUI() {
-  document.getElementById('settingsApiKey').value = userSettings.apiKey || '';
-  document.getElementById('settingsModel').value  = userSettings.model || 'gemini-1.5-flash';
-  const plan = userProfile.plan || 'free';
+  const keyEl   = document.getElementById('settingsApiKey');
+  const modelEl = document.getElementById('settingsModel');
+  if (keyEl)   keyEl.value   = userSettings.apiKey || '';
+  if (modelEl) { modelEl.value = userSettings.model || 'gemini-1.5-flash'; showModelDesc(); }
+  const plan   = userProfile.plan || 'free';
   const hasKey = !!(userSettings.apiKey && userSettings.apiKey.trim());
   const hasAdminKey = !!(adminAPIConfig?.reportAPIKey);
-  const box  = document.getElementById('apiStatusBox');
-  const txt  = document.getElementById('apiStatusText');
+  const box    = document.getElementById('apiStatusBox');
+  const txt    = document.getElementById('apiStatusText');
+  if (!box) return;
   if (plan !== 'free' && hasAdminKey) {
     box.className = 'api-status';
     txt.textContent = `Admin-assigned API key active for ${PLANS[plan].name} plan.`;
   } else if (hasKey) {
     box.className = 'api-status';
-    txt.textContent = 'Your API key is configured. Reports will use your Gemini quota.';
+    txt.textContent = 'Your API key is configured. Reports will use your quota.';
   } else {
     box.className = 'api-status no-key';
     txt.textContent = 'No API key configured. Add your key above or purchase a plan.';
   }
 }
 
-/* ── DETERMINE API KEY FOR REQUEST ───────────────────── */
-/*
-  Priority:
-  1. Paid plan → use adminAPIConfig.reportAPIKey (report) / chatAPIKey (chat)
-  2. Free plan with user key → userSettings.apiKey
-  3. None → show message
-*/
+/* ── API KEY RESOLUTION ──────────────────────────────── */
 function getReportAPIKey() {
   const plan = userProfile.plan || 'free';
   if (plan !== 'free' && adminAPIConfig?.reportAPIKey) return adminAPIConfig.reportAPIKey;
@@ -1187,25 +987,106 @@ function getSelectedModel(forChat=false) {
   return userSettings.model || 'gemini-1.5-flash';
 }
 
-/* ── GEMINI API CALL ─────────────────────────────────── */
+/* ── MULTI-PROVIDER AI CALL ──────────────────────────── */
+function getProviderForModel(modelId) {
+  const m = AI_MODELS.find(x => x.id === modelId);
+  return m ? m.provider : 'gemini';
+}
+
+async function callAI(prompt, apiKey, modelId) {
+  const provider = getProviderForModel(modelId);
+
+  if (provider === 'gemini') {
+    return callGemini(prompt, apiKey, modelId);
+  } else if (provider === 'openai') {
+    return callOpenAI(prompt, apiKey, modelId);
+  } else if (provider === 'anthropic') {
+    return callAnthropic(prompt, apiKey, modelId);
+  } else if (provider === 'mistral') {
+    return callMistral(prompt, apiKey, modelId);
+  } else if (provider === 'openrouter') {
+    return callOpenRouter(prompt, apiKey, modelId);
+  } else {
+    return callGemini(prompt, apiKey, modelId); // fallback
+  }
+}
+
 async function callGemini(prompt, apiKey, model) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   const resp = await fetch(endpoint, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      contents:[{parts:[{text: prompt}]}],
-      generationConfig:{ temperature:0.3, maxOutputTokens:4096 }
-    })
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3,maxOutputTokens:4096} })
   });
   if (!resp.ok) {
     const errBody = await resp.text();
-    if (resp.status === 400 && errBody.includes('API_KEY_INVALID')) throw new Error('Invalid API key. Please check your key in Settings.');
-    if (resp.status === 429) throw new Error('API quota exceeded. Try again later or upgrade your plan.');
+    if (resp.status === 400 && errBody.includes('API_KEY_INVALID')) throw new Error('Invalid Gemini API key. Check your key in Settings.');
+    if (resp.status === 429) throw new Error('Gemini quota exceeded. Try again later or upgrade your plan.');
     throw new Error(`Gemini API error ${resp.status}: ${errBody.substring(0,120)}`);
   }
   const data = await resp.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callOpenAI(prompt, apiKey, model) {
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body: JSON.stringify({ model, messages:[{role:'user',content:prompt}], max_tokens:4096, temperature:0.3 })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid OpenAI API key. Check your key in Settings.');
+    if (resp.status === 429) throw new Error('OpenAI quota exceeded. Try again later.');
+    throw new Error(`OpenAI API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callAnthropic(prompt, apiKey, model) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({ model, max_tokens:4096, messages:[{role:'user',content:prompt}] })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid Anthropic API key. Check your key in Settings.');
+    if (resp.status === 429) throw new Error('Anthropic quota exceeded. Try again later.');
+    throw new Error(`Anthropic API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.content?.[0]?.text || '';
+}
+
+async function callMistral(prompt, apiKey, model) {
+  const resp = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body: JSON.stringify({ model, messages:[{role:'user',content:prompt}], max_tokens:4096, temperature:0.3 })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid Mistral API key. Check your key in Settings.');
+    throw new Error(`Mistral API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callOpenRouter(prompt, apiKey, model) {
+  const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey,'HTTP-Referer':'https://geomind.app','X-Title':'GeoMind'},
+    body: JSON.stringify({ model, messages:[{role:'user',content:prompt}], max_tokens:4096, temperature:0.3 })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid OpenRouter API key. Check your key in Settings.');
+    throw new Error(`OpenRouter API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
 }
 
 /* ── AUTH FUNCTIONS ──────────────────────────────────── */
@@ -1213,7 +1094,6 @@ function showCard(which) {
   document.getElementById('loginCard').style.display  = which==='login'  ? 'block':'none';
   document.getElementById('signupCard').style.display = which==='signup' ? 'block':'none';
 }
-
 async function doLogin() {
   const email = document.getElementById('lemail').value.trim();
   const pwd   = document.getElementById('lpwd').value;
@@ -1222,22 +1102,16 @@ async function doLogin() {
   const ok    = document.getElementById('lok');
   err.style.display='none'; ok.style.display='none';
   if (!email||!pwd) return showAmsg(err,'Please fill in all fields.');
-  btn.disabled=true;
-  btn.innerHTML='<span class="spin-xs"></span>Signing in…';
+  btn.disabled=true; btn.innerHTML='<span class="spin-xs"></span>Signing in…';
   try {
     await auth.signInWithEmailAndPassword(email, pwd);
     ok.textContent='Login successful!'; ok.style.display='block';
-  } catch(e) {
-    btn.disabled=false; btn.textContent='Sign In';
-    showAmsg(err, authErr(e.code));
-  }
+  } catch(e) { btn.disabled=false; btn.textContent='Sign In'; showAmsg(err, authErr(e.code)); }
 }
-
 function chkPwd(v) {
-  const b = document.getElementById('pwdBar');
-  b.className = 'pwd-bar'+(v.length<4?'':v.length<8?' w':v.length<12&&!/[!@#$%^&*]/.test(v)?' m':' s');
+  const b=document.getElementById('pwdBar');
+  b.className='pwd-bar'+(v.length<4?'':v.length<8?' w':v.length<12&&!/[!@#$%^&*]/.test(v)?' m':' s');
 }
-
 async function doSignup() {
   const name  = document.getElementById('sname').value.trim();
   const email = document.getElementById('semail').value.trim();
@@ -1252,8 +1126,7 @@ async function doSignup() {
   if (!name||!email||!pwd||!cpwd) return showAmsg(err,'Please fill all fields.');
   if (pwd!==cpwd) return showAmsg(err,'Passwords do not match.');
   if (pwd.length<8) return showAmsg(err,'Password must be at least 8 characters.');
-  btn.disabled=true;
-  btn.innerHTML='<span class="spin-xs w"></span>Creating account…';
+  btn.disabled=true; btn.innerHTML='<span class="spin-xs w"></span>Creating account…';
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pwd);
     await cred.user.updateProfile({displayName: name});
@@ -1264,14 +1137,9 @@ async function doSignup() {
       lastResetMonth: monthStr(), signupDate: new Date().toISOString()
     });
     ok.textContent='Account created! Loading GeoMind…'; ok.style.display='block';
-  } catch(e) {
-    btn.disabled=false; btn.textContent='Create Free Account';
-    showAmsg(err, authErr(e.code));
-  }
+  } catch(e) { btn.disabled=false; btn.textContent='Create Free Account'; showAmsg(err, authErr(e.code)); }
 }
-
 function showAmsg(el,msg){el.textContent=msg;el.style.display='block';}
-
 function authErr(code) {
   return ({
     'auth/user-not-found':'No account found with this email.',
@@ -1284,38 +1152,27 @@ function authErr(code) {
     'auth/network-request-failed':'Network error. Check your connection.',
   })[code]||'Authentication failed. Please try again.';
 }
-
 async function doLogout() {
   try { await auth.signOut(); } catch(e) { toast('Logout error: '+e.message,'err'); }
 }
-
 document.getElementById('lpwd').addEventListener('keydown',  e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('scpwd').addEventListener('keydown', e=>{if(e.key==='Enter')doSignup();});
 
 /* ── PAGE NAVIGATION ─────────────────────────────────── */
 function goPage(name) {
-  // Show/hide pages
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(name+'Page').classList.add('active');
-
-  // Desktop tab highlights
   document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
   const dt = document.getElementById('pt-'+name);
   if (dt) dt.classList.add('active');
-
-  // Mobile tab highlights
   document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
   const mt = document.getElementById('mpt-'+name);
   if (mt) mt.classList.add('active');
-
-  // Lazy load page content
   if (name==='history')  loadHistoryPage();
   if (name==='plans')    renderPlansPage();
   if (name==='profile')  updateProfilePage();
-  if (name==='settings') updateSettingsUI();
-
-  // Fix map render if navigating back
-  if (name==='map' && map) { setTimeout(()=>map.invalidateSize(),100); }
+  if (name==='settings') { updateSettingsUI(); buildModelSelector(); }
+  if (name==='map' && map) setTimeout(()=>map.invalidateSize(),100);
 }
 
 /* ── MAP ─────────────────────────────────────────────── */
@@ -1328,18 +1185,15 @@ function initMap() {
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
     attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
   }).addTo(map);
-
   map.on('click', e=>{
-    pendingLat = e.latlng.lat;
-    pendingLon = e.latlng.lng;
+    pendingLat = e.latlng.lat; pendingLon = e.latlng.lng;
     placePin(pendingLat, pendingLon, '#00d4aa');
     showPill(pendingLat, pendingLon);
     document.getElementById('sendBtn').style.boxShadow='0 6px 24px rgba(0,212,170,0.5)';
-    toast('Location selected — click Send Report', 'ok');
+    toast('Location selected — click Send Report','ok');
   });
 }
-
-function placePin(lat, lng, color) {
+function placePin(lat,lng,color) {
   if (mapMarker) map.removeLayer(mapMarker);
   mapMarker = L.circleMarker([lat,lng],{radius:9,fillColor:color,color:'#fff',weight:2,fillOpacity:0.95}).addTo(map);
 }
@@ -1353,27 +1207,21 @@ async function handleSend() {
   if (pendingLat===null||pendingLon===null) { toast('Please select a location on the map first.','err'); return; }
   const plan = userProfile.plan||'free';
   if (!canGenerate()) {
-    if (plan==='free') {
-      showNoKeyError();
-    } else {
-      showLimitReached('generation');
-    }
+    if (plan==='free') showNoKeyError();
+    else showLimitReached('generation');
     return;
   }
   await generateReport(pendingLat, pendingLon);
 }
-
 function showNoKeyError() {
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
-  const w = document.getElementById('resultWrap');
-  w.style.display='block';
+  const w=document.getElementById('resultWrap'); w.style.display='block';
   w.innerHTML=`<div class="ebox" style="color:var(--amber);background:rgba(255,202,69,0.06);border-color:rgba(255,202,69,0.3)">
-    ⚠ <strong>API Key Required</strong><br><br>
-    You are on the Free plan. ${getNoKeyMessage()}<br><br>
+    ⚠ <strong>API Key Required</strong><br><br>You are on the Free plan. ${getNoKeyMessage()}<br><br>
     <button onclick="goPage('settings')" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:7px 18px;border-radius:7px;font-weight:700;font-size:12px">⚙ Go to Settings</button>
   </div>`;
-  goTab('a', document.getElementById('t-a'));
+  goTab('a',document.getElementById('t-a'));
 }
 
 /* ── REPORT PIPELINE ─────────────────────────────────── */
@@ -1382,27 +1230,21 @@ async function generateReport(lat, lon) {
   try {
     step('Reverse geocoding…',12);
     const geo = await fetchGeo(lat, lon);
-
     step('Country data…',28);
     const country = await fetchCountry(geo.address?.country||'');
-
     step('Wikipedia…',44);
     const wiki = await fetchWiki(geo.address?.city||geo.address?.state||geo.address?.country||'');
-
     step('AI generating report…',64);
     const ai = await generateAIReport(lat, lon, geo, country, wiki);
-
     step('Saving…',86);
     await incrementGeneration();
     await saveQuery(lat, lon, geo, ai);
-
     step('Done!',100);
     curData = {geo, country, wiki, lat, lon, ai};
     updateMapTooltip(geo, ai);
     renderReport(lat, lon, geo, country, wiki, ai);
   } catch(err) { showErr(err.message); }
 }
-
 function updateMapTooltip(geo, ai) {
   const tip=document.getElementById('ptip');
   document.getElementById('ptName').textContent = ai.locationId?.nearestCity||geo.address?.city||'';
@@ -1410,8 +1252,7 @@ function updateMapTooltip(geo, ai) {
   document.getElementById('ptLoc').textContent  = [geo.address?.state,geo.address?.country].filter(Boolean).join(', ');
   tip.style.display='block';
   if (ai.localInfo?.famousFor?.length) {
-    const fb=document.getElementById('famBar');
-    fb.style.display='block';
+    const fb=document.getElementById('famBar'); fb.style.display='block';
     fb.innerHTML='⭐ '+ai.localInfo.famousFor.map(f=>`<span class="fi-chip">${f}</span>`).join('');
   }
 }
@@ -1437,19 +1278,18 @@ async function fetchWiki(place) {
 async function generateAIReport(lat, lon, geo, country, wiki) {
   const apiKey = getReportAPIKey();
   if (!apiKey) {
-    if (userProfile.plan==='free') throw new Error('No API key configured. Please add your Gemini API key in Settings.');
+    if (userProfile.plan==='free') throw new Error('No API key configured. Please add your API key in Settings.');
     throw new Error('No API key available. Please contact support.');
   }
-
-  const model = getSelectedModel(false);
-  const cls   = gv('classLevel');
-  const exam  = gv('examType');
-  const mode  = gv('learningMode');
-  const addr  = geo.address||{};
-  const loc   = [addr.city,addr.state,addr.country].filter(Boolean).join(', ')||`${lat},${lon}`;
+  const model  = getSelectedModel(false);
+  const cls    = gv('classLevel');
+  const exam   = gv('examType');
+  const mode   = gv('learningMode');
+  const addr   = geo.address||{};
+  const loc    = [addr.city,addr.state,addr.country].filter(Boolean).join(', ')||`${lat},${lon}`;
   const country_input = document.getElementById('countryInput').value.trim()||addr.country||'';
-  const userQ = document.getElementById('userQuestion').value.trim();
-  const lPick = document.getElementById('langPick');
+  const userQ  = document.getElementById('userQuestion').value.trim();
+  const lPick  = document.getElementById('langPick');
   const langName = lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
 
   const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
@@ -1465,7 +1305,7 @@ Return ONLY compact valid JSON (no markdown, no backticks):
 {"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"localInfo":{"localLanguages":"","famousFor":["","",""],"famousPlaces":["",""],"famousPersonalities":["",""],"festivals":["",""],"localCuisine":["",""],"importantFacts":["","",""]}${userQ?',"userAnswer":"Direct answer to: '+userQ+' in 2-3 sentences"':''},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
 Rules: All values in ${langName}. 1-2 sentences per field. Valid closed JSON.`;
 
-  const raw = await callGemini(prompt, apiKey, model);
+  const raw = await callAI(prompt, apiKey, model);
   let text = raw.replace(/```json|```/g,'').trim();
   const f=text.indexOf('{'), l=text.lastIndexOf('}');
   if (f!==-1&&l!==-1) text=text.substring(f,l+1);
@@ -1482,7 +1322,6 @@ function fixJSON(s) {
   while(ar-->0)s+=']'; while(op-->0)s+='}';
   return JSON.parse(s);
 }
-
 function gv(id){const e=document.getElementById(id);return e?e.value:'';}
 
 /* ── FIREBASE SAVE ───────────────────────────────────── */
@@ -1499,11 +1338,9 @@ async function saveQuery(lat,lon,geo,ai) {
     localLanguages:ai.localInfo?.localLanguages||'',
     timestamp:new Date().toISOString()
   };
-  try {
-    await db.ref('users/'+currentUser.uid+'/queries').push(rec);
-  } catch(e){console.warn('saveQuery:',e);}
+  try { await db.ref('users/'+currentUser.uid+'/queries').push(rec); }
+  catch(e){console.warn('saveQuery:',e);}
 }
-
 async function saveChatMsg(q,ans) {
   if (!currentUser||!curData.lat) return;
   try {
@@ -1514,7 +1351,7 @@ async function saveChatMsg(q,ans) {
   } catch(e){}
 }
 
-/* ── TABS (MAP PAGE RIGHT PANEL) ─────────────────────── */
+/* ── TABS (MAP PAGE) ─────────────────────────────────── */
 function goTab(name,btn) {
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
@@ -1524,29 +1361,26 @@ function goTab(name,btn) {
   if(name==='p') renderPricingTab();
 }
 
-/* ── HISTORY (TAB — inline in map page) ─────────────── */
+/* ── HISTORY ─────────────────────────────────────────── */
 async function loadHistoryTab() {
   const hc=document.getElementById('hcontent');
   hc.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Loading…</div>';
   await renderHistoryInto(hc, true);
 }
-
-/* ── HISTORY PAGE ────────────────────────────────────── */
 async function loadHistoryPage() {
   const hc=document.getElementById('historyPageContent');
   hc.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading history…</p></div>';
   await renderHistoryInto(hc, false);
 }
-
 async function renderHistoryInto(container, compact) {
   try {
     const snap=await db.ref('users/'+currentUser.uid+'/queries').once('value');
     if (!snap.exists()||!snap.val()) {
-      container.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>No history yet.</p></div>'; return;
+      container.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>No history yet. Click a location on the map to get started!</p></div>'; return;
     }
     const entries=Object.entries(snap.val()).sort((a,b)=>(b[1].timestamp||'').localeCompare(a[1].timestamp||''));
     let html=`<button class="hclr" onclick="clearHistory()">🗑 Clear My History</button>`;
-    if (!compact) html=`<button class="hclr" onclick="clearHistory()">🗑 Clear My History</button><div class="hgrid">`;
+    if (!compact) html+=`<div class="hgrid">`;
     entries.forEach(([,rec])=>{
       const d=new Date(rec.timestamp);
       const ds=isNaN(d)?rec.timestamp:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
@@ -1564,14 +1398,12 @@ async function renderHistoryInto(container, compact) {
     container.innerHTML=html;
   } catch(e) { container.innerHTML=`<div class="ebox">Failed to load: ${e.message}</div>`; }
 }
-
 async function clearHistory(fromSettings=false) {
   if (!confirm('Delete all your search history?')) return;
   await db.ref('users/'+currentUser.uid+'/queries').remove();
   toast('History cleared','ok');
   if (!fromSettings) loadHistoryTab();
 }
-
 function reloadHist(enc) {
   try {
     const rec=JSON.parse(decodeURIComponent(enc));
@@ -1585,9 +1417,8 @@ function reloadHist(enc) {
     map.setView([rec.latitude,rec.longitude],8);
     showPill(rec.latitude,rec.longitude);
     renderReport(rec.latitude,rec.longitude,{address:{country:rec.country,state:rec.state,city:rec.selectedPlace}},null,null,ai);
-    goPage('map');
-    goTab('a',document.getElementById('t-a'));
-    toast('Loaded from history','ok');
+    goPage('map'); goTab('a',document.getElementById('t-a'));
+    toast('Loaded from history (no API call)','ok');
   } catch(e) { toast('Load failed: '+e.message,'err'); }
 }
 
@@ -1609,7 +1440,6 @@ async function sendChat() {
   const aid='ca'+Date.now();
   div.innerHTML=`<div class="cmq">💬 ${q}</div><div class="cma" id="${aid}">○ Thinking…</div><div class="cmts">${ts}</div>`;
   msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
-
   const addr=curData.geo?.address||{};
   const loc=[addr.city,addr.state,addr.country].filter(Boolean).join(', ');
   const lPick=document.getElementById('langPick');
@@ -1618,19 +1448,19 @@ async function sendChat() {
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
 Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
-
   let answer='No response received.';
   try {
-    const apiKey = getChatAPIKey();
+    const apiKey=getChatAPIKey();
     if (!apiKey) throw new Error('No API key available for chat.');
-    const model  = getSelectedModel(true);
-    answer = await callGemini(prompt, apiKey, model);
+    const model=getSelectedModel(true);
+    answer = await callAI(prompt, apiKey, model);
     await incrementChat();
     await saveChatMsg(q, answer);
   } catch(e) { answer='Error: '+e.message; }
   document.getElementById(aid).textContent=answer;
   msgs.scrollTop=msgs.scrollHeight;
 }
+document.getElementById('cinput').addEventListener('keydown', e=>{if(e.key==='Enter')sendChat();});
 
 /* ── REPORT RENDER ───────────────────────────────────── */
 function renderReport(lat,lon,geo,country,wiki,ai) {
@@ -1670,39 +1500,32 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
     ${R('District',ai.locationId?.district)}${R('Nearest City',ai.locationId?.nearestCity)}
     ${R('Coordinates',ai.locationId?.coordinates)}
   `);
-
   if (mode!=='Quiz Mode') h+=S('02','Geography',`
     ${R('Terrain',ai.geography?.terrain)}${R('Climate',ai.geography?.climate)}
     ${R('Soil',ai.geography?.soilType)}${R('Rivers',ai.geography?.rivers)}
     ${R('Resources',ai.geography?.naturalResources)}
   `);
-
   h+=S('03','Agriculture',`
     <div class="srow"><span class="slbl">Major Crops</span><span class="sval">${(ai.agriculture?.majorCrops||[]).map(c=>`<span class="tag ty">${c}</span>`).join('')}</span></div>
     ${R('Why Crops Grow',ai.agriculture?.whyCropsGrow)}${R('Irrigation',ai.agriculture?.irrigationSources)}${R('Season',ai.agriculture?.seasonalPattern)}
   `);
-
   h+=S('04','History',`
     ${R('Ancient',ai.history?.ancient)}${R('Medieval',ai.history?.medieval)}
     ${R('Modern',ai.history?.modern)}${R('Freedom Movement',ai.history?.freedomMovement)}
   `);
-
   h+=S('05','Economy',`
     <div class="srow"><span class="slbl">Industries</span><span class="sval">${(ai.economy?.majorIndustries||[]).map(i=>`<span class="tag tb">${i}</span>`).join('')}</span></div>
     ${R('GDP',ai.economy?.gdpContribution)}${R('Employment',ai.economy?.employmentPattern)}
   `);
-
   h+=S('06','Current Relevance',`
     ${R('Environment',ai.currentRelevance?.environmentalIssues)}
     ${R('Projects',ai.currentRelevance?.developmentProjects)}
     ${R('Strategic',ai.currentRelevance?.strategicImportance)}
   `);
-
   if (mode==='Timeline Mode'||mode==='Full Analysis') {
     const tl=(ai.timeline||[]).map(t=>`<div class="tli"><div class="tldot"></div><div class="tlyear">${t.year}</div><div class="tltext">${t.event}</div></div>`).join('');
     h+=S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
   }
-
   if (mode==='Quiz Mode'||mode==='Full Analysis') {
     let qh='<div style="margin-bottom:8px;font-size:10px;color:var(--muted)">Click options to check answers.</div>';
     (ai.quiz?.mcqs||[]).forEach((q,i)=>{
@@ -1714,15 +1537,15 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
     if (ai.quiz?.mapQuestion) qh+=`<div class="mcqi"><div class="mcqq">🗺 ${ai.quiz.mapQuestion}</div></div>`;
     h+=S('08','Quiz',qh);
   }
-
   const ef=(ai.examFocus||[]).map(q=>`<div class="epill">⚡ ${q}</div>`).join('');
   h+=S('09',`Exam Focus — ${gv('examType')||'UPSC'}`,ef);
 
-  // Download buttons
+  // Download buttons — now includes DOCX
   h+=`<div class="dl-row">
     <button class="dl-btn dl-txt"  onclick="downloadReport('txt')">⬇ .TXT</button>
     <button class="dl-btn dl-json" onclick="downloadReport('json')">⬇ .JSON</button>
     <button class="dl-btn dl-pdf"  onclick="downloadReport('pdf')">⬇ .PDF</button>
+    <button class="dl-btn dl-docx" onclick="downloadReport('docx')">⬇ .DOCX</button>
   </div>`;
 
   const wrap=document.getElementById('resultWrap');
@@ -1749,7 +1572,6 @@ function chkMCQ(el,sel,correct){
     else if(L===sel&&sel!==correct)o.classList.add('no');
   });
 }
-
 function getFlagEmoji(countryName) {
   const map={'India':'🇮🇳','United States':'🇺🇸','United Kingdom':'🇬🇧','China':'🇨🇳','Brazil':'🇧🇷','Russia':'🇷🇺','France':'🇫🇷','Germany':'🇩🇪','Japan':'🇯🇵','Australia':'🇦🇺','Canada':'🇨🇦','Pakistan':'🇵🇰','Bangladesh':'🇧🇩','Nepal':'🇳🇵','Sri Lanka':'🇱🇰','Indonesia':'🇮🇩','Turkey':'🇹🇷','Egypt':'🇪🇬'};
   return map[countryName]||'🌍';
@@ -1782,9 +1604,8 @@ function downloadReport(fmt) {
     t+=`\nLOCAL INFO\n${'-'.repeat(30)}\n`;
     if(ai.localInfo){Object.entries(ai.localInfo).forEach(([k,v])=>{t+=`${k}: ${Array.isArray(v)?v.join(', '):v}\n`;});}
     t+=`\nEXAM FOCUS\n${'-'.repeat(30)}\n${(ai.examFocus||[]).join('\n')}\n`;
-    t+=`\n${'═'.repeat(50)}\nGenerated by GeoMind v4.0\n`;
-    const blob=new Blob([t],{type:'text/plain'});
-    dlBlob(blob, name+'-geomind.txt');
+    t+=`\n${'═'.repeat(50)}\nGenerated by GeoMind v5.0\n`;
+    dlBlob(new Blob([t],{type:'text/plain'}), name+'-geomind.txt');
   }
 
   if (fmt==='pdf') {
@@ -1815,11 +1636,78 @@ function downloadReport(fmt) {
     section('History',ai.history);
     section('Economy',ai.economy);
     section('Current Relevance',ai.currentRelevance);
-    if (ai.localInfo) { if(y>260){doc.addPage();y=20;} doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('LOCAL INFO',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60); Object.entries(ai.localInfo).forEach(([k,v])=>{const val=Array.isArray(v)?v.join(', '):(v||'N/A');const lines=doc.splitTextToSize(`${k}: ${val}`,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});y+=4; }
-    if(ai.examFocus?.length){ if(y>260){doc.addPage();y=20;} doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('EXAM FOCUS',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60);ai.examFocus.forEach(f=>{const lines=doc.splitTextToSize('• '+f,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});}
+    if (ai.localInfo) { if(y>260){doc.addPage();y=20;} doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('LOCAL INFO',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60);Object.entries(ai.localInfo).forEach(([k,v])=>{const val=Array.isArray(v)?v.join(', '):(v||'N/A');const lines=doc.splitTextToSize(`${k}: ${val}`,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});y+=4;}
+    if(ai.examFocus?.length){if(y>260){doc.addPage();y=20;}doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('EXAM FOCUS',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60);ai.examFocus.forEach(f=>{const lines=doc.splitTextToSize('• '+f,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});}
     doc.save(name+'-geomind.pdf');
     toast('PDF downloaded!','ok');
   }
+
+  if (fmt==='docx') {
+    buildDocx(ai, name, date);
+  }
+}
+
+function buildDocx(ai, name, date) {
+  // Build a simple RTF-like HTML blob that Word can open (cross-browser compatible)
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  body{font-family:Calibri,sans-serif;font-size:11pt;color:#111;max-width:700px;margin:40px auto;}
+  h1{font-size:18pt;color:#006B5C;border-bottom:2px solid #006B5C;padding-bottom:6px;}
+  h2{font-size:13pt;color:#006B5C;margin-top:18px;}
+  .meta{font-size:10pt;color:#666;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;margin-bottom:14px;}
+  td{padding:5px 8px;border-bottom:1px solid #e0e0e0;font-size:10.5pt;vertical-align:top;}
+  td:first-child{font-weight:600;color:#444;width:140px;}
+  .tag{display:inline-block;padding:2px 8px;margin:2px;background:#eef;border-radius:10px;font-size:9.5pt;}
+  .epill{background:#f0faf8;border-left:3px solid #006B5C;padding:6px 10px;margin:4px 0;font-size:10pt;}
+  .tli{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eee;}
+  .tlyear{font-weight:700;min-width:50px;color:#006B5C;}
+  .mcq{background:#f8f8f8;padding:8px;margin:6px 0;border-radius:4px;font-size:10pt;}
+  .mcqq{font-weight:600;margin-bottom:4px;}
+</style></head><body>
+<h1>🌍 GeoMind AI Report</h1>
+<div class="meta">Location: <b>${name}</b> | Date: ${date} | LAT: ${parseFloat(curData.lat).toFixed(4)} | LON: ${parseFloat(curData.lon).toFixed(4)} | Generated by GeoMind v5.0</div>
+`;
+  const section=(title,obj)=>{
+    if(!obj) return;
+    html+=`<h2>${title}</h2><table>`;
+    Object.entries(obj).forEach(([k,v])=>{
+      const val=Array.isArray(v)?v.map(x=>`<span class="tag">${x}</span>`).join(' '):(v||'—');
+      html+=`<tr><td>${k}</td><td>${val}</td></tr>`;
+    });
+    html+='</table>';
+  };
+  section('📍 Location', ai.locationId);
+  section('🌏 Geography', ai.geography);
+  section('🌾 Agriculture', ai.agriculture);
+  section('📜 History', ai.history);
+  section('💰 Economy', ai.economy);
+  section('🔭 Current Relevance', ai.currentRelevance);
+  if (ai.localInfo) {
+    html+='<h2>★ Local Info & Famous Places</h2><table>';
+    Object.entries(ai.localInfo).forEach(([k,v])=>{
+      const val=Array.isArray(v)?v.map(x=>`<span class="tag">${x}</span>`).join(' '):(v||'—');
+      html+=`<tr><td>${k}</td><td>${val}</td></tr>`;
+    });
+    html+='</table>';
+  }
+  if (ai.timeline?.length) {
+    html+='<h2>⏳ Historical Timeline</h2>';
+    ai.timeline.forEach(t=>{html+=`<div class="tli"><div class="tlyear">${t.year}</div><div>${t.event}</div></div>`;});
+  }
+  if (ai.quiz?.mcqs?.length) {
+    html+='<h2>📝 Quiz</h2>';
+    ai.quiz.mcqs.forEach((q,i)=>{
+      html+=`<div class="mcq"><div class="mcqq">Q${i+1}. ${q.q}</div>${(q.options||[]).join(' | ')} <b>[Ans: ${q.answer}]</b></div>`;
+    });
+  }
+  if (ai.examFocus?.length) {
+    html+='<h2>⚡ Exam Focus</h2>';
+    ai.examFocus.forEach(f=>{html+=`<div class="epill">${f}</div>`;});
+  }
+  html+='</body></html>';
+  const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+  dlBlob(blob, name+'-geomind.doc');
 }
 
 function dlBlob(blob, filename) {
@@ -1829,20 +1717,14 @@ function dlBlob(blob, filename) {
   toast(filename+' downloaded!','ok');
 }
 
-/* ── PLANS PAGE (full page) ──────────────────────────── */
-function renderPlansPage() {
-  renderPlansInto(document.getElementById('plansPageContent'));
-}
-function renderPricingTab() {
-  renderPlansInto(document.getElementById('pricingContent'));
-}
-
+/* ── PLANS PAGE ──────────────────────────────────────── */
+function renderPlansPage() { renderPlansInto(document.getElementById('plansPageContent')); }
+function renderPricingTab() { renderPlansInto(document.getElementById('pricingContent')); }
 function renderPlansInto(wrap) {
   const currentPlan=userProfile.plan||'free';
   let html=`<div class="pricing-title">⭐ GeoMind Plans</div>
     <div class="pricing-sub">Choose the plan that fits your learning goals. Paid plans include admin-managed API keys — no setup needed.</div>
     <div class="plans-grid">`;
-
   const planOrder=['free','basic','standard','premium'];
   planOrder.forEach(key=>{
     const P=PLANS[key]; const feats=PLAN_FEATURES[key]; const isCur=key===currentPlan;
@@ -1860,12 +1742,11 @@ function renderPlansInto(wrap) {
       <div class="plan-features">
         ${feats.map(f=>`<div class="pf ${f.includes('report')||f.includes('message')||f.includes('Dual')?'highlight':''}"><span class="pf-check">✓</span>${f}</div>`).join('')}
       </div>
-      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="${key==='free'?'goPage(\'settings\')':'openPlanModal(\''+key+'\')'}" ${isCur&&key!=='free'?'disabled':''}>
+      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="${key==='free'?'goPage(\'settings\')':'openPlanModal(\''+key+'\'')" ${isCur&&key!=='free'?'disabled':''}>
         ${isCur&&key!=='free'?'✓ Current Plan':key==='free'?'⚙ Add API Key':'Purchase '+P.name}
       </button>
     </div>`;
   });
-
   html+=`</div>
   <div class="pay-box">
     <h3>💳 How to Purchase a Plan</h3>
@@ -1876,14 +1757,12 @@ function renderPlansInto(wrap) {
     <div class="pay-step"><div class="pay-num">3</div><div class="pay-text">Fill the <strong><a href="https://forms.gle/geomind" target="_blank" style="color:var(--cyan)">Google Form</a></strong> with your name, email, phone, plan selected, and upload a payment screenshot.</div></div>
     <div class="pay-step"><div class="pay-num">4</div><div class="pay-text">Admin reviews and activates your plan within <strong>7 days</strong>. You'll receive confirmation on your registered email.</div></div>
   </div>`;
-
   wrap.innerHTML=html;
 }
-
 function openPlanModal(planKey) {
   const P=PLANS[planKey];
   document.getElementById('modalTitle').textContent=`Purchase ${P.name} Plan`;
-  document.getElementById('modalBody').innerHTML=`Upgrade to <strong>${P.name}</strong> for ${P.price}. Send payment then fill the Google Form below.`;
+  document.getElementById('modalBody').innerHTML=`Upgrade to <strong>${P.name}</strong> for ${P.price}. Send payment then fill the Google Form.`;
   document.getElementById('planModal').classList.add('open');
 }
 function closePlanModal() { document.getElementById('planModal').classList.remove('open'); }
@@ -1900,7 +1779,6 @@ function updateProfilePage() {
   document.getElementById('pfEmail').value=email;
   document.getElementById('pfPhone').value=userProfile.phone||'';
 }
-
 async function saveProfile() {
   if (!currentUser) return;
   const name=document.getElementById('pfName').value.trim();
@@ -1922,49 +1800,43 @@ function updateNavUI() {
   const genUsed=userProfile.monthlyGenerationsUsed||0;
   const chatUsed=userProfile.monthlyMessagesUsed||0;
   const name=currentUser?.displayName||currentUser?.email?.split('@')[0]||'?';
-
   document.getElementById('userNm').textContent=name;
   document.getElementById('userAv').textContent=name.charAt(0).toUpperCase();
-
   const badge=document.getElementById('planBadge');
   badge.textContent=plan.toUpperCase();
   badge.className=`plan-badge pb-${plan}`;
-
   if (plan==='free') {
     document.getElementById('usageMini').textContent='Free Plan · Own API Key';
   } else {
     document.getElementById('usageMini').textContent=`Gen: ${genUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
   }
 }
-
 function updateUsageWidget() {
   const plan=userProfile.plan||'free';
   const P=PLANS[plan];
   const genUsed=userProfile.monthlyGenerationsUsed||0;
   const chatUsed=userProfile.monthlyMessagesUsed||0;
   const hasKey=!!(userSettings.apiKey&&userSettings.apiKey.trim());
-
+  const el=document.getElementById('uwContent');
+  if (!el) return;
   if (plan==='free') {
-    document.getElementById('uwContent').innerHTML=`
+    el.innerHTML=`
       <div style="text-align:center;padding:10px 0">
         <div style="font-size:11px;color:${hasKey?'var(--green)':'var(--amber)'};margin-bottom:8px">${hasKey?'✓ API Key Connected':'⚠ No API Key'}</div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.6">${hasKey?'Unlimited reports using your Gemini quota.':'Add your API key in Settings to start generating reports.'}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">${hasKey?'Unlimited reports using your API quota.':'Add your API key in Settings to start generating reports.'}</div>
         ${!hasKey?`<button onclick="goPage('settings')" style="margin-top:10px;background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;">⚙ Settings</button>`:''}
-      </div>
-    `;
+      </div>`;
   } else {
     const genPct=Math.min(100,(genUsed/P.genLimit)*100);
     const chatPct=Math.min(100,(chatUsed/P.chatLimit)*100);
-    document.getElementById('uwContent').innerHTML=`
+    el.innerHTML=`
       <div class="uw-row"><span class="uw-label">Reports this month</span><span class="uw-val">${genUsed} / ${P.genLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat messages</span><span class="uw-val">${chatUsed} / ${P.chatLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
-      <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">Plan: <span style="color:var(--pprem)">${P.name}</span> · Resets monthly</div>
-    `;
+      <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">Plan: <span style="color:var(--pprem)">${P.name}</span> · Resets monthly</div>`;
   }
 }
-
 function showLimitReached(type) {
   const plan=userProfile.plan||'free';
   const P=PLANS[plan];
@@ -1977,8 +1849,7 @@ function showLimitReached(type) {
       <div class="lb-title">Monthly Limit Reached</div>
       <div class="lb-desc">You've used all ${type==='generation'?P.genLimit+' reports':P.chatLimit+' chat messages'} this month on the <strong>${P.name}</strong> plan.<br>Limits reset monthly. Upgrade for more access.</div>
       <button class="lb-btn" onclick="goPage('plans')">⭐ View Plans & Upgrade</button>
-    </div>
-  `;
+    </div>`;
 }
 
 /* ── MULTILINGUAL ────────────────────────────────────── */
@@ -2005,7 +1876,6 @@ function showLoading() {
   document.getElementById('sendBtn').disabled=true;
   goTab('a',document.getElementById('t-a'));
 }
-
 function showErr(msg) {
   document.getElementById('loadbox').style.display='none';
   document.getElementById('sendBtn').disabled=false;
@@ -2014,7 +1884,6 @@ function showErr(msg) {
   w.style.display='block';
   toast(msg,'err');
 }
-
 function clearAll() {
   pendingLat=null; pendingLon=null;
   document.getElementById('idleBox').style.display='flex';
@@ -2031,13 +1900,11 @@ function clearAll() {
   if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}
   curData={}; updateUsageWidget();
 }
-
 function step(msg,pct) {
   document.getElementById('lstep').textContent=msg;
   document.getElementById('pfill').style.width=pct+'%';
   if(pct>=100) setTimeout(()=>{document.getElementById('sendBtn').disabled=false;},600);
 }
-
 function toast(msg,type='ok') {
   const t=document.createElement('div');
   t.className='toast '+type; t.textContent=msg;

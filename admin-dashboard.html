@@ -537,7 +537,7 @@ const ADMIN_MODELS = [
   'Qwen/Qwen2.5-7B'
 ];
 
-const PLAN_NAMES = { free:'Free', basic:'Basic', standard:'Standard', premium:'Premium' };
+const PLAN_NAMES = { free:'Free', basic:'Basic', standard:'Standard', premium:'Premium', custom:'⚡ Custom' };
 
 /* ── SESSION ──────────────────────────────────────────── */
 let adminAuthenticated = false;
@@ -670,6 +670,7 @@ function openEditUser(uid) {
   currentModalData = { type:'user', uid };
   document.getElementById('modalTitle').textContent = `Edit User — ${u.name||u.email||uid}`;
   document.getElementById('modalSub').textContent = `UID: ${uid}`;
+  const isCustom = (u.plan||'free') === 'custom';
   document.getElementById('modalContent').innerHTML = `
     <div class="mf-field">
       <label class="mf-label">Full Name</label>
@@ -681,17 +682,40 @@ function openEditUser(uid) {
     </div>
     <div class="mf-field">
       <label class="mf-label">Plan</label>
-      <select class="mf-select" id="mu-plan">
-        ${['free','basic','standard','premium'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`).join('')}
+      <select class="mf-select" id="mu-plan" onchange="toggleCustomFields(this.value)">
+        ${['free','basic','standard','premium','custom'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`).join('')}
       </select>
+    </div>
+    <!-- Custom plan limits (shown when plan = custom) -->
+    <div id="customFields" style="display:${isCustom?'block':'none'}">
+      <div class="mf-sep"></div>
+      <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:800;color:#34d399;margin-bottom:10px;">⚡ Custom Plan Limits</div>
+        <div class="mf-field" style="margin-bottom:8px;">
+          <label class="mf-label">Reports Allowed (this month)</label>
+          <input class="mf-input" id="mu-gen-limit" type="number" min="0" max="999" value="${u.customGenLimit ?? 1}" style="width:100px;"/>
+          <div class="mf-hint">How many AI reports this user can generate</div>
+        </div>
+        <div class="mf-field" style="margin-bottom:0;">
+          <label class="mf-label">Chat Messages Allowed (this month)</label>
+          <input class="mf-input" id="mu-chat-limit" type="number" min="0" max="999" value="${u.customChatLimit ?? 1}" style="width:100px;"/>
+          <div class="mf-hint">How many chat messages this user can send</div>
+        </div>
+      </div>
     </div>
     <div class="mf-sep"></div>
     <div class="mf-field">
-      <label class="mf-label">Reset Monthly Usage</label>
+      <label class="mf-label">Current Usage</label>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">Reports used: <b>${u.monthlyGenerationsUsed||0}</b> &nbsp;|&nbsp; Chats used: <b>${u.monthlyMessagesUsed||0}</b></div>
       <button class="action-btn ab-del" onclick="resetUsage('${uid}')" style="font-size:11px;padding:7px 14px">🗑 Reset Counters to 0</button>
-      <div class="mf-hint">Resets monthlyGenerationsUsed and monthlyMessagesUsed to 0</div>
+      <div class="mf-hint">Resets monthly usage counters immediately</div>
     </div>`;
   openModal();
+}
+
+function toggleCustomFields(plan) {
+  const el = document.getElementById('customFields');
+  if (el) el.style.display = plan === 'custom' ? 'block' : 'none';
 }
 
 async function resetUsage(uid) {
@@ -825,7 +849,7 @@ async function loadPlansTable() {
         <td style="font-family:var(--mono);font-size:11px">${u.monthlyMessagesUsed||0}</td>
         <td>
           <select onchange="changePlanInline('${u.uid}',this.value)" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text2);padding:5px 8px;font-size:11px;cursor:pointer;">
-            ${['free','basic','standard','premium'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`).join('')}
+            ${['free','basic','standard','premium','custom'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`).join('')}
           </select>
         </td>
       </tr>`).join('');
@@ -863,10 +887,21 @@ async function saveModal() {
     const phone = document.getElementById('mu-phone').value.trim();
     const plan  = document.getElementById('mu-plan').value;
     try {
-      await db.ref('users/'+uid).update({name, phone, plan});
-      const u=allUsers.find(x=>x.uid===uid);
-      if (u) { u.name=name; u.phone=phone; u.plan=plan; }
-      toast('User updated!','ok'); closeModal();
+      const update = { name, phone, plan };
+      // If custom plan, save admin-defined limits
+      if (plan === 'custom') {
+        const genLimitEl  = document.getElementById('mu-gen-limit');
+        const chatLimitEl = document.getElementById('mu-chat-limit');
+        if (genLimitEl)  update.customGenLimit  = parseInt(genLimitEl.value)  || 1;
+        if (chatLimitEl) update.customChatLimit = parseInt(chatLimitEl.value) || 1;
+      }
+      await db.ref('users/'+uid).update(update);
+      const u = allUsers.find(x=>x.uid===uid);
+      if (u) { u.name=name; u.phone=phone; u.plan=plan;
+        if (plan==='custom') { u.customGenLimit=update.customGenLimit; u.customChatLimit=update.customChatLimit; }
+      }
+      toast(`User updated! Plan: ${PLAN_NAMES[plan]}${plan==='custom'?' ('+update.customGenLimit+'R / '+update.customChatLimit+'C)':''}`, 'ok');
+      closeModal();
     } catch(e) { toast('Error: '+e.message,'err'); }
   } else if (type==='apikeys') {
     const rKey    = document.getElementById('ak-rkey').value.trim();

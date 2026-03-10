@@ -857,12 +857,14 @@ const AI_MODELS = [
   { id:'mistralai/Mistral-7B-Instruct-v0.3',          provider:'huggingface', label:'Mistral 7B Instruct',  desc:'Fast open Mistral 7B — via HuggingFace' },
   { id:'microsoft/phi-3-medium-128k-instruct',        provider:'openrouter',  label:'Phi-3 Medium',         desc:'Microsoft Phi-3 via OpenRouter' },
   { id:'cohere/command-r-plus',                       provider:'openrouter',  label:'Command R+',           desc:'Cohere retrieval-optimized via OpenRouter' },
+  // ── Bytez ──
+  { id:'Qwen/Qwen2.5-7B-Instruct',                    provider:'bytez',       label:'Qwen 2.5 7B',          desc:'Alibaba Qwen 2.5 7B — fast & efficient via Bytez' },
 ];
 
 const PROVIDER_LABELS = {
   gemini:'🔵 Google Gemini', openai:'🟢 ChatGPT / OpenAI', anthropic:'🟠 Anthropic',
   mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi + GLM Models)',
-  huggingface:'🤗 HuggingFace'
+  huggingface:'🤗 HuggingFace', bytez:'⚡ Bytez'
 };
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
@@ -1122,6 +1124,8 @@ async function callAI(prompt, apiKey, modelId) {
     return callZAI(prompt, apiKey, modelId);
   } else if (provider === 'huggingface') {
     return callHuggingFace(prompt, apiKey, modelId);
+  } else if (provider === 'bytez') {
+    return callBytez(prompt, apiKey, modelId);
   } else {
     return callGemini(prompt, apiKey, modelId); // fallback
   }
@@ -1245,6 +1249,32 @@ async function callHuggingFace(prompt, apiKey, model) {
     if (resp.status === 503) throw new Error('HuggingFace model is loading. Please wait 20 seconds and try again.');
     if (resp.status === 429) throw new Error('HuggingFace rate limit reached. Try again shortly.');
     throw new Error(`HuggingFace API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callBytez(prompt, apiKey, model) {
+  /* Bytez API — OpenAI-compatible chat completions */
+  const resp = await fetch('https://api.bytez.com/models/v2/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 4096,
+      temperature: 0.3
+    })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid Bytez API key. Get yours at bytez.com and add it in Settings.');
+    if (resp.status === 429) throw new Error('Bytez rate limit reached. Try again shortly.');
+    if (resp.status === 404) throw new Error(`Bytez model "${model}" not found. Check the model name.`);
+    throw new Error(`Bytez API error ${resp.status}: ${errBody.substring(0,120)}`);
   }
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || '';

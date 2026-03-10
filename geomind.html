@@ -1083,11 +1083,19 @@ async function saveUserProfile() {
 function canGenerate() {
   const plan = userProfile.plan || 'free';
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
+  if (plan === 'custom') {
+    const limit = userProfile.customGenLimit ?? PLANS.custom.genLimit;
+    return userProfile.monthlyGenerationsUsed < limit;
+  }
   return userProfile.monthlyGenerationsUsed < (PLANS[plan]?.genLimit ?? 30);
 }
 function canChat() {
   const plan = userProfile.plan || 'free';
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
+  if (plan === 'custom') {
+    const limit = userProfile.customChatLimit ?? PLANS.custom.chatLimit;
+    return userProfile.monthlyMessagesUsed < limit;
+  }
   return userProfile.monthlyMessagesUsed < (PLANS[plan]?.chatLimit ?? 60);
 }
 function getNoKeyMessage() {

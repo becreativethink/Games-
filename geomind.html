@@ -287,9 +287,11 @@ a{text-decoration:none;}
 .pricing-title{font-family:var(--ff-head);font-size:22px;font-weight:800;margin-bottom:6px;}
 .pricing-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
 .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:24px;}
-.plan-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;transition:transform 0.2s,border-color 0.2s;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;transition:transform 0.2s,border-color 0.2s;position:relative;}
 .plan-card:hover{transform:translateY(-3px);}
 .plan-card.current-plan{border-color:var(--cyan);box-shadow:0 0 24px rgba(0,229,200,0.1);}
+.plan-card.popular-plan{border-color:rgba(192,132,252,0.5);box-shadow:0 0 28px rgba(192,132,252,0.15);}
+.popular-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#9d7aff,#c084fc);color:#fff;font-size:9px;font-weight:800;padding:3px 14px;border-radius:20px;letter-spacing:0.07em;white-space:nowrap;}
 .plan-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
 .plan-name{font-family:var(--ff-head);font-size:15px;font-weight:700;}
 .pn-free{color:var(--pfree);}.pn-basic{color:var(--pbasic);}.pn-standard{color:var(--pstd);}.pn-premium{color:var(--pprem);}
@@ -893,6 +895,7 @@ const AI_MODELS = [
   { id:'google/gemma-2-27b-it',                       provider:'huggingface', label:'Gemma 2 27B',          desc:'Google Gemma 2 large — via HuggingFace' },
   { id:'deepseek/deepseek-chat',                      provider:'openrouter',  label:'DeepSeek Chat',        desc:'High-performance Chinese AI via OpenRouter' },
   { id:'Qwen/Qwen2.5-72B-Instruct',                   provider:'huggingface', label:'Qwen 2.5 72B',         desc:'Alibaba Qwen 2.5 flagship — via HuggingFace' },
+  { id:'Qwen/Qwen2.5-7B-Instruct',                    provider:'huggingface', label:'Qwen 2.5 7B (HF)',     desc:'Alibaba Qwen 2.5 7B — fast & compact via HuggingFace' },
   { id:'qwen/qwen-2-72b-instruct',                    provider:'openrouter',  label:'Qwen 2 72B',           desc:'Alibaba Qwen 2 flagship via OpenRouter' },
   { id:'mistralai/Mixtral-8x7B-Instruct-v0.1',        provider:'huggingface', label:'Mixtral 8x7B',         desc:'Mistral mixture-of-experts — via HuggingFace' },
   { id:'mistralai/Mistral-7B-Instruct-v0.3',          provider:'huggingface', label:'Mistral 7B Instruct',  desc:'Fast open Mistral 7B — via HuggingFace' },
@@ -911,15 +914,15 @@ const PROVIDER_LABELS = {
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
 const PLANS = {
   free:     { name:'Free',     price:'₹0',       genLimit:999, chatLimit:999, emoji:'○',  color:'--pfree'  },
-  basic:    { name:'Basic',    price:'₹199/mo',   genLimit:30,  chatLimit:60,  emoji:'★',  color:'--pbasic' },
-  standard: { name:'Standard', price:'₹249/mo',   genLimit:60,  chatLimit:150, emoji:'✦',  color:'--pstd'   },
-  premium:  { name:'Premium',  price:'₹399/mo',   genLimit:120, chatLimit:300, emoji:'♛',  color:'--pprem'  }
+  basic:    { name:'Basic',    price:'₹199/mo',   genLimit:15,  chatLimit:20,  emoji:'★',  color:'--pbasic' },
+  standard: { name:'Standard', price:'₹249/mo',   genLimit:20,  chatLimit:30,  emoji:'✦',  color:'--pstd'   },
+  premium:  { name:'Premium',  price:'₹399/mo',   genLimit:30,  chatLimit:40,  emoji:'♛',  color:'--pprem'  }
 };
 const PLAN_FEATURES = {
   free:     ['Own API key required','Unlimited reports (your quota)','25+ AI model options','Map history','Download TXT/JSON/PDF/DOCX'],
-  basic:    ['30 AI reports / month','60 chat messages / month','No API key needed','All learning modes','History & download'],
-  standard: ['60 AI reports / month','150 chat messages / month','No API key needed','Priority AI responses','Full history'],
-  premium:  ['120 AI reports / month','300 chat messages / month','No API key needed','Dual API — max reliability','Priority support','All features']
+  basic:    ['15 AI reports / month','20 chat messages / month','No API key needed','All learning modes','History & download'],
+  standard: ['20 AI reports / month','30 chat messages / month','No API key needed','Priority AI responses','Full history & download'],
+  premium:  ['30 AI reports / month','40 chat messages / month','No API key needed','Dual API — max reliability','Priority support','All features']
 };
 
 /* ── STATE ───────────────────────────────────────────── */
@@ -1838,76 +1841,121 @@ function getFlagEmoji(countryName) {
 
 /* ── DOWNLOAD FEATURE ────────────────────────────────── */
 function downloadReport(fmt) {
-  if (!curData.ai) { toast('No report to download','err'); return; }
+  if (!curData || !curData.ai) { toast('No report loaded. Generate a report first.','err'); return; }
   const ai   = curData.ai;
-  const name = ai.locationId?.nearestCity||'Location';
-  const date = new Date().toLocaleDateString();
+  const raw  = ai.locationId?.nearestCity || ai.locationId?.district || 'Location';
+  const name = raw.replace(/[^a-zA-Z0-9\u0900-\u097F\s-]/g,'').trim() || 'Location'; // safe filename
+  const date = new Date().toLocaleDateString('en-IN');
+  const lat  = parseFloat(curData.lat)||0;
+  const lon  = parseFloat(curData.lon)||0;
 
-  if (fmt==='json') {
-    const blob=new Blob([JSON.stringify({location:{lat:curData.lat,lon:curData.lon,...ai.locationId},report:ai,generatedAt:new Date().toISOString()},null,2)],{type:'application/json'});
-    dlBlob(blob, name+'-geomind.json');
-  }
+  try {
+    if (fmt === 'json') {
+      const payload = { location:{ lat, lon, ...ai.locationId }, report:ai, generatedAt:new Date().toISOString() };
+      dlBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}), name+'-geomind.json');
 
-  if (fmt==='txt') {
-    let t=`GEOMIND AI REPORT\n${'═'.repeat(50)}\nLocation: ${name}\nDate: ${date}\nLAT: ${curData.lat} | LON: ${curData.lon}\n\n`;
-    t+=`LOCATION\n${'-'.repeat(30)}\n`;
-    if(ai.locationId){Object.entries(ai.locationId).forEach(([k,v])=>{t+=`${k}: ${v}\n`;});}
-    t+=`\nGEOGRAPHY\n${'-'.repeat(30)}\n`;
-    if(ai.geography){Object.entries(ai.geography).forEach(([k,v])=>{t+=`${k}: ${Array.isArray(v)?v.join(', '):v}\n`;});}
-    t+=`\nAGRICULTURE\n${'-'.repeat(30)}\n`;
-    if(ai.agriculture){Object.entries(ai.agriculture).forEach(([k,v])=>{t+=`${k}: ${Array.isArray(v)?v.join(', '):v}\n`;});}
-    t+=`\nHISTORY\n${'-'.repeat(30)}\n`;
-    if(ai.history){Object.entries(ai.history).forEach(([k,v])=>{t+=`${k}: ${v}\n`;});}
-    t+=`\nECONOMY\n${'-'.repeat(30)}\n`;
-    if(ai.economy){Object.entries(ai.economy).forEach(([k,v])=>{t+=`${k}: ${Array.isArray(v)?v.join(', '):v}\n`;});}
-    t+=`\nLOCAL INFO\n${'-'.repeat(30)}\n`;
-    if(ai.localInfo){Object.entries(ai.localInfo).forEach(([k,v])=>{t+=`${k}: ${Array.isArray(v)?v.join(', '):v}\n`;});}
-    t+=`\nEXAM FOCUS\n${'-'.repeat(30)}\n${(ai.examFocus||[]).join('\n')}\n`;
-    t+=`\n${'═'.repeat(50)}\nGenerated by GeoMind v5.0\n`;
-    dlBlob(new Blob([t],{type:'text/plain'}), name+'-geomind.txt');
-  }
+    } else if (fmt === 'txt') {
+      const sep1 = '═'.repeat(50);
+      const sep2 = '-'.repeat(30);
+      let t = `GEOMIND AI REPORT\n${sep1}\nLocation: ${name}\nDate: ${date}\nLAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)}\n\n`;
+      const addSection = (title, obj) => {
+        if (!obj) return;
+        t += `\n${title}\n${sep2}\n`;
+        Object.entries(obj).forEach(([k,v]) => { t += `${k}: ${Array.isArray(v)?v.join(', '):(v||'—')}\n`; });
+      };
+      addSection('LOCATION', ai.locationId);
+      addSection('GEOGRAPHY', ai.geography);
+      addSection('AGRICULTURE', ai.agriculture);
+      addSection('HISTORY', ai.history);
+      addSection('ECONOMY', ai.economy);
+      addSection('CURRENT RELEVANCE', ai.currentRelevance);
+      addSection('LOCAL INFO', ai.localInfo);
+      if (ai.timeline?.length) {
+        t += `\nTIMELINE\n${sep2}\n`;
+        ai.timeline.forEach(e => { t += `${e.year}: ${e.event}\n`; });
+      }
+      t += `\nEXAM FOCUS\n${sep2}\n${(ai.examFocus||[]).map(f=>'• '+f).join('\n')}\n`;
+      t += `\n${sep1}\nGenerated by GeoMind v5.0\n`;
+      dlBlob(new Blob([t],{type:'text/plain;charset=utf-8'}), name+'-geomind.txt');
 
-  if (fmt==='pdf') {
-    if (typeof window.jspdf==='undefined') { toast('PDF library loading…','warn'); return; }
-    const { jsPDF }=window.jspdf;
-    const doc=new jsPDF();
-    doc.setFontSize(18); doc.setTextColor(0,100,80);
-    doc.text('GeoMind AI Report', 20, 20);
-    doc.setFontSize(13); doc.setTextColor(0,0,0);
-    doc.text(`Location: ${name}`, 20, 32);
-    doc.text(`Date: ${date}  |  LAT: ${parseFloat(curData.lat).toFixed(4)}  LON: ${parseFloat(curData.lon).toFixed(4)}`, 20, 40);
-    doc.setDrawColor(0,150,120); doc.line(20,44,190,44);
-    let y=52;
-    const section=(title,obj)=>{
-      if (!obj) return;
-      doc.setFontSize(11); doc.setTextColor(0,100,80); doc.text(title.toUpperCase(),20,y); y+=6;
-      doc.setFontSize(9); doc.setTextColor(60,60,60);
-      Object.entries(obj).forEach(([k,v])=>{
-        const val=Array.isArray(v)?v.join(', '):(v||'N/A');
-        const lines=doc.splitTextToSize(`${k}: ${val}`,170);
-        lines.forEach(l=>{ if(y>275){doc.addPage();y=20;} doc.text(l,22,y); y+=5; });
-      });
-      y+=4;
-    };
-    section('Location',ai.locationId);
-    section('Geography',ai.geography);
-    section('Agriculture',ai.agriculture);
-    section('History',ai.history);
-    section('Economy',ai.economy);
-    section('Current Relevance',ai.currentRelevance);
-    if (ai.localInfo) { if(y>260){doc.addPage();y=20;} doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('LOCAL INFO',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60);Object.entries(ai.localInfo).forEach(([k,v])=>{const val=Array.isArray(v)?v.join(', '):(v||'N/A');const lines=doc.splitTextToSize(`${k}: ${val}`,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});y+=4;}
-    if(ai.examFocus?.length){if(y>260){doc.addPage();y=20;}doc.setFontSize(11);doc.setTextColor(0,100,80);doc.text('EXAM FOCUS',20,y);y+=6;doc.setFontSize(9);doc.setTextColor(60,60,60);ai.examFocus.forEach(f=>{const lines=doc.splitTextToSize('• '+f,170);lines.forEach(l=>{if(y>275){doc.addPage();y=20;}doc.text(l,22,y);y+=5;});});}
-    doc.save(name+'-geomind.pdf');
-    toast('PDF downloaded!','ok');
-  }
+    } else if (fmt === 'pdf') {
+      // Try jsPDF - use output('blob') then dlBlob for consistent mobile download
+      const jspdfLib = window.jspdf || window.jsPDF;
+      if (!jspdfLib) { toast('PDF library not loaded yet. Try again in a moment.','warn'); return; }
+      const jsPDF = jspdfLib.jsPDF || jspdfLib;
+      const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      // Header
+      doc.setFillColor(0,100,80); doc.rect(0,0,210,28,'F');
+      doc.setFontSize(18); doc.setTextColor(255,255,255);
+      doc.text('GeoMind AI Report', 14, 13);
+      doc.setFontSize(9); doc.setTextColor(200,240,235);
+      doc.text(`${name}  |  ${date}  |  ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`, 14, 21);
+      doc.setTextColor(60,60,60);
+      let y = 36;
+      const pdfSection = (title, obj) => {
+        if (!obj || !Object.keys(obj).length) return;
+        if (y > 268) { doc.addPage(); y = 16; }
+        doc.setFontSize(10); doc.setTextColor(0,100,80); doc.setFont(undefined,'bold');
+        doc.text(title.toUpperCase(), 14, y); y += 5;
+        doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(55,55,55);
+        Object.entries(obj).forEach(([k,v]) => {
+          const val = Array.isArray(v) ? v.join(', ') : (v||'—');
+          const lines = doc.splitTextToSize(`${k}: ${val}`, 178);
+          lines.forEach(l => { if(y>280){doc.addPage();y=16;} doc.text(l,16,y); y+=4.5; });
+        });
+        y += 3;
+      };
+      pdfSection('Location', ai.locationId);
+      pdfSection('Geography', ai.geography);
+      pdfSection('Agriculture', ai.agriculture);
+      pdfSection('History', ai.history);
+      pdfSection('Economy', ai.economy);
+      pdfSection('Current Relevance', ai.currentRelevance);
+      pdfSection('Local Info', ai.localInfo);
+      if (ai.timeline?.length) {
+        if (y>265){doc.addPage();y=16;}
+        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont(undefined,'bold');
+        doc.text('HISTORICAL TIMELINE',14,y);y+=5;
+        doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
+        ai.timeline.forEach(e=>{
+          const lines=doc.splitTextToSize(`${e.year}: ${e.event}`,178);
+          lines.forEach(l=>{if(y>280){doc.addPage();y=16;}doc.text(l,16,y);y+=4.5;});
+        });
+        y+=3;
+      }
+      if (ai.examFocus?.length) {
+        if (y>265){doc.addPage();y=16;}
+        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont(undefined,'bold');
+        doc.text('EXAM FOCUS',14,y);y+=5;
+        doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
+        ai.examFocus.forEach(f=>{
+          const lines=doc.splitTextToSize('• '+f,178);
+          lines.forEach(l=>{if(y>280){doc.addPage();y=16;}doc.text(l,16,y);y+=4.5;});
+        });
+      }
+      // Footer on each page
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i=1; i<=pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);doc.setTextColor(150,150,150);
+        doc.text(`GeoMind v5.0 — Page ${i} of ${pageCount}`,14,292);
+      }
+      // Use blob for consistent mobile download
+      const pdfBlob = doc.output('blob');
+      dlBlob(pdfBlob, name+'-geomind.pdf');
 
-  if (fmt==='docx') {
-    buildDocx(ai, name, date);
+    } else if (fmt === 'docx') {
+      buildDocx(ai, name, date, lat, lon);
+    }
+  } catch(err) {
+    console.error('Download error:', err);
+    toast('Download error: ' + err.message, 'err');
   }
 }
 
-function buildDocx(ai, name, date) {
-  // Build a simple RTF-like HTML blob that Word can open (cross-browser compatible)
+function buildDocx(ai, name, date, lat, lon) {
+  lat = lat || parseFloat(curData?.lat) || 0;
+  lon = lon || parseFloat(curData?.lon) || 0;
   let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   body{font-family:Calibri,sans-serif;font-size:11pt;color:#111;max-width:700px;margin:40px auto;}
@@ -1925,7 +1973,7 @@ function buildDocx(ai, name, date) {
   .mcqq{font-weight:600;margin-bottom:4px;}
 </style></head><body>
 <h1>🌍 GeoMind AI Report</h1>
-<div class="meta">Location: <b>${name}</b> | Date: ${date} | LAT: ${parseFloat(curData.lat).toFixed(4)} | LON: ${parseFloat(curData.lon).toFixed(4)} | Generated by GeoMind v5.0</div>
+<div class="meta">Location: <b>${name}</b> | Date: ${date} | LAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)} | Generated by GeoMind v5.0</div>
 `;
   const section=(title,obj)=>{
     if(!obj) return;
@@ -2093,7 +2141,9 @@ function renderPlansInto(wrap) {
     const btnClick = key==='free' ? `goPage('settings')` : `openPlanModal('${key}')`;
     const btnLabel = (isCur && key!=='free') ? '✓ Current Plan' : (key==='free' ? '⚙ Add API Key' : 'Purchase ' + P.name);
     const btnDisabled = (isCur && key!=='free') ? 'disabled' : '';
-    html+=`<div class="plan-card ${key}${isCur?' current-plan':''}">
+    const isPopular = key === 'standard';
+    html+=`<div class="plan-card ${key}${isCur?' current-plan':''}${isPopular?' popular-plan':''}">
+      ${isPopular ? '<div class="popular-badge">⭐ MOST POPULAR</div>' : ''}
       <div class="plan-header">
         <div>
           <div class="plan-name pn-${key}">${P.emoji} ${P.name}</div>

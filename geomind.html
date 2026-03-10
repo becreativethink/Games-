@@ -858,7 +858,7 @@ const AI_MODELS = [
   { id:'microsoft/phi-3-medium-128k-instruct',        provider:'openrouter',  label:'Phi-3 Medium',         desc:'Microsoft Phi-3 via OpenRouter' },
   { id:'cohere/command-r-plus',                       provider:'openrouter',  label:'Command R+',           desc:'Cohere retrieval-optimized via OpenRouter' },
   // ── Bytez ──
-  { id:'Qwen/Qwen2.5-7B-Instruct',                    provider:'bytez',       label:'Qwen 2.5 7B',          desc:'Alibaba Qwen 2.5 7B — fast & efficient via Bytez' },
+  { id:'Qwen/Qwen2.5-7B',                              provider:'bytez',       label:'Qwen 2.5 7B',          desc:'Alibaba Qwen 2.5 7B — fast & efficient via Bytez' },
 ];
 
 const PROVIDER_LABELS = {
@@ -1255,29 +1255,42 @@ async function callHuggingFace(prompt, apiKey, model) {
 }
 
 async function callBytez(prompt, apiKey, model) {
-  /* Bytez API — OpenAI-compatible chat completions */
-  const resp = await fetch('https://api.bytez.com/models/v2/chat/completions', {
+  /* Bytez native API — matches the Python SDK:
+       sdk.model("Qwen/Qwen2.5-7B").run([{role, content}])
+     REST equivalent:
+       POST https://api.bytez.com/model/v2/{model}/run
+       Authorization: {BYTEZ_KEY}   ← no "Bearer" prefix
+       Body: { messages: [...] }
+     Response: { error, output }  where output is the reply string */
+  const encodedModel = encodeURIComponent(model);
+  const resp = await fetch(`https://api.bytez.com/model/v2/${encodedModel}/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey
+      'Authorization': apiKey   // Bytez uses raw key, no "Bearer"
     },
     body: JSON.stringify({
-      model,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 4096,
-      temperature: 0.3
+      params: { max_new_tokens: 4096, temperature: 0.3 }
     })
   });
   if (!resp.ok) {
     const errBody = await resp.text();
-    if (resp.status === 401) throw new Error('Invalid Bytez API key. Get yours at bytez.com and add it in Settings.');
+    if (resp.status === 401) throw new Error('Invalid Bytez API key. Get yours at bytez.com/api and add it in Settings.');
     if (resp.status === 429) throw new Error('Bytez rate limit reached. Try again shortly.');
     if (resp.status === 404) throw new Error(`Bytez model "${model}" not found. Check the model name.`);
-    throw new Error(`Bytez API error ${resp.status}: ${errBody.substring(0,120)}`);
+    if (resp.status === 503) throw new Error('Bytez model is loading. Please wait and try again.');
+    throw new Error(`Bytez API error ${resp.status}: ${errBody.substring(0, 120)}`);
   }
   const data = await resp.json();
-  return data.choices?.[0]?.message?.content || '';
+  if (data.error) throw new Error(`Bytez error: ${data.error}`);
+  /* output can be a string or an array of generated_text objects */
+  if (typeof data.output === 'string') return data.output;
+  if (Array.isArray(data.output)) {
+    const item = data.output[0];
+    return item?.generated_text ?? item?.content ?? JSON.stringify(item);
+  }
+  return data.output?.generated_text ?? data.output?.content ?? String(data.output ?? '');
 }
 
 /* ── AUTH FUNCTIONS ──────────────────────────────────── */

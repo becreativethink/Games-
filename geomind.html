@@ -846,18 +846,23 @@ const AI_MODELS = [
   { id:'open-mistral-7b',               provider:'mistral',    label:'Mistral 7B',                  desc:'Compact open Mistral model' },
   { id:'open-mixtral-8x7b',             provider:'mistral',    label:'Mixtral 8x7B',                desc:'Mixture-of-experts architecture' },
   // ── OpenRouter ──
-  { id:'meta-llama/llama-3-70b-instruct',     provider:'openrouter', label:'Llama 3 70B',           desc:'Meta open-source flagship via OpenRouter' },
-  { id:'meta-llama/llama-3-8b-instruct',      provider:'openrouter', label:'Llama 3 8B',            desc:'Compact Meta model via OpenRouter' },
-  { id:'google/gemma-2-9b-it',                provider:'openrouter', label:'Gemma 2 9B',            desc:'Google Gemma via OpenRouter' },
-  { id:'deepseek/deepseek-chat',              provider:'openrouter', label:'DeepSeek Chat',          desc:'High-performance Chinese AI via OpenRouter' },
-  { id:'qwen/qwen-2.5-72b-instruct',          provider:'openrouter', label:'Qwen 2.5 72B',          desc:'Alibaba large model via OpenRouter' },
-  { id:'microsoft/phi-3-medium-128k-instruct',provider:'openrouter', label:'Phi-3 Medium',          desc:'Microsoft Phi-3 via OpenRouter' },
-  { id:'cohere/command-r-plus',               provider:'openrouter', label:'Command R+',            desc:'Cohere retrieval-optimized via OpenRouter' },
+  { id:'meta-llama/llama-3-70b-instruct',             provider:'huggingface', label:'Llama 3 70B',          desc:'Meta open-source flagship — via HuggingFace' },
+  { id:'meta-llama/llama-3-8b-instruct',              provider:'openrouter',  label:'Llama 3 8B',           desc:'Compact Meta model via OpenRouter' },
+  { id:'google/gemma-2-9b-it',                        provider:'openrouter',  label:'Gemma 2 9B',           desc:'Google Gemma via OpenRouter' },
+  { id:'google/gemma-2-27b-it',                       provider:'huggingface', label:'Gemma 2 27B',          desc:'Google Gemma 2 large — via HuggingFace' },
+  { id:'deepseek/deepseek-chat',                      provider:'openrouter',  label:'DeepSeek Chat',        desc:'High-performance Chinese AI via OpenRouter' },
+  { id:'Qwen/Qwen2.5-72B-Instruct',                   provider:'huggingface', label:'Qwen 2.5 72B',         desc:'Alibaba Qwen 2.5 flagship — via HuggingFace' },
+  { id:'qwen/qwen-2-72b-instruct',                    provider:'openrouter',  label:'Qwen 2 72B',           desc:'Alibaba Qwen 2 flagship via OpenRouter' },
+  { id:'mistralai/Mixtral-8x7B-Instruct-v0.1',        provider:'huggingface', label:'Mixtral 8x7B',         desc:'Mistral mixture-of-experts — via HuggingFace' },
+  { id:'mistralai/Mistral-7B-Instruct-v0.3',          provider:'huggingface', label:'Mistral 7B Instruct',  desc:'Fast open Mistral 7B — via HuggingFace' },
+  { id:'microsoft/phi-3-medium-128k-instruct',        provider:'openrouter',  label:'Phi-3 Medium',         desc:'Microsoft Phi-3 via OpenRouter' },
+  { id:'cohere/command-r-plus',                       provider:'openrouter',  label:'Command R+',           desc:'Cohere retrieval-optimized via OpenRouter' },
 ];
 
 const PROVIDER_LABELS = {
   gemini:'🔵 Google Gemini', openai:'🟢 ChatGPT / OpenAI', anthropic:'🟠 Anthropic',
-  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi + GLM Models)'
+  mistral:'🟣 Mistral', openrouter:'⚫ OpenRouter', zai:'🟡 Z.ai (Yi + GLM Models)',
+  huggingface:'🤗 HuggingFace'
 };
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
@@ -1115,6 +1120,8 @@ async function callAI(prompt, apiKey, modelId) {
     return callOpenRouter(prompt, apiKey, modelId);
   } else if (provider === 'zai') {
     return callZAI(prompt, apiKey, modelId);
+  } else if (provider === 'huggingface') {
+    return callHuggingFace(prompt, apiKey, modelId);
   } else {
     return callGemini(prompt, apiKey, modelId); // fallback
   }
@@ -1211,6 +1218,33 @@ async function callZAI(prompt, apiKey, model) {
     if (resp.status === 429) throw new Error('Z.ai quota exceeded. Try again later.');
     if (resp.status === 404) throw new Error(`Z.ai model "${model}" not found. Try a different Yi model.`);
     throw new Error(`Z.ai API error ${resp.status}: ${errBody.substring(0,120)}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+async function callHuggingFace(prompt, apiKey, model) {
+  /* HuggingFace Inference API — chat completions (serverless) */
+  const resp = await fetch(`https://api-inference.huggingface.co/models/${model}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 4096,
+      temperature: 0.3
+    })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    if (resp.status === 401) throw new Error('Invalid HuggingFace API token. Get yours at huggingface.co/settings/tokens and add it in Settings.');
+    if (resp.status === 403) throw new Error(`HuggingFace model "${model}" requires a Pro subscription or model access approval.`);
+    if (resp.status === 503) throw new Error('HuggingFace model is loading. Please wait 20 seconds and try again.');
+    if (resp.status === 429) throw new Error('HuggingFace rate limit reached. Try again shortly.');
+    throw new Error(`HuggingFace API error ${resp.status}: ${errBody.substring(0,120)}`);
   }
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || '';

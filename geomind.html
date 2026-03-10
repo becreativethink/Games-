@@ -1228,8 +1228,11 @@ async function callZAI(prompt, apiKey, model) {
 }
 
 async function callHuggingFace(prompt, apiKey, model) {
-  /* HuggingFace Inference API — chat completions (serverless) */
-  const resp = await fetch(`https://api-inference.huggingface.co/models/${model}/v1/chat/completions`, {
+  /* HuggingFace Inference Providers — new router endpoint (supports browser CORS)
+     Old: api-inference.huggingface.co  ← deprecated, CORS issues
+     New: router.huggingface.co/v1/chat/completions  ← OpenAI-compatible, CORS OK
+     Token from: huggingface.co/settings/tokens  (needs "Inference" permission) */
+  const resp = await fetch('https://router.huggingface.co/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1244,11 +1247,12 @@ async function callHuggingFace(prompt, apiKey, model) {
   });
   if (!resp.ok) {
     const errBody = await resp.text();
-    if (resp.status === 401) throw new Error('Invalid HuggingFace API token. Get yours at huggingface.co/settings/tokens and add it in Settings.');
-    if (resp.status === 403) throw new Error(`HuggingFace model "${model}" requires a Pro subscription or model access approval.`);
-    if (resp.status === 503) throw new Error('HuggingFace model is loading. Please wait 20 seconds and try again.');
+    if (resp.status === 401) throw new Error('Invalid HuggingFace token. Go to huggingface.co/settings/tokens, create a token with "Make calls to Inference Providers" permission, and paste it in Settings.');
+    if (resp.status === 403) throw new Error(`HuggingFace: Access denied for model "${model}". You may need to accept the model license on its HuggingFace page.`);
+    if (resp.status === 503 || resp.status === 504) throw new Error('HuggingFace model is loading or busy. Wait 20–30 seconds and try again.');
     if (resp.status === 429) throw new Error('HuggingFace rate limit reached. Try again shortly.');
-    throw new Error(`HuggingFace API error ${resp.status}: ${errBody.substring(0,120)}`);
+    if (resp.status === 404) throw new Error(`HuggingFace model "${model}" not found or not available on Inference Providers.`);
+    throw new Error(`HuggingFace API error ${resp.status}: ${errBody.substring(0, 120)}`);
   }
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || '';

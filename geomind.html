@@ -364,6 +364,35 @@ a{text-decoration:none;}
 .modal-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:380px;position:relative;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
 .modal-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.07);border:none;color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;}
 .modal-close:hover{background:rgba(255,107,122,0.15);color:var(--red);}
+/* ── REPORT PREVIEW MODAL ── */
+#reportModal{position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);z-index:10001;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+#reportModal.open{opacity:1;pointer-events:all;}
+.rmodal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.rmodal-title{font-size:15px;font-weight:800;color:var(--cyan);}
+.rmodal-actions{display:flex;gap:8px;align-items:center;}
+.rmodal-body{flex:1;overflow-y:auto;padding:16px 18px;}
+.rmodal-goto{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060e;font-weight:800;font-size:11px;padding:6px 14px;border-radius:8px;}
+.rmodal-close{background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.rmodal-close:hover{background:rgba(255,107,122,0.15);color:var(--red);}
+/* report preview sections */
+.rp-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.rp-section h4{font-size:11px;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
+.rp-row{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.rp-row:last-child{border-bottom:none;}
+.rp-key{font-weight:700;color:var(--text2);min-width:100px;flex-shrink:0;}
+.rp-val{color:var(--muted);word-break:break-word;}
+.rp-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.rp-tag{background:rgba(157,122,255,0.1);border:1px solid rgba(157,122,255,0.2);color:var(--purple);padding:2px 8px;border-radius:10px;font-size:10px;}
+.rp-tl-item{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.rp-tl-year{font-weight:800;color:var(--cyan);min-width:44px;}
+.rp-ep{background:rgba(0,229,200,0.07);border-left:3px solid var(--cyan);padding:6px 10px;margin:3px 0;border-radius:0 6px 6px 0;font-size:11px;color:var(--text2);}
+.rp-dl-bar{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+/* history view button */
+.hitem-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.h-view-btn{background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:4px 12px;border-radius:7px;font-size:10px;font-weight:700;transition:all 0.2s;}
+.h-view-btn:hover{background:rgba(0,229,200,0.15);border-color:var(--cyan);}
+.h-map-btn{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);color:var(--blue);padding:4px 12px;border-radius:7px;font-size:10px;font-weight:700;transition:all 0.2s;}
+.h-map-btn:hover{background:rgba(96,165,250,0.15);}
 
 /* ══ TOAST ══ */
 .toast{position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;z-index:99999;animation:toastIn 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
@@ -753,6 +782,18 @@ a{text-decoration:none;}
     </div>
     <button onclick="closePlanModal()" style="margin-top:16px;width:100%;padding:11px;background:var(--lift);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-weight:700;">Close</button>
   </div>
+</div>
+
+<!-- ══ REPORT PREVIEW MODAL ══ -->
+<div id="reportModal">
+  <div class="rmodal-header">
+    <div class="rmodal-title" id="rmodalTitle">📊 Report</div>
+    <div class="rmodal-actions">
+      <button class="rmodal-goto" onclick="reportModalGoMap()">🗺 Open on Map</button>
+      <button class="rmodal-close" onclick="closeReportModal()">✕</button>
+    </div>
+  </div>
+  <div class="rmodal-body" id="rmodalBody"></div>
 </div>
 
 <!-- Firebase -->
@@ -1365,6 +1406,10 @@ async function doLogout() {
 }
 document.getElementById('lpwd').addEventListener('keydown',  e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('scpwd').addEventListener('keydown', e=>{if(e.key==='Enter')doSignup();});
+document.getElementById('reportModal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('reportModal')) closeReportModal();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeReportModal(); });
 
 /* ── PAGE NAVIGATION ─────────────────────────────────── */
 function goPage(name) {
@@ -1593,13 +1638,19 @@ async function renderHistoryInto(container, compact) {
       const d=new Date(rec.timestamp);
       const ds=isNaN(d)?rec.timestamp:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
       const enc=encodeURIComponent(JSON.stringify(rec));
-      html+=`<div class="hitem" onclick="reloadHist('${enc}')">
+      html+=`<div class="hitem">
         <div class="hname">📍 ${rec.selectedPlace||'Unknown'}</div>
         <div class="hmeta">${[rec.state,rec.country].filter(Boolean).join(', ')} · ${rec.userClass||''} · ${rec.examType||''}</div>
         ${rec.localLanguages?`<div class="hmeta" style="color:var(--purple)">🗣 ${rec.localLanguages}</div>`:''}
         ${rec.famousFor?.length?`<div class="hmeta">⭐ ${rec.famousFor.slice(0,3).join(', ')}</div>`:''}
         <div class="hcoord">${(rec.latitude||0).toFixed(4)}°, ${(rec.longitude||0).toFixed(4)}°</div>
-        <div class="hts">${ds}</div>
+        <div class="hitem-footer">
+          <div class="hts">${ds}</div>
+          <div style="display:flex;gap:6px;">
+            <button class="h-view-btn" onclick="event.stopPropagation();previewHistReport('${enc}')">📊 See More</button>
+            <button class="h-map-btn" onclick="event.stopPropagation();reloadHist('${enc}')">🗺 Map</button>
+          </div>
+        </div>
       </div>`;
     });
     if (!compact) html+='</div>';
@@ -1919,10 +1970,113 @@ function buildDocx(ai, name, date) {
 }
 
 function dlBlob(blob, filename) {
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=filename;
-  a.click(); URL.revokeObjectURL(url);
-  toast(filename+' downloaded!','ok');
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);  // MUST append to DOM for mobile
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 300);
+    toast('✅ ' + filename + ' downloaded!', 'ok');
+  } catch(e) {
+    toast('Download failed: ' + e.message, 'err');
+  }
+}
+
+/* ── REPORT PREVIEW MODAL ─────────────────────────── */
+let _previewRec = null;
+
+function previewHistReport(enc) {
+  try {
+    const rec = JSON.parse(decodeURIComponent(enc));
+    if (!rec || !rec.aiResponse) { toast('No report data saved for this entry','err'); return; }
+    const ai = JSON.parse(rec.aiResponse);
+    _previewRec = rec;
+    const name = rec.selectedPlace || 'Unknown';
+    const loc = [rec.state, rec.country].filter(Boolean).join(', ');
+    document.getElementById('rmodalTitle').textContent = `📊 ${name}${loc ? ' · ' + loc : ''}`;
+
+    let html = '';
+
+    // Helper: render a data section
+    const section = (icon, title, obj) => {
+      if (!obj || !Object.keys(obj).length) return '';
+      let s = `<div class="rp-section"><h4>${icon} ${title}</h4>`;
+      Object.entries(obj).forEach(([k, v]) => {
+        const isArr = Array.isArray(v);
+        s += `<div class="rp-row"><div class="rp-key">${k}</div><div class="rp-val">`;
+        if (isArr && v.length) {
+          s += `<div class="rp-tags">${v.map(x => `<span class="rp-tag">${x}</span>`).join('')}</div>`;
+        } else {
+          s += `${v || '—'}`;
+        }
+        s += `</div></div>`;
+      });
+      return s + '</div>';
+    };
+
+    html += section('📍', 'Location', ai.locationId);
+    html += section('🌏', 'Geography', ai.geography);
+    html += section('🌾', 'Agriculture', ai.agriculture);
+    html += section('📜', 'History', ai.history);
+    html += section('💰', 'Economy', ai.economy);
+    html += section('🔭', 'Current Relevance', ai.currentRelevance);
+    html += section('★', 'Local Info', ai.localInfo);
+
+    // Timeline
+    if (ai.timeline?.length) {
+      html += `<div class="rp-section"><h4>⏳ Historical Timeline</h4>`;
+      ai.timeline.forEach(t => {
+        html += `<div class="rp-tl-item"><div class="rp-tl-year">${t.year}</div><div class="rp-val">${t.event}</div></div>`;
+      });
+      html += '</div>';
+    }
+
+    // Exam Focus
+    if (ai.examFocus?.length) {
+      html += `<div class="rp-section"><h4>⚡ Exam Focus Points</h4>`;
+      ai.examFocus.forEach(f => { html += `<div class="rp-ep">${f}</div>`; });
+      html += '</div>';
+    }
+
+    // Download bar inside modal
+    html += `<div class="rp-dl-bar">
+      <button class="dl-btn dl-txt"  onclick="previewDownload('txt')">⬇ .TXT</button>
+      <button class="dl-btn dl-json" onclick="previewDownload('json')">⬇ .JSON</button>
+      <button class="dl-btn dl-pdf"  onclick="previewDownload('pdf')">⬇ .PDF</button>
+      <button class="dl-btn dl-docx" onclick="previewDownload('docx')">⬇ .DOCX</button>
+    </div>`;
+
+    document.getElementById('rmodalBody').innerHTML = html;
+    document.getElementById('reportModal').classList.add('open');
+  } catch(e) { toast('Preview failed: ' + e.message, 'err'); }
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').classList.remove('open');
+}
+
+function reportModalGoMap() {
+  if (!_previewRec) return;
+  closeReportModal();
+  reloadHist(encodeURIComponent(JSON.stringify(_previewRec)));
+}
+
+function previewDownload(fmt) {
+  /* Load the record into curData then call normal downloadReport */
+  if (!_previewRec) return;
+  try {
+    const ai = JSON.parse(_previewRec.aiResponse);
+    curData = {
+      geo: { address: { country: _previewRec.country, state: _previewRec.state, city: _previewRec.selectedPlace } },
+      lat: _previewRec.latitude,
+      lon: _previewRec.longitude,
+      ai
+    };
+    downloadReport(fmt);
+  } catch(e) { toast('Download failed: ' + e.message, 'err'); }
 }
 
 /* ── PLANS PAGE ──────────────────────────────────────── */

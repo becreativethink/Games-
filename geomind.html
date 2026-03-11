@@ -504,6 +504,11 @@ a{text-decoration:none;}
   .mob-tab{padding:7px 7px;font-size:10px;}
   #map{height:28vh;}
 }
+
+/* ── WebView Save Modal ─────────────────────────── */
+#_wvSaveModal *{box-sizing:border-box;font-family:var(--ff),system-ui,sans-serif;}
+#_wvSaveModal button:active{opacity:0.75;transform:scale(0.97);}
+#_wvSaveModal button{transition:opacity 0.15s,transform 0.15s;}
 </style>
 </head>
 <body>
@@ -2185,51 +2190,391 @@ function _dlDOCX(ai, name, date, lat, lon) {
 }
 
 /* ─── dlBlob: Universal file download ─────────────────────────── */
-function dlBlob(blob, filename) {
-  /* Strategy:
-     1. Blob URL + dispatchEvent (Chrome, Firefox, Edge, Android Chrome)
-     2. FileReader data-URI fallback (older Safari, some WebViews)
-     Key rules:
-       - anchor MUST be appended to document.body (not off-screen)
-       - use visibility:hidden NOT display:none (display:none blocks events in some browsers)
-       - use dispatchEvent(MouseEvent) NOT .click() for better cross-browser support
-       - revoke URL after 1s to allow download to start before cleanup
-  */
-  if (!blob || !filename) { console.error('dlBlob: missing blob or filename'); return; }
+/* ════════════════════════════════════════════════════════════════
+   GEOMIND  dlBlob  v4.0  — Multi-strategy cross-environment download
+   Works on: Chrome · Firefox · Safari · Android Chrome · WebView · Kodular
+   ════════════════════════════════════════════════════════════════ */
 
-  const triggerAnchor = (href) => {
-    const a     = document.createElement('a');
-    a.href      = href;
-    a.download  = filename;
-    a.setAttribute('download', filename);
-    a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;width:0;height:0;';
-    document.body.appendChild(a);
-    a.dispatchEvent(new MouseEvent('click', {
-      bubbles: true, cancelable: true, view: window
-    }));
-    setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 1500);
+/* ── Environment detection ──────────────────────────────────────── */
+function _isWebView() {
+  const ua = navigator.userAgent || '';
+  /* Kodular / App Inventor WebViews identify themselves */
+  if (/Kodular|AppInventor|MIT-AI2/i.test(ua)) return true;
+  /* Generic Android WebView signal: wv flag or no Chrome version in UA */
+  if (/Android/i.test(ua) && /wv|WebView/i.test(ua))  return true;
+  /* Android Chrome has "Chrome/X" but WebView also does — detect via APIs */
+  if (typeof window.Android !== 'undefined')           return true;   // injected Java bridge
+  /* If download attribute is NOT honoured (feature-detect) */
+  const a = document.createElement('a');
+  if (typeof a.download === 'undefined')               return true;
+  return false;
+}
+
+function _isMobileChrome() {
+  return /Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent)
+      && !/wv|WebView/i.test(navigator.userAgent);
+}
+
+/* ── Core anchor-click trigger ──────────────────────────────────── */
+function _triggerAnchor(href, filename) {
+  const a = document.createElement('a');
+  a.href  = href;
+  a.download = filename;
+  a.setAttribute('download', filename);
+  a.setAttribute('target', '_blank');   // helps some WebViews
+  a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;width:0;height:0;';
+  document.body.appendChild(a);
+  a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 2000);
+}
+
+/* ── Method: window.open data-URI (WebView new-tab route) ───────── */
+function _openDataURITab(dataURI, filename) {
+  try {
+    const w = window.open(dataURI, '_blank');
+    if (w) {
+      toast('File opened in new tab — tap ⋮ → Download to save.', 'ok');
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
+/* ── Method: location.href data-URI (last-resort for tiny files) ── */
+function _locationHref(dataURI) {
+  try {
+    window.location.href = dataURI;
+    return true;
+  } catch(_) {}
+  return false;
+}
+
+/* ── WebView Save Modal — shows file for manual long-press save ─── */
+function _showWebViewSaveModal(dataURI, filename, mimeLabel) {
+  // Remove any stale modal
+  const old = document.getElementById('_wvSaveModal');
+  if (old) old.remove();
+
+  const ext   = filename.split('.').pop().toUpperCase();
+  const isTxt = /txt/i.test(ext);
+
+  const modal = document.createElement('div');
+  modal.id = '_wvSaveModal';
+  modal.style.cssText = [
+    'position:fixed;inset:0;z-index:999999;',
+    'background:rgba(0,0,0,0.82);',
+    'display:flex;align-items:center;justify-content:center;',
+    'padding:16px;box-sizing:border-box;'
+  ].join('');
+
+  modal.innerHTML = \`
+<div style="background:#1a1f2e;border:1px solid rgba(0,229,200,0.25);border-radius:18px;
+            width:100%;max-width:420px;max-height:90vh;overflow:hidden;
+            display:flex;flex-direction:column;box-shadow:0 40px 80px rgba(0,0,0,0.7);">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#e8f4f2;">
+        📥 Save Report — <span style="color:#00e5c8;">\${ext}</span>
+      </div>
+      <div style="font-size:11px;color:#7c9a96;margin-top:2px;">\${filename}</div>
+    </div>
+    <button id="_wvClose" style="background:rgba(255,255,255,0.07);border:none;color:#7c9a96;
+                                  width:30px;height:30px;border-radius:50%;font-size:14px;
+                                  cursor:pointer;">✕</button>
+  </div>
+
+  <!-- Instructions -->
+  <div style="padding:14px 20px 10px;">
+    <div style="font-size:12px;color:#7c9a96;margin-bottom:10px;">
+      Your browser blocked the automatic download. Use one of these methods:
+    </div>
+
+    <!-- Method 1: Open in new tab -->
+    <div style="background:rgba(0,229,200,0.07);border:1px solid rgba(0,229,200,0.2);
+                border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#00e5c8;margin-bottom:6px;">
+        ① Open &amp; Save (Recommended)
+      </div>
+      <div style="font-size:11px;color:#9eaba9;margin-bottom:8px;">
+        Opens the file in a new tab. Then tap <strong style="color:#e8f4f2;">⋮ → Download</strong> or
+        <strong style="color:#e8f4f2;">Share → Save to Files</strong>.
+      </div>
+      <button id="_wvOpenTab"
+        style="width:100%;padding:9px;background:rgba(0,229,200,0.15);
+               border:1px solid rgba(0,229,200,0.3);color:#00e5c8;
+               border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        🔗 Open in New Tab
+      </button>
+    </div>
+
+    <!-- Method 2: Copy base64 / share -->
+    <div style="background:rgba(157,122,255,0.07);border:1px solid rgba(157,122,255,0.2);
+                border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#c084fc;margin-bottom:6px;">
+        ② Direct Download Attempt
+      </div>
+      <div style="font-size:11px;color:#9eaba9;margin-bottom:8px;">
+        Forces a download via data URI. May open in browser — then use
+        <strong style="color:#e8f4f2;">Share → Save</strong>.
+      </div>
+      <button id="_wvDirectDl"
+        style="width:100%;padding:9px;background:rgba(157,122,255,0.12);
+               border:1px solid rgba(157,122,255,0.25);color:#c084fc;
+               border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        ⬇ Force Download
+      </button>
+    </div>
+
+    \${isTxt ? \`
+    <!-- Method 3 (TXT only): Copy text -->
+    <div style="background:rgba(74,158,255,0.07);border:1px solid rgba(74,158,255,0.2);
+                border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#4a9eff;margin-bottom:6px;">
+        ③ Copy Text to Clipboard
+      </div>
+      <div style="font-size:11px;color:#9eaba9;margin-bottom:8px;">
+        Copy the full report text, then paste into any app or notes.
+      </div>
+      <button id="_wvCopyText"
+        style="width:100%;padding:9px;background:rgba(74,158,255,0.10);
+               border:1px solid rgba(74,158,255,0.25);color:#4a9eff;
+               border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        📋 Copy Report Text
+      </button>
+    </div>\` : ''}
+
+    <!-- Method 4: Web Share API -->
+    <div id="_wvShareWrap" style="display:none;background:rgba(34,197,94,0.07);
+                border:1px solid rgba(34,197,94,0.2);border-radius:10px;
+                padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:6px;">
+        ④ Share via Android Sheet
+      </div>
+      <div style="font-size:11px;color:#9eaba9;margin-bottom:8px;">
+        Opens Android's native share sheet so you can save to Drive, Files, etc.
+      </div>
+      <button id="_wvShare"
+        style="width:100%;padding:9px;background:rgba(34,197,94,0.10);
+               border:1px solid rgba(34,197,94,0.25);color:#22c55e;
+               border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
+        ↗ Share / Export
+      </button>
+    </div>
+
+    <!-- Status row -->
+    <div id="_wvStatus" style="font-size:11px;color:#00e5c8;min-height:16px;
+                                text-align:center;margin-top:2px;"></div>
+  </div>
+</div>\`;
+
+  document.body.appendChild(modal);
+
+  // ── Close ──────────────────────────────────────────────────────────────
+  const close = () => { try { modal.remove(); } catch(_){} };
+  document.getElementById('_wvClose').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  const setStatus = (msg, ok) => {
+    const s = document.getElementById('_wvStatus');
+    if (s) { s.textContent = msg; s.style.color = ok ? '#22c55e' : '#ff6b7a'; }
   };
 
-  /* Method 1: Blob URL */
-  try {
-    const url = URL.createObjectURL(blob);
-    triggerAnchor(url);
-    setTimeout(() => { try { URL.revokeObjectURL(url); } catch(_){} }, 2000);
-    toast('Downloading ' + filename + ' ...', 'ok');
-    return;
-  } catch (e1) {
-    console.warn('[dlBlob] Blob URL method failed:', e1.message);
+  // ── Open in new tab ────────────────────────────────────────────────────
+  document.getElementById('_wvOpenTab').addEventListener('click', () => {
+    try {
+      const w = window.open(dataURI, '_blank');
+      if (w) { setStatus('✓ Opened! Tap ⋮ → Download to save.', true); }
+      else   { setStatus('Popup blocked — try Force Download below.', false); }
+    } catch(e) { setStatus('Failed: ' + e.message, false); }
+  });
+
+  // ── Force download ─────────────────────────────────────────────────────
+  document.getElementById('_wvDirectDl').addEventListener('click', () => {
+    try {
+      const a = document.createElement('a');
+      a.href      = dataURI;
+      a.download  = filename;
+      a.setAttribute('download', filename);
+      a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;';
+      document.body.appendChild(a);
+      a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+      setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 2000);
+      setStatus('Download triggered — check your Downloads folder.', true);
+    } catch(e) { setStatus('Failed: ' + e.message, false); }
+  });
+
+  // ── Copy text (TXT only) ───────────────────────────────────────────────
+  const copyBtn = document.getElementById('_wvCopyText');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      try {
+        /* Decode base64 text from data URI */
+        const b64  = dataURI.split(',')[1] || '';
+        const text = atob(b64);            // works because TXT is base64-encoded
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => setStatus('✓ Copied to clipboard!', true))
+            .catch(() => _fallbackCopy(text, setStatus));
+        } else {
+          _fallbackCopy(text, setStatus);
+        }
+      } catch(e) { setStatus('Copy failed: ' + e.message, false); }
+    });
   }
 
-  /* Method 2: FileReader data-URI (fallback for restrictive environments) */
+  // ── Web Share API ─────────────────────────────────────────────────────
+  if (navigator.share && navigator.canShare) {
+    const shareWrap = document.getElementById('_wvShareWrap');
+    if (shareWrap) shareWrap.style.display = 'block';
+    document.getElementById('_wvShare').addEventListener('click', async () => {
+      try {
+        /* Convert dataURI back to File for sharing */
+        const res  = await fetch(dataURI);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: blob.type });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'GeoMind Report', text: filename });
+          setStatus('✓ Shared successfully!', true);
+        } else {
+          await navigator.share({ title: 'GeoMind Report', text: 'Download: ' + filename, url: dataURI });
+          setStatus('✓ Share sheet opened!', true);
+        }
+      } catch(e) {
+        if (e.name !== 'AbortError') setStatus('Share failed: ' + e.message, false);
+      }
+    });
+  }
+}
+
+/* ── Textarea clipboard fallback ────────────────────────────────── */
+function _fallbackCopy(text, setStatus) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    setStatus(ok ? '✓ Copied to clipboard!' : 'Copy failed — try manually.', ok);
+  } catch(e) {
+    if (setStatus) setStatus('Copy failed: ' + e.message, false);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   dlBlob  — main entry point called by all _dl* formatters
+   Strategy waterfall:
+     M1  Blob URL + anchor click          (desktop Chrome/FF/Edge, Android Chrome)
+     M2  FileReader data-URI + anchor     (older Safari, some WebViews)
+     M3  FileReader data-URI + window.open (WebView new-tab route)
+     M4  FileReader data-URI + location   (last-resort tiny-file route)
+     M5  _showWebViewSaveModal            (Kodular / fully locked WebViews)
+   ════════════════════════════════════════════════════════════════ */
+function dlBlob(blob, filename) {
+  if (!blob || !filename) { console.error('[dlBlob] missing blob or filename'); return; }
+
+  const wv = _isWebView();
+  console.log('[dlBlob] env → isWebView=' + wv + ' | ua=' + navigator.userAgent.substring(0,80));
+
+  /* ── Helper: attempt anchor click on a given href ── */
+  const tryAnchor = (href) => {
+    const a = document.createElement('a');
+    a.href  = href;
+    a.download = filename;
+    a.setAttribute('download', filename);
+    a.setAttribute('target', '_blank');
+    a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;width:0;height:0;';
+    document.body.appendChild(a);
+    a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 2000);
+  };
+
+  /* ══ FAST PATH: Desktop / Android Chrome (not WebView) ══════════ */
+  if (!wv) {
+    /* M1 — Blob URL (standard, fastest) */
+    try {
+      const url = URL.createObjectURL(blob);
+      tryAnchor(url);
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch(_){} }, 3000);
+      toast('⬇ Downloading ' + filename + ' …', 'ok');
+      return;
+    } catch(e1) {
+      console.warn('[dlBlob] M1 failed:', e1.message);
+    }
+
+    /* M2 — FileReader data-URI anchor (fallback for no createObjectURL) */
+    try {
+      const r = new FileReader();
+      r.onload  = () => { tryAnchor(r.result); toast('⬇ Downloading ' + filename + ' …', 'ok'); };
+      r.onerror = () => toast('Download error — try again.', 'err');
+      r.readAsDataURL(blob);
+      return;
+    } catch(e2) {
+      console.warn('[dlBlob] M2 failed:', e2.message);
+    }
+  }
+
+  /* ══ WEBVIEW PATH ════════════════════════════════════════════════ */
+  /* Convert blob → base64 data-URI first (needed for all WebView methods) */
   try {
     const reader = new FileReader();
-    reader.onload  = () => { triggerAnchor(reader.result); toast('Downloading ' + filename + ' ...', 'ok'); };
-    reader.onerror = () => toast('Download failed — try a different browser.', 'err');
+
+    reader.onload = function() {
+      const dataURI = reader.result;   // "data:mime/type;base64,AAAA..."
+      const ext     = filename.split('.').pop().toLowerCase();
+
+      console.log('[dlBlob] WebView path | dataURI length=' + dataURI.length);
+
+      /* M3 — Anchor click on data-URI  (works in some WebViews) */
+      let m3ok = false;
+      try {
+        tryAnchor(dataURI);
+        m3ok = true;
+      } catch(e3) { console.warn('[dlBlob] M3 failed:', e3.message); }
+
+      /* M4 — window.open data-URI (WebView new-tab, reliable in MIUI, Samsung) */
+      let m4ok = false;
+      try {
+        const w = window.open(dataURI, '_blank');
+        if (w !== null && w !== undefined) m4ok = true;
+      } catch(e4) { console.warn('[dlBlob] M4 failed:', e4.message); }
+
+      /* M5 — location.href for plain-text / small files only */
+      let m5ok = false;
+      if (!m4ok && ext === 'txt' && dataURI.length < 500000) {
+        try { window.location.href = dataURI; m5ok = true; }
+        catch(e5) { console.warn('[dlBlob] M5 failed:', e5.message); }
+      }
+
+      /* If any silent method may have worked, show a soft toast */
+      if (m3ok || m4ok) {
+        toast('⬇ Download started — check Downloads folder or new tab.', 'ok');
+        /* Also show the modal after a short delay as a backup */
+        setTimeout(() => {
+          const hasFile = document.getElementById('_wvSaveModal');
+          if (!hasFile) _showWebViewSaveModal(dataURI, filename, ext.toUpperCase());
+        }, 2200);
+        return;
+      }
+
+      /* M6 — Full modal (guaranteed fallback — always works) */
+      _showWebViewSaveModal(dataURI, filename, ext.toUpperCase());
+    };
+
+    reader.onerror = () => {
+      toast('Download failed — unable to read file.', 'err');
+    };
+
     reader.readAsDataURL(blob);
-  } catch (e2) {
-    console.error('[dlBlob] All methods failed:', e2.message);
-    toast('Download failed: ' + e2.message, 'err');
+
+  } catch(ex) {
+    console.error('[dlBlob] WebView path crashed:', ex.message);
+    toast('Download failed: ' + ex.message, 'err');
   }
 }
 

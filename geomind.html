@@ -1878,7 +1878,7 @@ function downloadReport(fmt) {
       dlBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}), name+'-geomind.json');
 
     } else if (fmt === 'txt') {
-      const sep1 = '═'.repeat(50);
+      const sep1 = '='.repeat(50);
       const sep2 = '-'.repeat(30);
       let t = `GEOMIND AI REPORT\n${sep1}\nLocation: ${name}\nDate: ${date}\nLAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)}\n\n`;
       const addSection = (title, obj) => {
@@ -1903,9 +1903,20 @@ function downloadReport(fmt) {
 
     } else if (fmt === 'pdf') {
       // Try jsPDF - use output('blob') then dlBlob for consistent mobile download
-      const jspdfLib = window.jspdf || window.jsPDF;
-      if (!jspdfLib) { toast('PDF library not loaded yet. Try again in a moment.','warn'); return; }
-      const jsPDF = jspdfLib.jsPDF || jspdfLib;
+      // Robust jsPDF detection — handles all CDN loading patterns
+      let jsPDF = null;
+      if (window.jspdf && window.jspdf.jsPDF) jsPDF = window.jspdf.jsPDF;
+      else if (window.jsPDF) jsPDF = window.jsPDF;
+      else if (window.jspdf) jsPDF = window.jspdf;
+      if (!jsPDF || typeof jsPDF !== 'function') {
+        toast('PDF library not ready. Wait 2 seconds and try again.', 'warn');
+        // Try loading dynamically if missed
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = () => toast('PDF library loaded! Click PDF again.', 'ok');
+        document.head.appendChild(s);
+        return;
+      }
       const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
       // Header
       doc.setFillColor(0,100,80); doc.rect(0,0,210,28,'F');
@@ -1918,9 +1929,9 @@ function downloadReport(fmt) {
       const pdfSection = (title, obj) => {
         if (!obj || !Object.keys(obj).length) return;
         if (y > 268) { doc.addPage(); y = 16; }
-        doc.setFontSize(10); doc.setTextColor(0,100,80); doc.setFont(undefined,'bold');
+        doc.setFontSize(10); doc.setTextColor(0,100,80); doc.setFont('helvetica','bold');
         doc.text(title.toUpperCase(), 14, y); y += 5;
-        doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(55,55,55);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(55,55,55);
         Object.entries(obj).forEach(([k,v]) => {
           const val = Array.isArray(v) ? v.join(', ') : (v||'—');
           const lines = doc.splitTextToSize(`${k}: ${val}`, 178);
@@ -1937,9 +1948,9 @@ function downloadReport(fmt) {
       pdfSection('Local Info', ai.localInfo);
       if (ai.timeline?.length) {
         if (y>265){doc.addPage();y=16;}
-        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont(undefined,'bold');
+        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont('helvetica','bold');
         doc.text('HISTORICAL TIMELINE',14,y);y+=5;
-        doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
         ai.timeline.forEach(e=>{
           const lines=doc.splitTextToSize(`${e.year}: ${e.event}`,178);
           lines.forEach(l=>{if(y>280){doc.addPage();y=16;}doc.text(l,16,y);y+=4.5;});
@@ -1948,9 +1959,9 @@ function downloadReport(fmt) {
       }
       if (ai.examFocus?.length) {
         if (y>265){doc.addPage();y=16;}
-        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont(undefined,'bold');
+        doc.setFontSize(10);doc.setTextColor(0,100,80);doc.setFont('helvetica','bold');
         doc.text('EXAM FOCUS',14,y);y+=5;
-        doc.setFont(undefined,'normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(55,55,55);
         ai.examFocus.forEach(f=>{
           const lines=doc.splitTextToSize('• '+f,178);
           lines.forEach(l=>{if(y>280){doc.addPage();y=16;}doc.text(l,16,y);y+=4.5;});
@@ -1979,7 +1990,7 @@ function downloadReport(fmt) {
 function buildDocx(ai, name, date, lat, lon) {
   lat = lat || parseFloat(curData?.lat) || 0;
   lon = lon || parseFloat(curData?.lon) || 0;
-  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  let docHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   body{font-family:Calibri,sans-serif;font-size:11pt;color:#111;max-width:700px;margin:40px auto;}
   h1{font-size:18pt;color:#006B5C;border-bottom:2px solid #006B5C;padding-bottom:6px;}
@@ -2000,12 +2011,12 @@ function buildDocx(ai, name, date, lat, lon) {
 `;
   const section=(title,obj)=>{
     if(!obj) return;
-    html+=`<h2>${title}</h2><table>`;
+    docHtml+=`<h2>${title}</h2><table>`;
     Object.entries(obj).forEach(([k,v])=>{
       const val=Array.isArray(v)?v.map(x=>`<span class="tag">${x}</span>`).join(' '):(v||'—');
-      html+=`<tr><td>${k}</td><td>${val}</td></tr>`;
+      docHtml+=`<tr><td>${k}</td><td>${val}</td></tr>`;
     });
-    html+='</table>';
+    docHtml+='</table>';
   };
   section('📍 Location', ai.locationId);
   section('🌏 Geography', ai.geography);
@@ -2014,70 +2025,75 @@ function buildDocx(ai, name, date, lat, lon) {
   section('💰 Economy', ai.economy);
   section('🔭 Current Relevance', ai.currentRelevance);
   if (ai.localInfo) {
-    html+='<h2>★ Local Info & Famous Places</h2><table>';
+    docHtml+='<h2>★ Local Info & Famous Places</h2><table>';
     Object.entries(ai.localInfo).forEach(([k,v])=>{
       const val=Array.isArray(v)?v.map(x=>`<span class="tag">${x}</span>`).join(' '):(v||'—');
-      html+=`<tr><td>${k}</td><td>${val}</td></tr>`;
+      docHtml+=`<tr><td>${k}</td><td>${val}</td></tr>`;
     });
-    html+='</table>';
+    docHtml+='</table>';
   }
   if (ai.timeline?.length) {
-    html+='<h2>⏳ Historical Timeline</h2>';
+    docHtml+='<h2>⏳ Historical Timeline</h2>';
     ai.timeline.forEach(t=>{html+=`<div class="tli"><div class="tlyear">${t.year}</div><div>${t.event}</div></div>`;});
   }
   if (ai.quiz?.mcqs?.length) {
-    html+='<h2>📝 Quiz</h2>';
+    docHtml+='<h2>📝 Quiz</h2>';
     ai.quiz.mcqs.forEach((q,i)=>{
-      html+=`<div class="mcq"><div class="mcqq">Q${i+1}. ${q.q}</div>${(q.options||[]).join(' | ')} <b>[Ans: ${q.answer}]</b></div>`;
+      docHtml+=`<div class="mcq"><div class="mcqq">Q${i+1}. ${q.q}</div>${(q.options||[]).join(' | ')} <b>[Ans: ${q.answer}]</b></div>`;
     });
   }
   if (ai.examFocus?.length) {
-    html+='<h2>⚡ Exam Focus</h2>';
+    docHtml+='<h2>⚡ Exam Focus</h2>';
     ai.examFocus.forEach(f=>{html+=`<div class="epill">${f}</div>`;});
   }
-  html+='</body></html>';
-  const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
-  dlBlob(blob, name+'-geomind.doc');
+  docHtml+='</body></html>';
+  // Use text/html MIME — browsers allow this download, Word opens it natively
+  const docBlob = new Blob(['\ufeff' + docHtml], { type: 'text/html;charset=utf-8' });
+  dlBlob(docBlob, name + '-geomind.doc');
 }
 
 function dlBlob(blob, filename) {
+  /* Battle-tested cross-browser download.
+     KEY FIX: never use position:fixed/off-screen — Android Chrome ignores clicks on
+     elements outside the viewport. Use visibility:hidden inside the document flow. */
   try {
-    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-      // IE/Edge legacy
-      window.navigator.msSaveOrOpenBlob(blob, filename);
-      toast('✅ ' + filename + ' downloaded!', 'ok');
-      return;
-    }
+    // Method 1: Modern Blob URL approach (Chrome, Firefox, Safari, Android Chrome)
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const a   = document.createElement('a');
+    a.href     = url;
     a.download = filename;
-    a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;';
+    // CRITICAL: Must be IN the document and IN the viewport area
+    a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;width:1px;height:1px;';
     document.body.appendChild(a);
-    a.click();
+    // Use dispatchEvent for better compatibility vs .click()
+    a.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, view:window }));
     setTimeout(() => {
-      try { document.body.removeChild(a); } catch(e){}
+      try { document.body.removeChild(a); } catch(_){}
       URL.revokeObjectURL(url);
-    }, 500);
-    toast('✅ ' + filename + ' downloaded!', 'ok');
-  } catch(e) {
-    // FileReader fallback for restrictive browsers
-    try {
-      const reader = new FileReader();
-      reader.onload = function() {
-        const a = document.createElement('a');
-        a.href = reader.result;
-        a.download = filename;
-        a.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { try { document.body.removeChild(a); } catch(e2){} }, 500);
-      };
-      reader.readAsDataURL(blob);
-      toast('✅ ' + filename + ' downloaded!', 'ok');
-    } catch(e2) {
-      toast('Download failed: ' + e2.message + '. Try a different browser.', 'err');
-    }
+    }, 1000);
+    toast('⬇ Downloading ' + filename + '…', 'ok');
+    return;
+  } catch(err1) {
+    console.warn('dlBlob method1 failed:', err1);
+  }
+  // Method 2: FileReader data-URI fallback (older Safari / restrictive WebViews)
+  try {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const a   = document.createElement('a');
+      a.href     = reader.result;
+      a.download = filename;
+      a.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;width:1px;height:1px;';
+      document.body.appendChild(a);
+      a.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, view:window }));
+      setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 1000);
+      toast('⬇ Downloading ' + filename + '…', 'ok');
+    };
+    reader.onerror = () => toast('Download failed. Please try again.', 'err');
+    reader.readAsDataURL(blob);
+  } catch(err2) {
+    console.error('dlBlob all methods failed:', err2);
+    toast('Download failed: ' + err2.message, 'err');
   }
 }
 

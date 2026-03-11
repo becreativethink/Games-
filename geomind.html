@@ -65,6 +65,7 @@ a{text-decoration:none;}
 .pwd-bar.m{width:75%;background:var(--blue);}
 .pwd-bar.s{width:100%;background:var(--green);}
 .spin-xs{width:14px;height:14px;border:2px solid rgba(0,0,0,0.2);border-top-color:#04060e;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px;}
+.spin-xs.w{border-color:rgba(255,255,255,0.2);border-top-color:#fff;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* ══ APP SCREEN ══ */
@@ -515,6 +516,13 @@ a{text-decoration:none;}
 
 <!-- ══ AUTH SCREEN ══ -->
 <div id="authScreen">
+  <!-- Firebase load failure warning (hidden by default) -->
+  <div id="fbErrBanner" style="display:none;position:fixed;top:0;left:0;right:0;
+       background:#ff3b30;color:#fff;font-size:12px;font-weight:700;
+       text-align:center;padding:10px 16px;z-index:99999;line-height:1.4;">
+    ⚠️ Could not connect to authentication servers.<br>
+    Please check your internet connection and reload the page.
+  </div>
   <div id="loginCard" class="auth-card">
     <div class="auth-logo">
       <div class="auth-logo-gem">🌍</div>
@@ -841,6 +849,17 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.database();
+
+/* ── Firebase readiness check ─────────────────────────────────── */
+(function checkFirebaseReady() {
+  if (typeof firebase === 'undefined' || !firebase.auth || !firebase.database) {
+    const banner = document.getElementById('fbErrBanner');
+    if (banner) banner.style.display = 'block';
+    console.error('[GeoMind] Firebase failed to load — CDN may be blocked');
+  } else {
+    console.log('[GeoMind] Firebase ready ✓');
+  }
+})();
 
 /* ── ADMIN UID WHITELIST ─────────────────────────────── */
 /* Admin UID is stored in Firebase at adminConfig/adminUid  */
@@ -1381,12 +1400,35 @@ async function doLogin() {
   const err   = document.getElementById('lerr');
   const ok    = document.getElementById('lok');
   err.style.display='none'; ok.style.display='none';
-  if (!email||!pwd) return showAmsg(err,'Please fill in all fields.');
+
+  // ── Validation ──
+  if (!email || !pwd) { showAmsg(err,'Please fill in all fields.'); return; }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { showAmsg(err,'Enter a valid email address.'); return; }
+  if (pwd.length < 6) { showAmsg(err,'Password must be at least 6 characters.'); return; }
+
+  // ── Guard: Firebase must be ready ──
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    showAmsg(err,'Connection error. Please check your internet and reload the page.');
+    return;
+  }
+
+  const resetBtn = () => { btn.disabled=false; btn.textContent='Sign In'; };
   btn.disabled=true; btn.innerHTML='<span class="spin-xs"></span>Signing in…';
+
+  // ── Safety timeout: re-enable after 15s ──
+  const timeout = setTimeout(resetBtn, 15000);
+
   try {
     await auth.signInWithEmailAndPassword(email, pwd);
-    ok.textContent='Login successful!'; ok.style.display='block';
-  } catch(e) { btn.disabled=false; btn.textContent='Sign In'; showAmsg(err, authErr(e.code)); }
+    clearTimeout(timeout);
+    ok.textContent='Login successful! Loading…'; ok.style.display='block';
+    // btn stays disabled intentionally — page will transition via onAuthStateChanged
+  } catch(e) {
+    clearTimeout(timeout);
+    resetBtn();
+    showAmsg(err, authErr(e.code));
+    console.error('[doLogin]', e.code, e.message);
+  }
 }
 function chkPwd(v) {
   const b=document.getElementById('pwdBar');
@@ -1403,10 +1445,27 @@ async function doSignup() {
   const err   = document.getElementById('serr');
   const ok    = document.getElementById('sok');
   err.style.display='none'; ok.style.display='none';
-  if (!name||!email||!pwd||!cpwd) return showAmsg(err,'Please fill all fields.');
-  if (pwd!==cpwd) return showAmsg(err,'Passwords do not match.');
-  if (pwd.length<8) return showAmsg(err,'Password must be at least 8 characters.');
+
+  // ── Validation ──
+  if (!name)  { showAmsg(err,'Please enter your full name.'); return; }
+  if (!email) { showAmsg(err,'Please enter your email address.'); return; }
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { showAmsg(err,'Enter a valid email address.'); return; }
+  if (!pwd || !cpwd) { showAmsg(err,'Please fill in both password fields.'); return; }
+  if (pwd.length < 8) { showAmsg(err,'Password must be at least 8 characters.'); return; }
+  if (pwd !== cpwd) { showAmsg(err,'Passwords do not match. Please re-enter.'); return; }
+
+  // ── Guard: Firebase must be ready ──
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    showAmsg(err,'Connection error. Please check your internet and reload the page.');
+    return;
+  }
+
+  const resetBtn = () => { btn.disabled=false; btn.textContent='Create Free Account'; };
   btn.disabled=true; btn.innerHTML='<span class="spin-xs w"></span>Creating account…';
+
+  // ── Safety timeout: re-enable after 20s ──
+  const timeout = setTimeout(resetBtn, 20000);
+
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pwd);
     await cred.user.updateProfile({displayName: name});
@@ -1416,8 +1475,15 @@ async function doSignup() {
       plan:'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
       lastResetMonth: monthStr(), signupDate: new Date().toISOString()
     });
+    clearTimeout(timeout);
     ok.textContent='Account created! Loading GeoMind…'; ok.style.display='block';
-  } catch(e) { btn.disabled=false; btn.textContent='Create Free Account'; showAmsg(err, authErr(e.code)); }
+    // btn stays disabled — page transitions via onAuthStateChanged
+  } catch(e) {
+    clearTimeout(timeout);
+    resetBtn();
+    showAmsg(err, authErr(e.code));
+    console.error('[doSignup]', e.code, e.message);
+  }
 }
 function showAmsg(el,msg){el.textContent=msg;el.style.display='block';}
 function authErr(code) {
@@ -1435,7 +1501,11 @@ function authErr(code) {
 async function doLogout() {
   try { await auth.signOut(); } catch(e) { toast('Logout error: '+e.message,'err'); }
 }
+document.getElementById('lemail').addEventListener('keydown', e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('lpwd').addEventListener('keydown',  e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('sname').addEventListener('keydown',  e=>{if(e.key==='Enter')doSignup();});
+document.getElementById('semail').addEventListener('keydown', e=>{if(e.key==='Enter')doSignup();});
+document.getElementById('spwd').addEventListener('keydown',  e=>{if(e.key==='Enter')doSignup();});
 document.getElementById('scpwd').addEventListener('keydown', e=>{if(e.key==='Enter')doSignup();});
 document.getElementById('reportModal').addEventListener('click', e=>{
   if(e.target===document.getElementById('reportModal')) closeReportModal();

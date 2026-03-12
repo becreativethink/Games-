@@ -113,6 +113,63 @@
 </div>
 
 <div class="prof-sec">
+  <div class="prof-sec-lbl">📖 Word Collection</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;" id="wc-total">—</div>
+      <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:3px;">Solved</div>
+    </div>
+    <div style="background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.15);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--gold);" id="wc-rare">—</div>
+      <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:3px;">Rare</div>
+    </div>
+    <div style="background:rgba(109,81,245,.06);border:1px solid rgba(109,81,245,.15);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:#b0a0ff;" id="wc-longest">—</div>
+      <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:3px;">Longest</div>
+    </div>
+  </div>
+  <a href="wordcollection.html" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;font-size:.78rem;font-weight:700;color:var(--text2);text-decoration:none;transition:all .16s;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+    📖 Full Word Collection →
+  </a>
+</div>
+
+<div class="prof-sec">
+  <div class="prof-sec-lbl">⚡ Power-Ups Inventory</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+    <div style="background:rgba(22,194,106,.06);border:1px solid rgba(22,194,106,.15);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-size:1.3rem;margin-bottom:4px;">➕</div>
+      <div style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:#16c26a;" id="pu-extraTry-cnt">0</div>
+      <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:2px;">Extra Try</div>
+    </div>
+    <div style="background:rgba(61,232,255,.06);border:1px solid rgba(61,232,255,.15);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-size:1.3rem;margin-bottom:4px;">❄️</div>
+      <div style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:#3de8ff;" id="pu-freeze-cnt">0</div>
+      <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:2px;">Freeze</div>
+    </div>
+    <div style="background:rgba(109,81,245,.06);border:1px solid rgba(109,81,245,.15);border-radius:12px;padding:12px 8px;text-align:center;">
+      <div style="font-size:1.3rem;margin-bottom:4px;">💡</div>
+      <div style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:#b0a0ff;" id="pu-reveal-cnt">0</div>
+      <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-top:2px;">Reveal</div>
+    </div>
+  </div>
+  <a href="game.html?mode=offline" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:rgba(109,81,245,0.08);border:1px solid rgba(109,81,245,0.2);border-radius:12px;font-size:.78rem;font-weight:700;color:#b0a0ff;text-decoration:none;transition:all .16s;" onmouseover="this.style.background='rgba(109,81,245,0.15)'" onmouseout="this.style.background='rgba(109,81,245,0.08)'">
+    ⚡ Use Power-Ups In-Game →
+  </a>
+</div>
+
+<div class="prof-sec">
+  <div class="prof-sec-lbl">🛡️ Clan</div>
+  <div id="clan-info-wrap">
+    <div style="background:rgba(61,232,255,.05);border:1px dashed rgba(61,232,255,.2);border-radius:14px;padding:20px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🛡️</div>
+      <div style="font-size:.84rem;font-weight:700;margin-bottom:4px;" id="clan-prof-name">No Clan</div>
+      <div style="font-size:.74rem;color:var(--text3);margin-bottom:14px;" id="clan-prof-sub">Join or create a clan to compete as a team</div>
+      <a href="clans.html" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;background:linear-gradient(135deg,rgba(61,232,255,.15),rgba(109,81,245,.12));border:1px solid rgba(61,232,255,.3);border-radius:100px;font-size:.76rem;font-weight:700;color:#3de8ff;text-decoration:none;">🛡️ Go to Clans</a>
+    </div>
+  </div>
+</div>
+
+<div class="prof-sec">
   <div class="prof-sec-lbl">⚙️ Account</div>
   <div class="prof-actions">
     <button class="pact" onclick="changePhoto()"><span class="pi">📷</span>Change Photo</button>
@@ -158,11 +215,14 @@ function fillUI(u){
   document.getElementById('prof-games').textContent=fmtNum(u.totalGames||0);
   document.getElementById('prof-wr').textContent=u.totalGames>0?Math.round((u.wins||0)*100/u.totalGames)+'%':'0%';
   document.getElementById('prof-streak').textContent=u.winStreak||0;
-  var lvl=Math.floor((u.score||0)/500)+1,xp=(u.score||0)%500;
+  var XP_LVS=[0,100,250,500,900,1400,2000,2800,3800,5000];
+  var xp=u.xp||0; var lvl=1; var nextXp=XP_LVS[1]||100; var prevXp=0;
+  for(var i=0;i<XP_LVS.length;i++){if(xp>=XP_LVS[i]){lvl=i+1;prevXp=XP_LVS[i];nextXp=XP_LVS[i+1]||XP_LVS[XP_LVS.length-1]+500;}}
+  var pct=nextXp>prevXp?Math.min(100,((xp-prevXp)/(nextXp-prevXp)*100)):100;
   document.getElementById('prof-level').textContent='Lv. '+lvl;
   document.getElementById('lv-cur').textContent=lvl;
-  document.getElementById('lv-xp').textContent=xp;
-  document.getElementById('lv-fill').style.width=(xp/500*100).toFixed(1)+'%';
+  document.getElementById('lv-xp').textContent=xp+' / '+nextXp+' XP';
+  document.getElementById('lv-fill').style.width=pct.toFixed(1)+'%';
   var ot=document.getElementById('prof-online');
   ot.textContent=u.isOnline?'● Online':'○ Offline';
   ot.className='ptag '+(u.isOnline?'ptag-on':'ptag-off');
@@ -174,11 +234,56 @@ function fillUI(u){
       +'</div>';
   }).join('');
 }
-if(user){fillUI(user);db.ref('users/'+user.uid).get().then(function(snap){if(snap.exists()){var f=Object.assign({uid:user.uid},snap.val());saveSession(f);fillUI(f);}}).catch(function(){});}
+if(user){fillUI(user);db.ref('users/'+user.uid).get().then(function(snap){if(snap.exists()){var f=Object.assign({uid:user.uid},snap.val());saveSession(f);fillUI(f);}}).catch(function(){});
+  // Load extra profile data
+  loadWordCollectionStats();
+  loadPowerUpCounts();
+  loadClanInfo();
+}
 window.doLogout=async function(){if(user&&user.uid){try{await db.ref('users/'+user.uid).update({isOnline:false});}catch(e){}}localStorage.removeItem('ww_user');sessionStorage.removeItem('ww_mode');location.href='login.html';};
 window.changePhoto=async function(){var url=prompt('Enter new photo URL:');if(!url||!url.startsWith('http')){alert('Please enter a valid URL starting with http');return;}await db.ref('users/'+user.uid).update({photoURL:url});var s=await db.ref('users/'+user.uid).get();var f=Object.assign({uid:user.uid},s.val());saveSession(f);fillUI(f);};
 window.deleteAccount=async function(){if(!confirm('Delete your account permanently?'))return;if(!confirm('Are you absolutely sure?'))return;await db.ref('users/'+user.uid).remove();await db.ref('usernames/'+user.username.toLowerCase()).remove();localStorage.removeItem('ww_user');sessionStorage.removeItem('ww_mode');location.href='login.html';};
 function selectDailyMode(){if(!loadSession()){location.href='login.html';return;}sessionStorage.setItem('ww_mode','daily');location.href='game.html';}
+
+async function loadWordCollectionStats(){
+  try{
+    var snap = await db.ref('wordCollection/'+user.uid+'/_stats').get();
+    if(snap.exists()){
+      var s = snap.val();
+      document.getElementById('wc-total').textContent = s.total||0;
+      document.getElementById('wc-rare').textContent  = s.rare||0;
+      document.getElementById('wc-longest').textContent = s.longestWord||'—';
+    } else {
+      document.getElementById('wc-total').textContent = 0;
+      document.getElementById('wc-rare').textContent  = 0;
+      document.getElementById('wc-longest').textContent = '—';
+    }
+  }catch(e){}
+}
+
+async function loadPowerUpCounts(){
+  try{
+    var snap = await db.ref('users/'+user.uid+'/powerUps').get();
+    var pus = snap.exists() ? snap.val() : {};
+    document.getElementById('pu-extraTry-cnt').textContent = pus.extraTry||0;
+    document.getElementById('pu-freeze-cnt').textContent   = pus.freezeTimer||0;
+    document.getElementById('pu-reveal-cnt').textContent   = pus.revealLetter||0;
+  }catch(e){}
+}
+
+async function loadClanInfo(){
+  try{
+    var snap = await db.ref('users/'+user.uid+'/clanId').get();
+    if(!snap.exists()||!snap.val()) return;
+    var clanId = snap.val();
+    var clanSnap = await db.ref('clans/'+clanId).get();
+    if(!clanSnap.exists()) return;
+    var clan = clanSnap.val();
+    document.getElementById('clan-prof-name').textContent = clan.name||'Unknown Clan';
+    var memberCount = clan.members ? Object.keys(clan.members).length : 0;
+    document.getElementById('clan-prof-sub').textContent = memberCount+' member'+(memberCount!==1?'s':'')+' · Score: '+(clan.score||0);
+  }catch(e){}
+}
 </script>
 <script src="/pwa.js"></script>
 </body>

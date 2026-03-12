@@ -360,6 +360,71 @@ a{text-decoration:none;}
 .api-status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
 .info-box{background:rgba(74,158,255,0.05);border:1px solid rgba(74,158,255,0.12);border-radius:9px;padding:12px;font-size:11px;color:var(--text2);line-height:1.7;}
 
+/* ══ OFFLINE BANNER ══ */
+#offlineBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:linear-gradient(90deg,rgba(255,107,122,0.95),rgba(255,82,100,0.95));color:#fff;text-align:center;padding:8px 16px;font-size:12px;font-weight:700;backdrop-filter:blur(8px);}
+#offlineBanner.show{display:block;}
+
+/* ══ COMPARE PAGE ══ */
+#comparePage{background:var(--bg1);flex-direction:column;}
+.compare-scroll{flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.compare-scroll::-webkit-scrollbar{width:3px;}
+.compare-pins{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.cpin-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.cpin-card.selected{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,229,200,0.12);}
+.cpin-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+.cpin-label-a{color:var(--cyan);}
+.cpin-label-b{color:var(--purple);}
+.cpin-name{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text);}
+.cpin-sub{font-size:10px;color:var(--muted);}
+.cpin-btn{width:100%;padding:8px;border-radius:8px;font-size:11px;font-weight:700;margin-top:8px;transition:all 0.2s;border:1px solid;}
+.cpin-btn-a{background:rgba(0,229,200,0.08);border-color:rgba(0,229,200,0.2);color:var(--cyan);}
+.cpin-btn-a:hover{background:rgba(0,229,200,0.15);}
+.cpin-btn-b{background:rgba(157,122,255,0.08);border-color:rgba(157,122,255,0.2);color:var(--purple);}
+.cpin-btn-b:hover{background:rgba(157,122,255,0.15);}
+.cpin-btn:disabled{opacity:0.4;cursor:not-allowed;}
+#compareRunBtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060e;font-weight:800;font-size:13px;border-radius:10px;margin-bottom:16px;transition:all 0.2s;}
+#compareRunBtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,229,200,0.3);}
+#compareRunBtn:disabled{opacity:0.5;cursor:not-allowed;}
+.compare-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;background:var(--card);}
+.compare-table th{padding:10px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;background:var(--card2);}
+.compare-table th:nth-child(1){color:var(--muted);text-align:left;width:120px;}
+.compare-table th:nth-child(2){color:var(--cyan);}
+.compare-table th:nth-child(3){color:var(--purple);}
+.compare-table td{padding:9px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border3);vertical-align:top;line-height:1.5;}
+.compare-table td:nth-child(1){font-weight:700;color:var(--muted);font-size:10px;}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-load{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 20px;}
+.compare-info{background:rgba(0,229,200,0.05);border:1px solid rgba(0,229,200,0.15);border-radius:10px;padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+
+/* ══ SHARE BUTTONS ══ */
+.share-row{display:flex;gap:8px;padding:12px 0 4px;flex-wrap:wrap;align-items:center;}
+.share-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);width:100%;margin-bottom:2px;}
+.share-btn{padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;transition:all 0.2s;border:1px solid;display:flex;align-items:center;gap:5px;}
+.share-wa{background:rgba(37,211,102,0.08);border-color:rgba(37,211,102,0.25);color:#25d366;}
+.share-wa:hover{background:rgba(37,211,102,0.16);}
+.share-tg{background:rgba(41,182,246,0.08);border-color:rgba(41,182,246,0.25);color:#29b6f6;}
+.share-tg:hover{background:rgba(41,182,246,0.16);}
+.share-em{background:rgba(255,202,69,0.08);border-color:rgba(255,202,69,0.25);color:var(--amber);}
+.share-em:hover{background:rgba(255,202,69,0.16);}
+.share-cp{background:rgba(148,163,184,0.08);border-color:rgba(148,163,184,0.2);color:var(--pfree);}
+.share-cp:hover{background:rgba(148,163,184,0.15);}
+
+/* ══ PROGRESS STATS ══ */
+.progress-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:center;}
+.stat-num{font-family:var(--ff-head);font-size:26px;font-weight:800;color:var(--cyan);}
+.stat-label{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.05em;}
+
+/* ══ PASSWORD SECTION ══ */
+.pwd-feedback{font-size:11px;margin-top:6px;display:none;padding:8px 12px;border-radius:8px;}
+.pwd-feedback.ok{display:block;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);color:var(--green);}
+.pwd-feedback.err{display:block;background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.2);color:var(--red);}
+
+/* ══ OPEN REPORT LINK ══ */
+.report-link-row{padding:14px 0 6px;}
+.report-open-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,rgba(0,229,200,0.12),rgba(74,158,255,0.12));border:1px solid rgba(0,229,200,0.3);border-radius:10px;color:var(--cyan);font-weight:700;font-size:12px;transition:all 0.2s;cursor:pointer;}
+.report-open-btn:hover{background:linear-gradient(135deg,rgba(0,229,200,0.2),rgba(74,158,255,0.2));transform:translateY(-1px);}
+
 /* ══ FOOTER ══ */
 #footer{flex-shrink:0;padding:5px 16px;font-size:10px;color:var(--dim);border-top:1px solid var(--border3);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;}
 #footer span{color:var(--green);font-family:var(--ff-mono);}
@@ -568,6 +633,7 @@ a{text-decoration:none;}
 
 <!-- ══ APP SCREEN ══ -->
 <div id="appScreen">
+  <div id="offlineBanner">📶 You're offline — showing cached data where available</div>
 
   <!-- TOP NAV -->
   <div id="topNav">
@@ -577,6 +643,7 @@ a{text-decoration:none;}
     </div>
     <div class="page-tabs">
       <button class="page-tab active" id="pt-map"      onclick="goPage('map')">🗺 Map</button>
+      <button class="page-tab"        id="pt-compare"  onclick="goPage('compare')">⚖ Compare</button>
       <button class="page-tab"        id="pt-history"  onclick="goPage('history')">📋 History</button>
       <button class="page-tab"        id="pt-plans"    onclick="goPage('plans')">⭐ Plans</button>
       <button class="page-tab"        id="pt-profile"  onclick="goPage('profile')">👤 Profile</button>
@@ -597,6 +664,7 @@ a{text-decoration:none;}
   <!-- MOBILE NAV BAR -->
   <div id="mobileBar">
     <button class="mob-tab active" id="mpt-map"      onclick="goPage('map')">🗺 Map</button>
+    <button class="mob-tab"        id="mpt-compare"  onclick="goPage('compare')">⚖ Compare</button>
     <button class="mob-tab"        id="mpt-history"  onclick="goPage('history')">📋 History</button>
     <button class="mob-tab"        id="mpt-plans"    onclick="goPage('plans')">⭐ Plans</button>
     <button class="mob-tab"        id="mpt-profile"  onclick="goPage('profile')">👤 Profile</button>
@@ -725,6 +793,16 @@ a{text-decoration:none;}
         <div class="profile-user-name" id="profileName">Loading…</div>
         <div class="profile-user-email" id="profileEmail"></div>
       </div>
+      <!-- Progress Stats -->
+      <div class="profile-section">
+        <h3>📊 Learning Progress</h3>
+        <div class="progress-grid" id="progressGrid">
+          <div class="stat-card"><div class="stat-num" id="statReports">0</div><div class="stat-label">Reports Generated</div></div>
+          <div class="stat-card"><div class="stat-num" id="statLocations">0</div><div class="stat-label">Locations Explored</div></div>
+          <div class="stat-card"><div class="stat-num" id="statChats">0</div><div class="stat-label">Chat Messages</div></div>
+          <div class="stat-card"><div class="stat-num" id="statCountries">0</div><div class="stat-label">Countries</div></div>
+        </div>
+      </div>
       <div class="profile-section">
         <h3>Current Plan</h3>
         <div class="plan-info-card">
@@ -738,10 +816,53 @@ a{text-decoration:none;}
       <div class="profile-section">
         <h3>Edit Profile</h3>
         <div class="pf-field"><label>Full Name</label><input type="text" id="pfName" placeholder="Your name"/></div>
-        <div class="pf-field"><label>Email</label><input type="email" id="pfEmail" placeholder="your@email.com"/></div>
+        <div class="pf-field"><label>Email</label><input type="email" id="pfEmail" placeholder="your@email.com" readonly style="opacity:0.6;cursor:not-allowed"/></div>
         <div class="pf-field"><label>Phone Number</label><input type="tel" id="pfPhone" placeholder="+91 00000 00000"/></div>
         <button class="save-btn" onclick="saveProfile()">💾 Save Changes</button>
       </div>
+      <!-- Password Change -->
+      <div class="profile-section">
+        <h3>🔒 Change Password</h3>
+        <div class="pf-field"><label>Current Password</label><input type="password" id="pwdCurrent" placeholder="Your current password"/></div>
+        <div class="pf-field"><label>New Password</label><input type="password" id="pwdNew" placeholder="At least 8 characters"/></div>
+        <div class="pf-field"><label>Confirm New Password</label><input type="password" id="pwdConfirm" placeholder="Repeat new password"/></div>
+        <div class="pwd-feedback" id="pwdFeedback"></div>
+        <button class="save-btn" onclick="changePassword()" style="background:linear-gradient(135deg,var(--purple),var(--blue))">🔑 Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: COMPARE ══ -->
+  <div class="page" id="comparePage">
+    <div class="compare-scroll">
+      <div class="page-header" style="padding:0 0 16px">
+        <h2>⚖ Location Comparison</h2>
+        <p>Select two locations on the map, then generate a detailed side-by-side comparison</p>
+      </div>
+      <div class="compare-info">
+        💡 <strong>How to use:</strong> First go to the Map tab and click a location, then come back here and click <em>Set as Location A</em>. Repeat for Location B, then click Compare.
+      </div>
+      <div class="compare-pins">
+        <div class="cpin-card" id="cpinA">
+          <div class="cpin-label cpin-label-a">📍 Location A</div>
+          <div class="cpin-name" id="cpinAName">Not selected</div>
+          <div class="cpin-sub" id="cpinASub">Go to map and click a location</div>
+          <button class="cpin-btn cpin-btn-a" onclick="setComparePin('A')">Set as Location A</button>
+        </div>
+        <div class="cpin-card" id="cpinB">
+          <div class="cpin-label cpin-label-b" style="color:var(--purple)">📍 Location B</div>
+          <div class="cpin-name" id="cpinBName">Not selected</div>
+          <div class="cpin-sub" id="cpinBSub">Go to map and click a location</div>
+          <button class="cpin-btn cpin-btn-b" onclick="setComparePin('B')">Set as Location B</button>
+        </div>
+      </div>
+      <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
+      <div id="compareLoad" class="compare-load" style="display:none">
+        <div class="spin-lg"></div>
+        <div class="lstep" id="cmpStep">Initializing…</div>
+        <div class="pbar"><div class="pfill" id="cmpPfill"></div></div>
+      </div>
+      <div id="compareResult" style="display:none"></div>
     </div>
   </div>
 
@@ -981,6 +1102,8 @@ auth.onAuthStateChanged(async user => {
   initMap();
   updateNavUI();
   updateUsageWidget();
+  setupOfflineMode();
+  checkSharedReportLink();
 });
 
 /* ── ADMIN CHECK ─────────────────────────────────────── */
@@ -1524,7 +1647,8 @@ function goPage(name) {
   if (mt) mt.classList.add('active');
   if (name==='history')  loadHistoryPage();
   if (name==='plans')    renderPlansPage();
-  if (name==='profile')  updateProfilePage();
+  if (name==='compare')  initCompare();
+  if (name==='profile')  { updateProfilePage(); loadProgressStats(); }
   if (name==='settings') { updateSettingsUI(); buildModelSelector(); }
   if (name==='map' && map) setTimeout(()=>map.invalidateSize(),100);
 }
@@ -1543,9 +1667,15 @@ function initMap() {
     pendingLat = e.latlng.lat; pendingLon = e.latlng.lng;
     placePin(pendingLat, pendingLon, '#00d4aa');
     showPill(pendingLat, pendingLon);
-    document.getElementById('sendBtn').style.boxShadow='0 6px 24px rgba(0,212,170,0.5)';
-    toast('Location selected — click Send Report','ok');
+    const btn=document.getElementById('sendBtn');
+    btn.style.boxShadow='0 6px 24px rgba(0,212,170,0.5)';
+    btn.style.transform='scale(1.05)';
+    setTimeout(()=>{btn.style.transform='';},400);
+    console.log('[map click] lat='+pendingLat.toFixed(4)+' lon='+pendingLon.toFixed(4));
+    toast('📍 Location selected — press ⚡ Send Report','ok');
   });
+  // Error handler for tile failures
+  map.on('tileerror', ()=>{ console.warn('[map] tile load error'); });
 }
 function placePin(lat,lng,color) {
   if (mapMarker) map.removeLayer(mapMarker);
@@ -1558,11 +1688,25 @@ function showPill(lat,lng) {
 
 /* ── SEND HANDLER ────────────────────────────────────── */
 async function handleSend() {
-  if (pendingLat===null||pendingLon===null) { toast('Please select a location on the map first.','err'); return; }
+  console.log('[handleSend] pendingLat='+pendingLat+' pendingLon='+pendingLon);
+  if (pendingLat===null||pendingLon===null) {
+    toast('📍 Please click a location on the map first.','err');
+    // Pulse the map to draw attention
+    const mapEl=document.getElementById('map');
+    if(mapEl){mapEl.style.boxShadow='0 0 0 3px var(--red)';setTimeout(()=>mapEl.style.boxShadow='',2000);}
+    return;
+  }
   const plan = userProfile.plan||'free';
   if (!canGenerate()) {
     if (plan==='free') showNoKeyError();
     else showLimitReached('generation');
+    return;
+  }
+  // Check network
+  if (!navigator.onLine) {
+    const cached=await loadCachedReport(pendingLat,pendingLon);
+    if(cached){curData=cached;updateMapTooltip(cached.geo,cached.ai);renderReport(pendingLat,pendingLon,cached.geo,cached.country,cached.wiki,cached.ai);toast('📶 Offline — showing cached report','warn');}
+    else{toast('📶 You are offline and no cached report exists for this location.','err');}
     return;
   }
   await generateReport(pendingLat, pendingLon);
@@ -1582,17 +1726,29 @@ function showNoKeyError() {
 async function generateReport(lat, lon) {
   showLoading();
   try {
-    step('Reverse geocoding…',12);
+    // ── Check cache first ─────────────────────────────
+    step('Checking cache…', 8);
+    const cached = await loadCachedReport(lat, lon);
+    if (cached) {
+      step('Loaded from cache!', 100);
+      curData = cached;
+      updateMapTooltip(cached.geo, cached.ai);
+      renderReport(lat, lon, cached.geo, cached.country, cached.wiki, cached.ai);
+      toast('✓ Loaded from saved cache (no API call)', 'ok');
+      return;
+    }
+    step('Reverse geocoding…',16);
     const geo = await fetchGeo(lat, lon);
-    step('Country data…',28);
+    step('Country data…',32);
     const country = await fetchCountry(geo.address?.country||'');
-    step('Wikipedia…',44);
+    step('Wikipedia…',48);
     const wiki = await fetchWiki(geo.address?.city||geo.address?.state||geo.address?.country||'');
     step('AI generating report…',64);
     const ai = await generateAIReport(lat, lon, geo, country, wiki);
     step('Saving…',86);
     await incrementGeneration();
     await saveQuery(lat, lon, geo, ai);
+    await cacheReport(lat, lon, geo, country, wiki, ai);
     step('Done!',100);
     curData = {geo, country, wiki, lat, lon, ai};
     updateMapTooltip(geo, ai);
@@ -1900,12 +2056,17 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
   const ef=(ai.examFocus||[]).map(q=>`<div class="epill">⚡ ${q}</div>`).join('');
   h+=S('09',`Exam Focus — ${gv('examType')||'UPSC'}`,ef);
 
-  // Download buttons — now includes DOCX
-  h+=`<div class="dl-row">
-    <button class="dl-btn dl-txt"  onclick="downloadReport('txt')">⬇ .TXT</button>
-    <button class="dl-btn dl-json" onclick="downloadReport('json')">⬇ .JSON</button>
-    <button class="dl-btn dl-pdf"  onclick="downloadReport('pdf')">⬇ .PDF</button>
-    <button class="dl-btn dl-docx" onclick="downloadReport('docx')">⬇ .DOCX</button>
+  // Single "Open Full Report" link + Share buttons
+  h+=`<div class="report-link-row">
+    <div class="share-label">📄 Access Report</div>
+    <button class="report-open-btn" onclick="openReportFile()">📂 Open Full Report File</button>
+  </div>
+  <div class="share-row">
+    <div class="share-label">🔗 Share This Report</div>
+    <button class="share-btn share-wa" onclick="shareReport('whatsapp')">📱 WhatsApp</button>
+    <button class="share-btn share-tg" onclick="shareReport('telegram')">✈ Telegram</button>
+    <button class="share-btn share-em" onclick="shareReport('email')">📧 Email</button>
+    <button class="share-btn share-cp" onclick="shareReport('copy')">📋 Copy Link</button>
   </div>`;
 
   const wrap=document.getElementById('resultWrap');
@@ -2648,7 +2809,359 @@ function dlBlob(blob, filename) {
   }
 }
 
-/* Backwards compat: previewDownload calls downloadReport after loading curData */
+/* ══════════════════════════════════════════════════════
+   SECTION 4 — REPORT CACHE SYSTEM
+   ══════════════════════════════════════════════════════ */
+function _cacheKey(lat, lon) {
+  // Round to 2 decimal places for approximate location matching (~1.1km)
+  return `${parseFloat(lat).toFixed(2)}_${parseFloat(lon).toFixed(2)}`;
+}
+async function cacheReport(lat, lon, geo, country, wiki, ai) {
+  if (!currentUser) return;
+  try {
+    const key = _cacheKey(lat, lon);
+    const rec = {
+      userId: currentUser.uid,
+      location: ai.locationId?.nearestCity||geo.address?.city||'',
+      latitude: parseFloat(lat), longitude: parseFloat(lon),
+      reportContent: JSON.stringify(ai),
+      geoData: JSON.stringify(geo),
+      countryData: country ? JSON.stringify(country) : null,
+      wikiData: wiki ? JSON.stringify({extract: wiki.extract?.substring(0,500)||''}) : null,
+      timestamp: new Date().toISOString()
+    };
+    await db.ref(`reports/${currentUser.uid}/${key}`).set(rec);
+    console.log('[cache] saved report for', key);
+  } catch(e) { console.warn('[cache] save failed:', e.message); }
+}
+async function loadCachedReport(lat, lon) {
+  if (!currentUser) return null;
+  try {
+    const key = _cacheKey(lat, lon);
+    const snap = await db.ref(`reports/${currentUser.uid}/${key}`).once('value');
+    if (!snap.exists()) return null;
+    const rec = snap.val();
+    const ai = JSON.parse(rec.reportContent);
+    const geo = rec.geoData ? JSON.parse(rec.geoData) : {address:{}};
+    const country = rec.countryData ? JSON.parse(rec.countryData) : null;
+    const wiki = rec.wikiData ? JSON.parse(rec.wikiData) : null;
+    console.log('[cache] hit for', key);
+    return {lat, lon, geo, country, wiki, ai};
+  } catch(e) { console.warn('[cache] load failed:', e.message); return null; }
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION 5 — OFFLINE MODE
+   ══════════════════════════════════════════════════════ */
+function setupOfflineMode() {
+  const banner = document.getElementById('offlineBanner');
+  const update = () => {
+    if (!navigator.onLine) { banner.classList.add('show'); }
+    else { banner.classList.remove('show'); }
+  };
+  window.addEventListener('online',  update);
+  window.addEventListener('offline', update);
+  update();
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION 6 — LEARNING PROGRESS TRACKER
+   ══════════════════════════════════════════════════════ */
+async function loadProgressStats() {
+  if (!currentUser) return;
+  try {
+    const [qSnap, cSnap] = await Promise.all([
+      db.ref('users/'+currentUser.uid+'/queries').once('value'),
+      db.ref('users/'+currentUser.uid+'/chats').once('value')
+    ]);
+    const queries = qSnap.val() || {};
+    const chats   = cSnap.val() || {};
+    const entries  = Object.values(queries);
+    const reports  = entries.length;
+    const locations = new Set(entries.map(e => `${parseFloat(e.latitude||0).toFixed(1)}_${parseFloat(e.longitude||0).toFixed(1)}`)).size;
+    const chatCount = Object.values(chats).length;
+    const countries = new Set(entries.map(e => e.country||'').filter(Boolean)).size;
+
+    const el = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+    el('statReports',   reports);
+    el('statLocations', locations);
+    el('statChats',     chatCount);
+    el('statCountries', countries);
+  } catch(e) { console.warn('[progress]', e.message); }
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION 7 — REPORT SHARING
+   ══════════════════════════════════════════════════════ */
+function shareReport(platform) {
+  if (!curData || !curData.ai) { toast('Generate a report first to share it.','err'); return; }
+  const loc  = curData.ai.locationId?.nearestCity || curData.ai.locationId?.country || 'this location';
+  const coord= `${parseFloat(curData.lat||0).toFixed(4)},${parseFloat(curData.lon||0).toFixed(4)}`;
+  // Build a share link (deep link back into GeoMind with coords)
+  const baseUrl = window.location.href.split('?')[0];
+  const shareUrl = `${baseUrl}?lat=${encodeURIComponent(curData.lat)}&lon=${encodeURIComponent(curData.lon)}`;
+  const text = `📍 GeoMind AI Report: ${loc}\n🌐 Coordinates: ${coord}\n\nCheck the full geo-intelligence report here: ${shareUrl}`;
+  const enc  = encodeURIComponent(text);
+  const urlEnc = encodeURIComponent(shareUrl);
+
+  if (platform === 'whatsapp') {
+    window.open(`https://wa.me/?text=${enc}`, '_blank');
+  } else if (platform === 'telegram') {
+    window.open(`https://t.me/share/url?url=${urlEnc}&text=${encodeURIComponent('📍 GeoMind AI Report: '+loc)}`, '_blank');
+  } else if (platform === 'email') {
+    const subject = encodeURIComponent(`GeoMind Report: ${loc}`);
+    const body    = encodeURIComponent(`Hi,\n\nI generated an AI geography report for ${loc} on GeoMind.\n\n${shareUrl}\n\nCoordinates: ${coord}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  } else if (platform === 'copy') {
+    const ta = document.createElement('textarea');
+    ta.value = shareUrl;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0,9999);
+    try { document.execCommand('copy'); toast('🔗 Share link copied!','ok'); }
+    catch(e) { toast('Copy failed — '+(e.message||'unknown'),'err'); }
+    document.body.removeChild(ta);
+    // Also try modern clipboard
+    if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).catch(()=>{});
+  }
+}
+
+// Check URL params on page load to auto-load a shared report link
+function checkSharedReportLink() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const lat = parseFloat(params.get('lat'));
+    const lon = parseFloat(params.get('lon'));
+    if (!isNaN(lat) && !isNaN(lon)) {
+      // Clean the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname);
+      // Wait a beat for the app to fully initialize, then trigger the report
+      setTimeout(() => {
+        pendingLat = lat; pendingLon = lon;
+        placePin(lat, lon, '#00d4aa');
+        showPill(lat, lon);
+        goPage('map');
+        toast('📤 Loading shared report…', 'ok');
+        setTimeout(() => handleSend(), 800);
+      }, 1200);
+    }
+  } catch(e) { console.warn('[sharedLink]', e.message); }
+}
+
+// Open full report in the existing preview modal (section 8 — single report access)
+function openReportFile() {
+  if (!curData || !curData.ai) { toast('No report loaded yet.','err'); return; }
+  // Build a fake history record from curData and use the existing preview modal
+  const rec = {
+    selectedPlace: curData.ai?.locationId?.nearestCity || '',
+    country: curData.geo?.address?.country || '',
+    state:   curData.geo?.address?.state || '',
+    latitude:  curData.lat,
+    longitude: curData.lon,
+    aiResponse: JSON.stringify(curData.ai),
+    timestamp: new Date().toISOString()
+  };
+  previewHistReport(encodeURIComponent(JSON.stringify(rec)));
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION 9 — PASSWORD MANAGEMENT
+   ══════════════════════════════════════════════════════ */
+async function changePassword() {
+  const currentPwd = document.getElementById('pwdCurrent').value;
+  const newPwd     = document.getElementById('pwdNew').value;
+  const confirmPwd = document.getElementById('pwdConfirm').value;
+  const fb         = document.getElementById('pwdFeedback');
+
+  const show = (msg, type) => {
+    fb.textContent = msg;
+    fb.className = 'pwd-feedback ' + type;
+  };
+
+  if (!currentPwd || !newPwd || !confirmPwd) { show('Please fill in all password fields.','err'); return; }
+  if (newPwd.length < 8) { show('New password must be at least 8 characters.','err'); return; }
+  if (newPwd !== confirmPwd) { show('New passwords do not match.','err'); return; }
+  if (newPwd === currentPwd) { show('New password must be different from current.','err'); return; }
+
+  try {
+    const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js').catch(()=>null) || {};
+    // Use compat SDK re-auth approach
+    const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPwd);
+    await currentUser.reauthenticateWithCredential(credential);
+    await currentUser.updatePassword(newPwd);
+    show('✓ Password updated successfully!', 'ok');
+    document.getElementById('pwdCurrent').value = '';
+    document.getElementById('pwdNew').value = '';
+    document.getElementById('pwdConfirm').value = '';
+    toast('Password changed successfully!','ok');
+  } catch(e) {
+    const msgs = {
+      'auth/wrong-password': 'Current password is incorrect.',
+      'auth/weak-password':  'New password is too weak (min 8 chars).',
+      'auth/requires-recent-login': 'Please sign out and sign back in before changing password.',
+      'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
+    };
+    show(msgs[e.code] || 'Error: ' + e.message, 'err');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   SECTION 3 — LOCATION COMPARISON
+   ══════════════════════════════════════════════════════ */
+let compareA = null, compareB = null;
+
+function initCompare() {
+  // Refresh the compare pin display when navigating to the compare page
+  if (compareA) {
+    document.getElementById('cpinAName').textContent = compareA.name;
+    document.getElementById('cpinASub').textContent  = `${parseFloat(compareA.lat).toFixed(4)}, ${parseFloat(compareA.lon).toFixed(4)}`;
+    document.getElementById('cpinA').classList.add('selected');
+  }
+  if (compareB) {
+    document.getElementById('cpinBName').textContent = compareB.name;
+    document.getElementById('cpinBSub').textContent  = `${parseFloat(compareB.lat).toFixed(4)}, ${parseFloat(compareB.lon).toFixed(4)}`;
+    document.getElementById('cpinB').classList.add('selected');
+  }
+  const runBtn = document.getElementById('compareRunBtn');
+  if (runBtn) runBtn.disabled = !(compareA && compareB);
+}
+
+
+  if (pendingLat === null || pendingLon === null) {
+    toast('Go to the Map tab and click a location first.','err');
+    return;
+  }
+  const geo  = curData?.geo || {address:{}};
+  const ai   = curData?.ai  || {};
+  const name = ai.locationId?.nearestCity || geo.address?.city || geo.address?.state || geo.address?.country || `${parseFloat(pendingLat).toFixed(2)}, ${parseFloat(pendingLon).toFixed(2)}`;
+  const sub  = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ') || `${parseFloat(pendingLat).toFixed(4)}°, ${parseFloat(pendingLon).toFixed(4)}°`;
+
+  if (which === 'A') {
+    compareA = {lat: pendingLat, lon: pendingLon, geo, ai, name, sub};
+    document.getElementById('cpinAName').textContent = name;
+    document.getElementById('cpinASub').textContent  = sub;
+    document.getElementById('cpinA').classList.add('selected');
+    toast('📍 Location A set: '+name,'ok');
+  } else {
+    compareB = {lat: pendingLat, lon: pendingLon, geo, ai, name, sub};
+    document.getElementById('cpinBName').textContent = name;
+    document.getElementById('cpinBSub').textContent  = sub;
+    document.getElementById('cpinB').classList.add('selected');
+    toast('📍 Location B set: '+name,'ok');
+  }
+  document.getElementById('compareRunBtn').disabled = !(compareA && compareB);
+}
+
+async function runComparison() {
+  if (!compareA || !compareB) { toast('Select both locations first.','err'); return; }
+  document.getElementById('compareLoad').style.display  = 'flex';
+  document.getElementById('compareResult').style.display = 'none';
+  document.getElementById('compareRunBtn').disabled = true;
+
+  const cStep = (msg, pct) => {
+    document.getElementById('cmpStep').textContent = msg;
+    document.getElementById('cmpPfill').style.width = pct + '%';
+  };
+
+  try {
+    // Get AI data for both — use cache if available, else use existing curData or generate
+    cStep('Loading data for Location A…', 20);
+    const dataA = await _getCompareData(compareA);
+    cStep('Loading data for Location B…', 50);
+    const dataB = await _getCompareData(compareB);
+    cStep('Generating comparison…', 80);
+    renderComparison(dataA, dataB);
+    cStep('Done!', 100);
+  } catch(e) {
+    toast('Comparison failed: ' + e.message, 'err');
+    console.error('[compare]', e);
+  } finally {
+    document.getElementById('compareLoad').style.display = 'none';
+    document.getElementById('compareRunBtn').disabled = false;
+  }
+}
+
+async function _getCompareData(pin) {
+  // Try cache first
+  const cached = await loadCachedReport(pin.lat, pin.lon);
+  if (cached) return cached;
+  // Use existing pin.ai if it's loaded from current session
+  if (pin.ai && pin.ai.locationId) return pin;
+  // Fetch fresh (no AI increment — comparison uses existing data)
+  const geo     = await fetchGeo(pin.lat, pin.lon).catch(()=>({address:{}}));
+  const country = await fetchCountry(geo.address?.country||'').catch(()=>null);
+  const wiki    = await fetchWiki(geo.address?.city||geo.address?.state||geo.address?.country||'').catch(()=>null);
+  // Fetch AI for comparison
+  const apiKey  = getReportAPIKey();
+  if (!apiKey) throw new Error('No API key — set one in Settings.');
+  const model   = getSelectedModel(false);
+  const loc     = [geo.address?.city, geo.address?.state, geo.address?.country].filter(Boolean).join(', ');
+  const prompt  = `You are an Educational Geo-Intelligence System.\nLOCATION: ${loc} | LAT: ${pin.lat} | LON: ${pin.lon}\nReturn ONLY compact valid JSON (no markdown):\n{"locationId":{"country":"","state":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":""},"agriculture":{"majorCrops":[""],"irrigationSources":""},"history":{"ancient":"","modern":""},"economy":{"majorIndustries":[""],"gdpContribution":""},"currentRelevance":{"environmentalIssues":"","strategicImportance":""},"localInfo":{"localLanguages":"","famousFor":[""]}}`;
+  const raw = await callAI(prompt, apiKey, model);
+  let text = raw.replace(/```json|```/g,'').trim();
+  const f=text.indexOf('{'),l=text.lastIndexOf('}');
+  if(f!==-1&&l!==-1) text=text.substring(f,l+1);
+  const ai = JSON.parse(text);
+  await cacheReport(pin.lat, pin.lon, geo, country, wiki, ai);
+  return {lat:pin.lat, lon:pin.lon, geo, country, wiki, ai};
+}
+
+function renderComparison(dA, dB) {
+  const aiA = dA.ai, aiB = dB.ai;
+  const nameA = aiA.locationId?.nearestCity || compareA.name;
+  const nameB = aiB.locationId?.nearestCity || compareB.name;
+  const flagA = getFlagEmoji(aiA.locationId?.country||'');
+  const flagB = getFlagEmoji(aiB.locationId?.country||'');
+
+  const row = (label, a, b) => {
+    const va = Array.isArray(a) ? a.join(', ') : (a||'—');
+    const vb = Array.isArray(b) ? b.join(', ') : (b||'—');
+    return `<tr><td>${label}</td><td>${va}</td><td>${vb}</td></tr>`;
+  };
+
+  let h = `<table class="compare-table">
+    <thead><tr>
+      <th>Category</th>
+      <th>${flagA} ${nameA}</th>
+      <th>${flagB} ${nameB}</th>
+    </tr></thead><tbody>`;
+
+  // Geography
+  h += `<tr><td colspan="3" style="background:rgba(0,229,200,0.05);color:var(--cyan);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">🌏 Geography</td></tr>`;
+  h += row('Terrain',    aiA.geography?.terrain,    aiB.geography?.terrain);
+  h += row('Climate',    aiA.geography?.climate,    aiB.geography?.climate);
+  h += row('Soil Type',  aiA.geography?.soilType,   aiB.geography?.soilType);
+  h += row('Rivers',     aiA.geography?.rivers,     aiB.geography?.rivers);
+
+  // Agriculture
+  h += `<tr><td colspan="3" style="background:rgba(52,211,153,0.05);color:var(--green);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">🌾 Agriculture</td></tr>`;
+  h += row('Major Crops',aiA.agriculture?.majorCrops, aiB.agriculture?.majorCrops);
+  h += row('Irrigation', aiA.agriculture?.irrigationSources, aiB.agriculture?.irrigationSources);
+
+  // Economy
+  h += `<tr><td colspan="3" style="background:rgba(74,158,255,0.05);color:var(--blue);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">💰 Economy</td></tr>`;
+  h += row('Industries',  aiA.economy?.majorIndustries, aiB.economy?.majorIndustries);
+  h += row('GDP Role',    aiA.economy?.gdpContribution, aiB.economy?.gdpContribution);
+
+  // History
+  h += `<tr><td colspan="3" style="background:rgba(157,122,255,0.05);color:var(--purple);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">📜 History</td></tr>`;
+  h += row('Ancient',    aiA.history?.ancient, aiB.history?.ancient);
+  h += row('Modern',     aiA.history?.modern,  aiB.history?.modern);
+
+  // Local
+  h += `<tr><td colspan="3" style="background:rgba(255,202,69,0.05);color:var(--amber);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">★ Local Info</td></tr>`;
+  h += row('Languages',  aiA.localInfo?.localLanguages, aiB.localInfo?.localLanguages);
+  h += row('Famous For', aiA.localInfo?.famousFor,      aiB.localInfo?.famousFor);
+  h += row('Strategic',  aiA.currentRelevance?.strategicImportance, aiB.currentRelevance?.strategicImportance);
+  h += row('Environment',aiA.currentRelevance?.environmentalIssues, aiB.currentRelevance?.environmentalIssues);
+
+  h += '</tbody></table>';
+
+  const wrap = document.getElementById('compareResult');
+  wrap.innerHTML = h;
+  wrap.style.display = 'block';
+  toast('✓ Comparison ready!','ok');
+}
 
 /* ── REPORT PREVIEW MODAL ─────────────────────────── */
 let _previewRec = null;

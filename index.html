@@ -203,6 +203,8 @@ document.addEventListener('DOMContentLoaded', function(){
     checkAdCooldown();
     checkFriendRequests();
     listenForChallenges();
+    // Check for active mystery event (after small delay so daily reward shows first)
+    setTimeout(checkMysteryEvent, 3500);
   }
 });
 
@@ -395,6 +397,107 @@ window.respondChallenge = async function(accept){
   }
   _activeChallId=null;
 };
+
+/* ════════════════════════════════════════
+   MYSTERY WORD EVENT SYSTEM
+════════════════════════════════════════ */
+var _mysteryWord    = '';
+var _mysteryTimerIv = null;
+var _mysterySeconds = 60;
+var _mysteryDone    = false;
+
+async function checkMysteryEvent(){
+  if(!user||!user.uid) return;
+  try{
+    // Check if player already claimed today
+    var today = new Date().toISOString().split('T')[0];
+    var claimSnap = await db.ref('events/mystery/claims/'+user.uid).get();
+    if(claimSnap.exists() && claimSnap.val().date === today) return;
+
+    // Check Firebase for an active event
+    var eventSnap = await db.ref('events/mystery').get();
+    var eventData;
+    if(eventSnap.exists() && eventSnap.val().active){
+      eventData = eventSnap.val();
+      var now = Date.now();
+      if(eventData.endsAt && now > eventData.endsAt) return;
+    } else {
+      // No event in DB — generate a random local event (30% chance per session)
+      if(Math.random() > 0.30) return;
+      var words = ['PHANTOM','CRYSTAL','GALAXY','WIZARD','DRAGON','CASTLE','SHADOW','THUNDER','ECLIPSE','MYSTIC'];
+      eventData = {
+        word: words[Math.floor(Math.random()*words.length)],
+        moneyReward: 200, scoreReward: 50,
+        active: true
+      };
+    }
+
+    _mysteryWord    = eventData.word.toUpperCase();
+    _mysterySeconds = eventData.seconds || 60;
+    _mysteryDone    = false;
+
+    document.getElementById('mev-len').textContent   = _mysteryWord.length;
+    document.getElementById('mev-timer').textContent = _mysterySeconds;
+    document.getElementById('mev-input').value       = '';
+    document.getElementById('mev-msg').textContent   = '';
+    document.getElementById('mystery-overlay').classList.add('open');
+
+    _mysteryTimerIv = setInterval(function(){
+      _mysterySeconds = Math.max(0, _mysterySeconds - 1);
+      document.getElementById('mev-timer').textContent = _mysterySeconds;
+      if(_mysterySeconds <= 0){
+        clearInterval(_mysteryTimerIv);
+        if(!_mysteryDone) endMysteryEvent(false, eventData);
+      }
+    }, 1000);
+  }catch(e){}
+}
+
+window.submitMysteryGuess = async function(){
+  if(_mysteryDone) return;
+  var guess = document.getElementById('mev-input').value.toUpperCase().trim();
+  if(guess.length < 2) return;
+  if(guess === _mysteryWord){
+    _mysteryDone = true;
+    clearInterval(_mysteryTimerIv);
+    endMysteryEvent(true, null);
+  } else {
+    document.getElementById('mev-msg').textContent = '✕ Wrong! Keep trying…';
+    document.getElementById('mev-input').value = '';
+    var m = document.getElementById('mev-msg');
+    m.style.color = '#f04060';
+    setTimeout(function(){ m.textContent = 'Word length: '+_mysteryWord.length; m.style.color=''; }, 1200);
+  }
+};
+
+async function endMysteryEvent(won, eventData){
+  document.getElementById('mystery-overlay').classList.remove('open');
+  if(!won) return;
+
+  var moneyReward = (eventData && eventData.moneyReward) || 200;
+  var scoreReward = (eventData && eventData.scoreReward) || 50;
+  try{
+    var snap = await db.ref('users/'+user.uid).get();
+    if(!snap.exists()) return;
+    var ud = snap.val();
+    await db.ref('users/'+user.uid).update({
+      money: Math.max(0,(ud.money||0)+moneyReward),
+      score: Math.max(0,(ud.score||0)+scoreReward)
+    });
+    // Mark claimed today
+    var today = new Date().toISOString().split('T')[0];
+    await db.ref('events/mystery/claims/'+user.uid).set({ date:today, word:_mysteryWord, ts:Date.now() });
+    var newSnap = await db.ref('users/'+user.uid).get();
+    var fresh = Object.assign({uid:user.uid}, newSnap.val());
+    saveSession(fresh); user = fresh; fillUI(fresh);
+    toast('🎁 Mystery Word solved! +'+moneyReward+'💰 +'+scoreReward+'⭐','success');
+  }catch(e){ toast('Reward error. Try again.','error'); }
+}
+
+window.closeMysteryEvent = function(){
+  clearInterval(_mysteryTimerIv);
+  document.getElementById('mystery-overlay').classList.remove('open');
+};
 </script>
 </head>
 <body>
@@ -490,13 +593,48 @@ window.respondChallenge = async function(accept){
       <p class="mc-desc">Compete in the weekly arena. Top players win big score rewards!</p>
       <button class="btn btn-gold btn-full mt-16">Join Tournament</button>
     </div>
-    <div class="mode-card" style="cursor:pointer;background:rgba(22,194,106,.04);border-color:rgba(22,194,106,.15);" onclick="location.href='referral.html'">
+    <div class="mode-card" style="cursor:pointer;background:rgba(255,255,255,.04);border-color:rgba(22,194,106,.15);" onclick="location.href='referral.html'">
       <div class="mc-icon">🎁</div>
       <h3 class="mc-title">Invite & Earn</h3>
       <p class="mc-desc">Share your referral code, invite friends, and earn money & badges!</p>
       <button class="btn btn-success btn-full mt-16">Invite Friends</button>
     </div>
-  </div>
+    <div class="mode-card speed" onclick="selectMode('speed')">
+      <div class="mc-icon">⚡</div>
+      <h3 class="mc-title">Speed Mode</h3>
+      <p class="mc-desc">20 seconds. Solve it fast. Bonus rewards for rapid guesses!</p>
+      <button class="btn btn-danger btn-full mt-16">Play Speed</button>
+    </div>
+    <div class="mode-card blind" onclick="selectMode('blind')">
+      <div class="mc-icon">🙈</div>
+      <h3 class="mc-title">Blind Mode</h3>
+      <p class="mc-desc">No color feedback until all attempts are used. Can you see the truth?</p>
+      <button class="btn btn-full mt-16" style="background:linear-gradient(135deg,#6d51f5,#b44cff);color:#fff;">Play Blind</button>
+    </div>
+    <div class="mode-card category" onclick="selectMode('category')">
+      <div class="mc-icon">📚</div>
+      <h3 class="mc-title">Categories</h3>
+      <p class="mc-desc">Animals, Countries, Tech, Movies, Science, Sports — themed word battles.</p>
+      <button class="btn btn-success btn-full mt-16">Choose Category</button>
+    </div>
+    <div class="mode-card royale" onclick="selectMode('royale')">
+      <div class="mc-icon">👑</div>
+      <h3 class="mc-title">Battle Royale</h3>
+      <p class="mc-desc">Up to 10 players. Same word. First to solve wins +200⭐ +100💰!</p>
+      <button class="btn btn-danger btn-full mt-16" style="background:linear-gradient(135deg,#f04060,#f0b429);color:#000;font-weight:900;">Join Royale</button>
+    </div>
+    <div class="mode-card spinwheel" onclick="location.href='spinwheel.html'">
+      <div class="mc-icon">🎡</div>
+      <h3 class="mc-title">Lucky Spin</h3>
+      <p class="mc-desc">Spin the wheel once per day. Win money, score, power-ups, and mystery prizes!</p>
+      <button class="btn btn-gold btn-full mt-16">Spin Now</button>
+    </div>
+    <div class="mode-card clans" onclick="location.href='clans.html'">
+      <div class="mc-icon">🛡️</div>
+      <h3 class="mc-title">Clans</h3>
+      <p class="mc-desc">Create or join a clan. Team chat, clan leaderboard, and group tournaments!</p>
+      <button class="btn btn-full mt-16" style="background:linear-gradient(135deg,rgba(61,232,255,.15),rgba(109,81,245,.12));border:1px solid rgba(61,232,255,.3);color:#3de8ff;">Join Clan</button>
+    </div>
 </div>
 
 <!-- REWARDED VIDEO AD -->
@@ -590,6 +728,37 @@ window.respondChallenge = async function(accept){
   💬
   <span class="chat-fab-badge hidden" id="chat-fab-badge">0</span>
 </button>
+
+<!-- Mystery Word Event Overlay -->
+<div class="mystery-overlay" id="mystery-overlay">
+  <div class="mystery-card">
+    <div class="mystery-badge">🎁 MYSTERY EVENT</div>
+    <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:900;letter-spacing:.04em;margin-bottom:4px;color:#fff;">Mystery Word!</div>
+    <div style="font-size:.8rem;color:var(--text2);margin-bottom:14px;">Guess this special word to claim the prize</div>
+
+    <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text3);margin-bottom:8px;padding:0 4px;">
+      <span>Word Length: <strong id="mev-len" style="color:#fff;">?</strong></span>
+      <span>Time Left:</span>
+    </div>
+    <div class="mystery-timer" id="mev-timer">60</div>
+
+    <div class="mystery-rewards">
+      <span class="mystery-reward-chip" style="color:#f0b429;">+200 💰</span>
+      <span class="mystery-reward-chip" style="color:#b0a0ff;">+50 ⭐</span>
+    </div>
+
+    <input class="mystery-guess-input" id="mev-input" type="text" maxlength="12"
+      placeholder="TYPE YOUR GUESS"
+      autocomplete="off" autocorrect="off" autocapitalize="characters"
+      oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'').toUpperCase()"
+      onkeydown="if(event.key==='Enter')submitMysteryGuess()"/>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-danger" style="flex:1;padding:13px;background:linear-gradient(135deg,#f04060,#b44cff);" onclick="submitMysteryGuess()">⚡ Guess!</button>
+      <button class="btn btn-ghost" style="padding:13px 16px;" onclick="closeMysteryEvent()">Skip</button>
+    </div>
+    <div style="font-size:.65rem;color:var(--text3);margin-top:10px;text-align:center;" id="mev-msg"></div>
+  </div>
+</div>
 
 <script src="/pwa.js"></script>
 </body>

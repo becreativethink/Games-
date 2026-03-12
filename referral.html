@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<title>WordWar — Invite Friends</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.ref-hero {
+  text-align: center;
+  padding: 28px 20px 20px;
+  background: linear-gradient(160deg, rgba(22,194,106,0.1) 0%, rgba(109,81,245,0.07) 100%);
+  border-bottom: 1px solid rgba(22,194,106,0.1);
+}
+.ref-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(109,81,245,0.08);
+  border: 2px dashed rgba(109,81,245,0.35);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all .18s;
+  user-select: all;
+  margin-bottom: 12px;
+}
+.ref-code-box:hover { background: rgba(109,81,245,0.14); border-color: rgba(109,81,245,0.55); }
+.ref-code-text {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: #b0a0ff;
+}
+.ref-copy-hint { font-size: .65rem; color: var(--text3); }
+
+.milestone-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--b1);
+  background: rgba(255,255,255,.03);
+  transition: all .18s;
+  margin-bottom: 8px;
+}
+.milestone-card.done {
+  background: rgba(22,194,106,.07);
+  border-color: rgba(22,194,106,.25);
+}
+.milestone-card.done .ms-name { color: var(--green); }
+.ms-icon { font-size: 1.6rem; flex-shrink: 0; }
+.ms-info { flex: 1; min-width: 0; }
+.ms-name { font-weight: 700; font-size: .86rem; margin-bottom: 3px; }
+.ms-prize { font-size: .72rem; color: var(--text3); }
+.ms-status { font-size: .72rem; font-weight: 700; text-align: right; flex-shrink: 0; }
+.ms-status.done { color: var(--green); }
+.ms-status.pending { color: var(--text3); }
+
+.invited-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  font-size: .82rem;
+  margin-bottom: 6px;
+}
+.inv-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.1); flex-shrink: 0; }
+.inv-name { font-weight: 700; color: var(--text); }
+.inv-date { font-size: .65rem; color: var(--text3); margin-top: 1px; }
+
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(109,81,245,.1);
+  border: 1px solid rgba(109,81,245,.25);
+  border-radius: 100px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #b0a0ff;
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← HOME</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="ref-hero">
+  <div style="font-size:2.4rem;margin-bottom:8px;">🎁</div>
+  <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:900;letter-spacing:.04em;margin-bottom:6px;">INVITE & EARN</div>
+  <div style="font-size:.82rem;color:var(--text2);margin-bottom:14px;">Invite friends, earn rewards. The more you invite, the more you win!</div>
+  <div class="progress-pill" id="invite-progress">👥 <span id="invited-count">0</span> friends invited</div>
+</div>
+
+<div class="page-shell">
+
+  <!-- YOUR REFERRAL CODE -->
+  <div class="sec-label" style="margin-bottom:10px;">🔑 Your Referral Code</div>
+  <div class="ref-code-box" id="code-box" onclick="copyCode()">
+    <span class="ref-code-text" id="ref-code-display">LOADING…</span>
+    <div>
+      <div style="font-size:1.2rem;">📋</div>
+      <div class="ref-copy-hint">Tap to copy</div>
+    </div>
+  </div>
+
+  <!-- SHARE BUTTONS -->
+  <div class="glass-card" style="margin-bottom:20px;">
+    <div class="sec-label" style="margin-bottom:12px;">📤 Share Your Code</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm flex-1" style="background:rgba(37,211,102,.12);color:#25d366;border:1px solid rgba(37,211,102,.25);min-width:100px;" onclick="shareWA()">📱 WhatsApp</button>
+      <button class="btn btn-sm flex-1" style="background:rgba(39,174,245,.12);color:#27aef5;border:1px solid rgba(39,174,245,.25);min-width:100px;" onclick="shareTG()">✈️ Telegram</button>
+      <button class="btn btn-secondary btn-sm flex-1" onclick="copyCode()" style="min-width:100px;">📋 Copy Link</button>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="sec-label" style="margin-bottom:12px;">🏆 Invite Milestones</div>
+  <div id="milestones-list">
+    <div class="milestone-card" id="ms-1">
+      <span class="ms-icon">👥</span>
+      <div class="ms-info">
+        <div class="ms-name">First Recruit</div>
+        <div class="ms-prize">Invite 1 friend → +50 💰 Money</div>
+      </div>
+      <div class="ms-status pending" id="ms-1-status">0/1</div>
+    </div>
+    <div class="milestone-card" id="ms-3">
+      <span class="ms-icon">🔥</span>
+      <div class="ms-info">
+        <div class="ms-name">Squad Builder</div>
+        <div class="ms-prize">Invite 3 friends → +20 ⭐ Score</div>
+      </div>
+      <div class="ms-status pending" id="ms-3-status">0/3</div>
+    </div>
+    <div class="milestone-card" id="ms-5">
+      <span class="ms-icon">👑</span>
+      <div class="ms-info">
+        <div class="ms-name">Recruiter Legend</div>
+        <div class="ms-prize">Invite 5 friends → 🏅 Special Badge</div>
+      </div>
+      <div class="ms-status pending" id="ms-5-status">0/5</div>
+    </div>
+  </div>
+
+  <!-- INVITED USERS -->
+  <div class="sec-label" style="margin-top:20px;margin-bottom:12px;">📋 Friends You Invited</div>
+  <div id="invited-list">
+    <div class="empty-state">
+      <div class="empty-state-icon">👤</div>
+      <div class="empty-state-title">No invites yet</div>
+      <div class="empty-state-sub">Share your code to invite friends and earn rewards!</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+
+function avatarUrl(url,name){
+  if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;
+  return 'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';
+}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+';">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
+}
+
+if(user){
+  document.getElementById('nav-username').textContent = user.username||'…';
+  document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+}
+
+var myCode = '';
+
+/* ── Generate referral code ── */
+function genCode(username){
+  return 'WORDWAR-' + username.toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,8);
+}
+
+async function initReferral(){
+  myCode = genCode(user.username);
+  document.getElementById('ref-code-display').textContent = myCode;
+
+  // Save code to Firebase if not exists
+  var snap = await db.ref('referrals/'+user.uid).get();
+  if(!snap.exists()){
+    await db.ref('referrals/'+user.uid).set({
+      referralCode: myCode,
+      invitedUsers: {},
+      milestones: {}
+    });
+  } else {
+    var data = snap.val();
+    // Update code in case username changed
+    if(data.referralCode !== myCode){
+      await db.ref('referrals/'+user.uid+'/referralCode').set(myCode);
+    }
+    // Also update index
+    loadInvites(data);
+  }
+
+  // Register code → uid mapping for lookup during registration
+  await db.ref('referralCodes/'+myCode).set(user.uid);
+
+  // Live listener for invited users
+  db.ref('referrals/'+user.uid).on('value', function(snap){
+    if(snap.exists()) loadInvites(snap.val());
+  });
+}
+
+function loadInvites(data){
+  var invited = data.invitedUsers || {};
+  var milestones = data.milestones || {};
+  var count = Object.keys(invited).length;
+
+  document.getElementById('invited-count').textContent = count;
+
+  // Update milestone UI
+  var thresholds = [1,3,5];
+  thresholds.forEach(function(n){
+    var card = document.getElementById('ms-'+n);
+    var status = document.getElementById('ms-'+n+'-status');
+    if(!card||!status) return;
+    var done = milestones['m'+n] || false;
+    status.textContent = done ? '✓ Claimed' : Math.min(count,n)+'/'+n;
+    status.className = 'ms-status ' + (done ? 'done' : (count>=n ? 'done' : 'pending'));
+    if(done || count>=n) card.classList.add('done');
+    else card.classList.remove('done');
+    // Auto-claim unclaimed milestones
+    if(!done && count>=n) claimMilestone(n, milestones);
+  });
+
+  // Render invited list
+  var list = document.getElementById('invited-list');
+  var entries = Object.entries(invited);
+  if(entries.length === 0){
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-title">No invites yet</div><div class="empty-state-sub">Share your code to earn rewards!</div></div>';
+    return;
+  }
+  list.innerHTML = entries.map(function(e){
+    var info = e[1];
+    return '<div class="invited-item">'
+      + '<img class="inv-avatar" src="'+avatarUrl('',info.username||e[0])+'" alt=""/>'
+      + '<div><div class="inv-name">'+escHtml(info.username||e[0])+'</div><div class="inv-date">Joined '+(info.joinedAt ? new Date(info.joinedAt).toLocaleDateString() : 'recently')+'</div></div>'
+      + '</div>';
+  }).join('');
+}
+
+async function claimMilestone(n, milestones){
+  if(milestones['m'+n]) return; // already claimed
+  try{
+    var snap = await db.ref('users/'+user.uid).get();
+    if(!snap.exists()) return;
+    var ud = snap.val();
+    var upd = {};
+    if(n===1){ upd.money = Math.max(0,(ud.money||0)+50); toast('🎉 Milestone! +50 💰 Money earned!','success'); }
+    else if(n===3){ upd.score = Math.max(0,(ud.score||0)+20); toast('🎉 Milestone! +20 ⭐ Score earned!','success'); }
+    else if(n===5){
+      upd['achievements/recruiter_legend'] = true;
+      toast('👑 Recruiter Legend badge unlocked!','success');
+    }
+    if(Object.keys(upd).length){
+      await db.ref('users/'+user.uid).update(upd);
+    }
+    await db.ref('referrals/'+user.uid+'/milestones/m'+n).set(true);
+  }catch(e){}
+}
+
+function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+var _shareText = function(){
+  return '🗡️ Join me on WORD WAR!\n\nUse my referral code: '+myCode+'\n\nCompete in word battles, win prizes, and climb the leaderboard!\n\n🎮 Play now: wordwar.app';
+};
+
+window.copyCode = function(){
+  var text = _shareText();
+  if(navigator.clipboard){ navigator.clipboard.writeText(text).then(function(){ toast('Invite copied! 📋','success'); }); }
+  else{ var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied!','success'); }
+  var box = document.getElementById('code-box');
+  box.style.borderColor = 'rgba(22,194,106,.5)';
+  setTimeout(function(){ box.style.borderColor=''; }, 1500);
+};
+window.shareWA = function(){ window.open('https://wa.me/?text='+encodeURIComponent(_shareText()),'_blank'); };
+window.shareTG = function(){ window.open('https://t.me/share/url?url=https://wordwar.app&text='+encodeURIComponent(_shareText()),'_blank'); };
+
+initReferral();
+</script>
+<script src="/pwa.js"></script>
+</body>
+    </html>
+  

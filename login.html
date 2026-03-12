@@ -2,7 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WordWar"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png"/>
 <title>WordWar — Login</title>
 <link rel="stylesheet" href="style.css"/>
 </head>
@@ -47,6 +56,10 @@
         <div class="form-group">
           <label class="form-label">Profile Photo URL (optional)</label>
           <input class="form-control" id="r-photo" type="url" placeholder="https://…"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referral Code (optional)</label>
+          <input class="form-control" id="r-ref" type="text" placeholder="WORDWAR-XXXXX" maxlength="20" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
         </div>
         <button class="btn btn-primary btn-full btn-lg mt-16" id="reg-btn" onclick="doRegister()">🚀 Create Account</button>
       </div>
@@ -127,6 +140,7 @@ window.doRegister=async function(){
   var password=document.getElementById('r-pass').value;
   var confirm=document.getElementById('r-pass2').value;
   var photoURL=document.getElementById('r-photo').value.trim();
+  var refCode=(document.getElementById('r-ref').value||'').trim().toUpperCase();
   if(!username||!password){toast('Fill in required fields.','warn');return;}
   if(username.length<3){toast('Username needs 3+ characters.','warn');return;}
   if(password.length<6){toast('Password needs 6+ characters.','warn');return;}
@@ -139,6 +153,20 @@ window.doRegister=async function(){
     var uid='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
     var hash=await sha256(password);
     var ud={username:username,passwordHash:hash,photoURL:photoURL||'',money:100,score:0,wins:0,losses:0,totalGames:0,createdAt:Date.now(),isOnline:true,achievements:{}};
+    // Process referral code
+    if(refCode){
+      var rcSnap=await db.ref('referralCodes/'+refCode).get();
+      if(rcSnap.exists()){
+        var referrerUid=rcSnap.val();
+        if(referrerUid!==uid){
+          ud.referredBy=referrerUid;
+          ud.money=150; // +50 bonus for using a referral code
+          // Record in referrer's invitedUsers
+          await db.ref('referrals/'+referrerUid+'/invitedUsers/'+uid).set({username:username,joinedAt:Date.now()});
+          toast('Referral applied! +50 💰 bonus money!','success');
+        }
+      }
+    }
     await db.ref('users/'+uid).set(ud);
     await db.ref('usernames/'+username.toLowerCase()).set(uid);
     saveSession(Object.assign({uid:uid},ud));
@@ -155,5 +183,6 @@ document.addEventListener('keydown',function(e){
   if(loginShown)window.doLogin();else window.doRegister();
 });
 </script>
+<script src="/pwa.js"></script>
 </body>
 </html>

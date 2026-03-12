@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<title>WordWar — Word Collection</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.wc-page { max-width: 500px; margin: 0 auto; padding: 16px 16px calc(88px + env(safe-area-inset-bottom)); }
+.filter-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: .72rem; font-weight: 700;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--text2);
+  cursor: pointer; transition: all .16s;
+}
+.filter-chip.active {
+  background: rgba(109,81,245,.15);
+  border-color: rgba(109,81,245,.4);
+  color: #b0a0ff;
+}
+.words-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px;
+}
+.wc-badge {
+  font-size: .6rem; padding: 1px 5px;
+  border-radius: 4px; margin-left: 4px;
+  vertical-align: middle;
+}
+.wc-badge.rare { background: rgba(240,180,41,.2); color: var(--gold); }
+.wc-badge.long { background: rgba(109,81,245,.2); color: #b0a0ff; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="profile.html" class="nav-logo" style="font-size:.85rem;opacity:.7;">← Profile</a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">Home</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+    </a>
+  </div>
+</nav>
+
+<div class="wc-page">
+  <div style="padding:8px 0 0;margin-bottom:18px;">
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(109,81,245,.1);border:1px solid rgba(109,81,245,.25);border-radius:100px;font-size:.65rem;font-weight:700;color:#b0a0ff;letter-spacing:.07em;margin-bottom:8px;">📖 WORD COLLECTION</div>
+    <h1 style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;letter-spacing:.03em;margin-bottom:2px;">My Solved Words</h1>
+    <p style="font-size:.78rem;color:var(--text2);">Every word you've ever cracked</p>
+  </div>
+
+  <!-- Stats banner -->
+  <div class="wc-stat-banner">
+    <div class="wc-stat">
+      <span class="wc-stat-val text-accent" id="s-total">0</span>
+      <span class="wc-stat-lbl">📖 Solved</span>
+    </div>
+    <div class="wc-stat" style="background:rgba(240,180,41,.06);border-color:rgba(240,180,41,.15);">
+      <span class="wc-stat-val" style="color:var(--gold);" id="s-rare">0</span>
+      <span class="wc-stat-lbl">⭐ Rare</span>
+    </div>
+    <div class="wc-stat" style="background:rgba(109,81,245,.06);border-color:rgba(109,81,245,.15);">
+      <span class="wc-stat-val" style="color:#b0a0ff;" id="s-longest">—</span>
+      <span class="wc-stat-lbl">📏 Longest</span>
+    </div>
+  </div>
+
+  <!-- Filter row -->
+  <div class="filter-row" id="filter-row">
+    <div class="filter-chip active" data-filter="all" onclick="setFilter(this,'all')">All</div>
+    <div class="filter-chip" data-filter="rare" onclick="setFilter(this,'rare')">⭐ Rare</div>
+    <div class="filter-chip" data-filter="long" onclick="setFilter(this,'long')">📏 Long (7+)</div>
+    <div class="filter-chip" data-filter="daily" onclick="setFilter(this,'daily')">📅 Daily</div>
+    <div class="filter-chip" data-filter="category" onclick="setFilter(this,'category')">📚 Category</div>
+  </div>
+
+  <!-- Search -->
+  <div style="margin-bottom:14px;">
+    <input class="search-input" id="wc-search" type="text" placeholder="🔍 Search words…" oninput="renderWords()" style="width:100%;box-sizing:border-box;"/>
+  </div>
+
+  <!-- Words grid -->
+  <div class="words-grid" id="words-grid"></div>
+
+  <div id="empty-msg" class="empty-state hidden">
+    <div class="empty-state-icon">📖</div>
+    <div class="empty-state-title">No words yet</div>
+    <div class="empty-state-sub">Play some games and start building your collection!</div>
+    <a href="index.html" class="btn btn-primary" style="margin-top:12px;">Play Now</a>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn active" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+function avatarUrl(url,name){if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+
+if(user){
+  document.getElementById('nav-username').textContent = user.username||'…';
+  document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+}
+
+var _allWords   = [];
+var _activeFilter = 'all';
+
+async function loadCollection(){
+  try{
+    var snap = await db.ref('wordCollection/'+user.uid).get();
+    if(!snap.exists()){ showEmpty(); return; }
+    var data = snap.val();
+
+    // Load stats
+    var stats = data._stats || {};
+    document.getElementById('s-total').textContent   = stats.total || 0;
+    document.getElementById('s-rare').textContent    = stats.rare  || 0;
+    document.getElementById('s-longest').textContent = stats.longestWord || '—';
+
+    // Build word list (exclude _stats key)
+    _allWords = [];
+    Object.entries(data).forEach(function(entry){
+      if(entry[0] === '_stats') return;
+      _allWords.push(entry[1]);
+    });
+
+    // Sort newest first
+    _allWords.sort(function(a,b){ return (b.date||0)-(a.date||0); });
+
+    if(_allWords.length === 0){ showEmpty(); return; }
+    renderWords();
+  }catch(e){
+    document.getElementById('empty-msg').classList.remove('hidden');
+    document.getElementById('empty-msg').querySelector('.empty-state-sub').textContent = 'Error loading collection.';
+  }
+}
+
+function showEmpty(){
+  document.getElementById('words-grid').innerHTML = '';
+  document.getElementById('empty-msg').classList.remove('hidden');
+}
+
+window.setFilter = function(el, filter){
+  _activeFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  renderWords();
+};
+
+function renderWords(){
+  var search = (document.getElementById('wc-search').value||'').toUpperCase().trim();
+  var filtered = _allWords.filter(function(w){
+    if(search && !w.word.includes(search)) return false;
+    if(_activeFilter === 'rare')     return w.rare;
+    if(_activeFilter === 'long')     return w.length >= 7;
+    if(_activeFilter === 'daily')    return w.mode === 'daily';
+    if(_activeFilter === 'category') return w.mode === 'category';
+    return true;
+  });
+
+  var grid = document.getElementById('words-grid');
+  var empty = document.getElementById('empty-msg');
+
+  if(filtered.length === 0){
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  var modeColors = {
+    daily:    '#f0b429',
+    speed:    '#f04060',
+    blind:    '#b44cff',
+    category: '#16c26a',
+    online:   '#6d51f5',
+    offline:  '#7878a0',
+    royale:   '#ff8c42',
+  };
+
+  grid.innerHTML = filtered.map(function(w){
+    var color = modeColors[w.mode] || '#7878a0';
+    var badges = '';
+    if(w.rare)        badges += '<span class="wc-badge rare">⭐ Rare</span>';
+    if(w.length >= 7) badges += '<span class="wc-badge long">Long</span>';
+    return '<div class="wc-word-pill'+(w.rare?' rare':'')+(w.length>=7?' longest':'')+'" title="'+w.mode+' · '+new Date(w.date||0).toLocaleDateString()+'" style="border-left:3px solid '+color+';">'
+      + w.word + badges
+      + '</div>';
+  }).join('');
+}
+
+loadCollection();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

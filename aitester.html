@@ -2,1469 +2,1661 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AI Website Tester v2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Website Tester — Advanced v3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════════
-   FONTS & VARIABLES
+   FONTS
 ═══════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap');
 
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
 :root {
-  /* Palette — industrial amber-on-slate */
-  --void:        #0b0c0f;
-  --base:        #111318;
-  --surface:     #181b22;
-  --raised:      #1f2330;
-  --border:      #2a2f3d;
-  --border-hi:   #3d4560;
+  --bg0: #060810;  --bg1: #0c0f1a;  --bg2: #111525;
+  --bg3: #171c2e;  --bg4: #1e2438;
+  --b0: #1a2035;   --b1: #232b45;   --b2: #2e3a5c;
 
-  --amber:       #f5a623;
-  --amber-dim:   #a06b10;
-  --amber-glow:  rgba(245,166,35,0.18);
-  --green:       #39e87c;
-  --green-dim:   #1a6637;
-  --red:         #ff4b4b;
-  --red-dim:     #6b1515;
-  --blue:        #5b9cf6;
-  --blue-dim:    #1a3a7a;
-  --cyan:        #00d4ff;
+  --teal:       #00e5c0;
+  --teal-dim:   #007a68;
+  --teal-glo:   rgba(0,229,192,0.15);
+  --teal-g2:    rgba(0,229,192,0.06);
+  --violet:     #a78bfa;
+  --violet-dim: #4c3d82;
+  --violet-glo: rgba(167,139,250,0.12);
+  --green:      #34d399;
+  --green-dim:  #0d4f36;
+  --red:        #f87171;
+  --red-dim:    #4f1d1d;
+  --amber:      #fbbf24;
+  --amber-dim:  #6b4800;
+  --blue:       #60a5fa;
 
-  --text-hi:     #e8eaf0;
-  --text-mid:    #8890a8;
-  --text-lo:     #454d63;
+  --t0: #eef2ff;  --t1: #94a3b8;  --t2: #475569;  --t3: #2d3954;
 
-  --mono:        'IBM Plex Mono', monospace;
-  --sans:        'IBM Plex Sans', sans-serif;
-  --display:     'Bebas Neue', sans-serif;
+  --f-display: 'Chakra Petch', sans-serif;
+  --f-mono:    'JetBrains Mono', monospace;
+  --f-body:    'Outfit', sans-serif;
 
-  --glow-amber:  0 0 12px rgba(245,166,35,0.4), 0 0 24px rgba(245,166,35,0.15);
-  --glow-green:  0 0 10px rgba(57,232,124,0.4);
-  --glow-red:    0 0 10px rgba(255,75,75,0.4);
+  --glow-teal:   0 0 14px rgba(0,229,192,0.45), 0 0 28px rgba(0,229,192,0.15);
+  --glow-violet: 0 0 14px rgba(167,139,250,0.4);
+  --glow-red:    0 0 12px rgba(248,113,113,0.4);
+  --glow-amber:  0 0 12px rgba(251,191,36,0.4);
 
-  --radius:      6px;
-  --topbar-h:    56px;
-}
-
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 100%; height: 100%; overflow: hidden; }
-body {
-  background: var(--void);
-  color: var(--text-hi);
-  font-family: var(--mono);
-  font-size: 13px;
-}
-
-/* Subtle noise texture overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9000;
+  --bar: 54px;
+  --r:   5px;
 }
 
 /* ═══════════════════════════════════════════════
-   LAYOUT SHELL
+   RESET
+═══════════════════════════════════════════════ */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html,body { width:100%; height:100%; overflow:hidden }
+body {
+  background: var(--bg0);
+  color: var(--t0);
+  font-family: var(--f-body);
+  font-size: 13px;
+}
+/* Dot-grid background */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    radial-gradient(circle, rgba(0,229,192,0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events:none; z-index:0;
+}
+
+/* ═══════════════════════════════════════════════
+   APP SHELL — 3 columns
 ═══════════════════════════════════════════════ */
 #app {
-  display: grid;
-  grid-template-rows: var(--topbar-h) 1fr;
-  grid-template-columns: 1fr 400px;
-  grid-template-areas:
-    "topbar topbar"
-    "preview panel";
-  width: 100vw;
-  height: 100vh;
+  position:relative; z-index:1;
+  display:grid;
+  grid-template-rows: var(--bar) 1fr;
+  grid-template-columns: 1fr 360px 310px;
+  grid-template-areas: "bar bar bar" "prev chat plan";
+  width:100vw; height:100vh;
 }
 
 /* ═══════════════════════════════════════════════
    TOP BAR
 ═══════════════════════════════════════════════ */
-#topbar {
-  grid-area: topbar;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 16px;
-  background: var(--base);
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  z-index: 100;
+#bar {
+  grid-area:bar;
+  display:flex; align-items:center; gap:8px;
+  padding:0 14px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--b0);
+  position:relative; z-index:200;
+}
+#bar::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,var(--teal-dim),transparent);
 }
 
 /* Brand */
-.brand {
-  display: flex; align-items: center; gap: 8px;
-  flex-shrink: 0; margin-right: 4px;
+.brand { display:flex; align-items:center; gap:9px; flex-shrink:0 }
+.bmark {
+  width:32px; height:32px;
+  background:linear-gradient(135deg,var(--teal),#00a88c);
+  border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: var(--glow-teal); flex-shrink:0;
 }
-.brand-mark {
-  width: 30px; height: 30px;
-  background: var(--amber);
-  border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--glow-amber);
+.bmark svg { width:17px; height:17px; stroke:#000; stroke-width:2.2; fill:none; stroke-linecap:round }
+.btxt {
+  font-family:var(--f-display); font-size:15px; font-weight:700;
+  letter-spacing:0.08em; white-space:nowrap;
 }
-.brand-mark svg { width: 16px; height: 16px; }
-.brand-text {
-  font-family: var(--display);
-  font-size: 20px;
-  letter-spacing: 0.06em;
-  color: var(--text-hi);
-  line-height: 1;
-}
-.brand-text em {
-  color: var(--amber);
-  font-style: normal;
-}
+.btxt em { color:var(--teal); font-style:normal }
+.btxt small { font-size:9px; color:var(--t2); font-weight:300 }
 
-.topbar-sep {
-  width: 1px; height: 28px;
-  background: var(--border);
-  flex-shrink: 0;
-}
+.sep { width:1px; height:26px; background:var(--b1); flex-shrink:0; margin:0 1px }
 
-/* URL Input */
-.field-wrap {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0 10px;
-  transition: border-color 0.15s;
+/* Input groups */
+.ig {
+  display:flex; align-items:center; gap:6px;
+  background:var(--bg2); border:1px solid var(--b1);
+  border-radius:var(--r); padding:0 10px;
+  transition:border-color .15s, box-shadow .15s;
 }
-.field-wrap:focus-within {
-  border-color: var(--amber-dim);
-  box-shadow: 0 0 0 2px var(--amber-glow);
+.ig:focus-within { border-color:var(--teal-dim); box-shadow:0 0 0 2px var(--teal-glo) }
+.il {
+  font-family:var(--f-mono); font-size:8px; font-weight:500;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--t2); white-space:nowrap; flex-shrink:0;
 }
-.field-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--text-lo);
-  text-transform: uppercase;
-  white-space: nowrap;
+.il.c { color:var(--teal-dim) }
+.ifield {
+  background:transparent; border:none; outline:none;
+  color:var(--t0); font-family:var(--f-mono); font-size:11.5px;
+  padding:8px 0; caret-color:var(--teal);
 }
-.field-input {
-  background: transparent; border: none; outline: none;
-  color: var(--text-hi); font-family: var(--mono);
-  font-size: 12px; padding: 9px 0;
-  caret-color: var(--amber);
-}
-.field-input::placeholder { color: var(--text-lo); }
-#url-input  { width: 220px; }
-#key-input  { width: 170px; }
+.ifield::placeholder { color:var(--t2) }
+#url-inp  { width:195px }
+#key-inp  { width:155px }
 
 /* Buttons */
 .btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px;
-  font-family: var(--display);
-  font-size: 14px; letter-spacing: 0.08em;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap; flex-shrink: 0;
-  line-height: 1;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 12px;
+  font-family:var(--f-display); font-size:11px;
+  font-weight:600; letter-spacing:.08em;
+  border:1.5px solid transparent; border-radius:var(--r);
+  cursor:pointer; transition:all .15s;
+  white-space:nowrap; flex-shrink:0; line-height:1;
 }
-.btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-.btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.btn:not(:disabled):active { transform: scale(0.97); }
+.btn svg { width:12px; height:12px; flex-shrink:0 }
+.btn:disabled { opacity:.3; cursor:not-allowed; transform:none!important }
+.btn:not(:disabled):active { transform:scale(.97) }
 
-.btn-start {
-  background: var(--amber);
-  border-color: var(--amber);
-  color: #000;
-}
-.btn-start:not(:disabled):hover {
-  background: #ffc04d;
-  box-shadow: var(--glow-amber);
-}
+.bp { background:var(--teal); border-color:var(--teal); color:#000 }
+.bp:not(:disabled):hover { filter:brightness(1.15); box-shadow:var(--glow-teal) }
 
-.btn-stop {
-  background: transparent;
-  border-color: var(--red);
-  color: var(--red);
-}
-.btn-stop:not(:disabled):hover {
-  background: rgba(255,75,75,0.08);
-  box-shadow: var(--glow-red);
-}
+.bd { background:transparent; border-color:var(--red); color:var(--red) }
+.bd:not(:disabled):hover { background:rgba(248,113,113,.08); box-shadow:var(--glow-red) }
 
-.btn-resume {
-  background: var(--green);
-  border-color: var(--green);
-  color: #000;
-  display: none;
+.bg {
+  background:transparent; border-color:var(--b2); color:var(--t1);
+  font-family:var(--f-mono); font-size:10px; font-weight:400;
+  letter-spacing:.05em; padding:6px 10px;
 }
-.btn-resume.visible { display: inline-flex; }
-.btn-resume:not(:disabled):hover {
-  background: #5df59b;
-  box-shadow: var(--glow-green);
-}
+.bg:not(:disabled):hover { border-color:var(--teal-dim); color:var(--teal) }
+.bg.on { border-color:var(--teal); color:var(--teal); background:var(--teal-g2) }
 
-.btn-ghost {
-  background: transparent;
-  border-color: var(--border-hi);
-  color: var(--text-mid);
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  padding: 7px 12px;
-}
-.btn-ghost:not(:disabled):hover {
-  border-color: var(--amber-dim);
-  color: var(--amber);
-}
+.bv { background:transparent; border-color:var(--violet-dim); color:var(--violet) }
+.bv:not(:disabled):hover { background:var(--violet-glo); box-shadow:var(--glow-violet) }
+
+.ba { background:transparent; border-color:var(--amber-dim); color:var(--amber) }
+.ba:not(:disabled):hover { background:rgba(251,191,36,.08); box-shadow:var(--glow-amber) }
 
 /* Status pill */
-#status-pill {
-  display: flex; align-items: center; gap: 6px;
-  padding: 4px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  flex-shrink: 0;
+#spill { display:flex; align-items:center; gap:6px; flex-shrink:0 }
+.sdot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--t2);
+  transition:background .3s, box-shadow .3s; flex-shrink:0;
 }
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-lo);
-  transition: background 0.3s, box-shadow 0.3s;
-}
-.status-dot.idle    { background: var(--text-lo); }
-.status-dot.running { background: var(--green); box-shadow: var(--glow-green); animation: blink 1.6s ease-in-out infinite; }
-.status-dot.paused  { background: var(--amber); box-shadow: var(--glow-amber); animation: blink 0.8s ease-in-out infinite; }
-.status-dot.error   { background: var(--red);   box-shadow: var(--glow-red); }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-#status-label {
-  font-size: 10px; font-weight: 500;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-mid);
-}
+.sdot.idle   { background:var(--t2) }
+.sdot.plan   { background:var(--violet); box-shadow:var(--glow-violet); animation:blink 1.2s ease-in-out infinite }
+.sdot.run    { background:var(--teal);   box-shadow:var(--glow-teal);   animation:blink 1.6s ease-in-out infinite }
+.sdot.paused { background:var(--amber);  box-shadow:var(--glow-amber);  animation:blink .9s ease-in-out infinite }
+.sdot.stuck  { background:var(--red);    box-shadow:var(--glow-red);    animation:blink .5s ease-in-out infinite }
+.sdot.stop   { background:var(--t2) }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+#slbl { font-family:var(--f-mono); font-size:10px; color:var(--t1); letter-spacing:.08em }
 
-/* Report timer */
-#report-timer {
-  font-size: 11px; color: var(--text-lo);
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
+/* Misc bar items */
+#gbadge {
+  font-family:var(--f-mono); font-size:9px;
+  padding:3px 8px; background:var(--bg3);
+  border:1px solid var(--b1); border-radius:3px; color:var(--t1); flex-shrink:0;
 }
-#report-timer span { color: var(--amber); }
-
-/* spacer */
-.spacer { flex: 1; }
+#gbadge em { color:var(--teal); font-style:normal }
+#rtimer { font-family:var(--f-mono); font-size:10px; color:var(--t2); flex-shrink:0; white-space:nowrap }
+#rtimer em { color:var(--amber); font-style:normal }
+.spacer { flex:1 }
 
 /* ═══════════════════════════════════════════════
-   LEFT PANEL – PREVIEW
+   PREVIEW PANEL (left)
 ═══════════════════════════════════════════════ */
-#preview {
-  grid-area: preview;
-  display: flex; flex-direction: column;
-  background: var(--base);
-  border-right: 1px solid var(--border);
-  overflow: hidden;
+#prev {
+  grid-area:prev;
+  display:flex; flex-direction:column;
+  background:var(--bg1);
+  border-right:1px solid var(--b0);
+  overflow:hidden;
 }
+.pbar {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 12px; background:var(--bg2);
+  border-bottom:1px solid var(--b0); flex-shrink:0;
+}
+.ptitle { font-family:var(--f-display); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--t2) }
+.purl { flex:1; font-family:var(--f-mono); font-size:10px; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.purl em { color:var(--teal); font-style:normal }
+.otag { font-family:var(--f-mono); font-size:9px; padding:2px 7px; border-radius:3px; flex-shrink:0; display:none }
+.otag.xo { background:rgba(251,191,36,.08); border:1px solid var(--amber-dim); color:var(--amber) }
+.otag.so { background:rgba(52,211,153,.08); border:1px solid var(--green-dim); color:var(--green) }
 
-.panel-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.panel-title {
-  font-size: 10px; font-weight: 600;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-lo);
-}
-.panel-info {
-  font-size: 10px; color: var(--text-lo);
-  margin-left: 4px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  flex: 1;
-}
-.panel-info span { color: var(--amber); }
+#fwrap { position:relative; flex:1; overflow:hidden; background:#000 }
+#sframe { width:100%; height:100%; border:none; display:block }
 
-#iframe-wrap {
-  position: relative; flex: 1; overflow: hidden;
-  background: #000;
+/* ─── Grid overlay ─── */
+#goverlay {
+  position:absolute; inset:0;
+  display:grid; pointer-events:none; z-index:10;
+  transition:opacity .2s;
 }
+#goverlay.g100  { grid-template-columns:repeat(10,1fr); grid-template-rows:repeat(10,1fr) }
+#goverlay.g1000 { grid-template-columns:repeat(40,1fr); grid-template-rows:repeat(25,1fr) }
+.gc {
+  border-right:1px solid rgba(0,229,192,.1);
+  border-bottom:1px solid rgba(0,229,192,.1);
+  position:relative; overflow:hidden;
+}
+.gn {
+  position:absolute; top:1px; left:1px;
+  font-family:var(--f-mono); font-size:7px;
+  color:rgba(0,229,192,.45); line-height:1;
+  user-select:none; pointer-events:none;
+  transition:opacity .2s;
+}
+#goverlay.g1000 .gn { font-size:4.5px }
+#goverlay.loff .gn  { opacity:0 }
+.gc.fl { animation:cfl .55s ease-out forwards }
+@keyframes cfl { 0%{background:rgba(0,229,192,.3)} 100%{background:transparent} }
+.gc.shi { background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.35)!important }
 
-#site-frame {
-  width: 100%; height: 100%;
-  border: none; display: block;
-}
+/* Screenshot flash */
+#sfl { position:absolute; inset:0; pointer-events:none; z-index:20; opacity:0; background:rgba(0,229,192,.05) }
+@keyframes sfani { 0%{opacity:1} 100%{opacity:0} }
+#sfl.go { animation:sfani .3s ease-out forwards }
 
-/* ── Grid overlay ── */
-#grid {
-  position: absolute; inset: 0;
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  grid-template-rows: repeat(10, 1fr);
-  pointer-events: none;
-  z-index: 10;
+/* Ripple */
+@keyframes rip {
+  0%  { transform:scale(1);   opacity:1;  box-shadow:0 0 0 0 rgba(0,229,192,.8) }
+  60% { transform:scale(4.5); opacity:.5; box-shadow:0 0 0 14px rgba(0,229,192,0) }
+  100%{ transform:scale(8);   opacity:0;  box-shadow:0 0 0 20px rgba(0,229,192,0) }
 }
-.g-cell {
-  border-right: 1px solid rgba(245,166,35,0.12);
-  border-bottom: 1px solid rgba(245,166,35,0.12);
-  position: relative;
-}
-.g-cell:nth-child(10n)   { border-right: none; }
-.g-cell:nth-last-child(-n+10) { border-bottom: none; }
-.g-num {
-  position: absolute; top: 2px; left: 3px;
-  font-size: 8px; color: rgba(245,166,35,0.5);
-  line-height: 1; user-select: none;
-  transition: opacity 0.2s;
-}
-/* When grid labels are hidden, only hide the text, not the cell borders */
-#grid.labels-hidden .g-num { opacity: 0; }
+.rip { position:absolute; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background:var(--teal); pointer-events:none; z-index:30; animation:rip .7s ease-out forwards }
 
-/* Cell flash on AI action */
-.g-cell.flash-cell {
-  animation: cell-flash 0.6s ease-out forwards;
-}
-@keyframes cell-flash {
-  0%   { background: rgba(245,166,35,0.35); }
-  100% { background: transparent; }
-}
+/* Scroll indicator */
+.sarrow { position:absolute; right:10px; font-family:var(--f-mono); font-size:10px; color:var(--teal); z-index:31; pointer-events:none; animation:saf .8s ease-out forwards }
+@keyframes saf { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(18px)} }
 
-/* ── Screenshot flash ── */
-#snap-flash {
-  position: absolute; inset: 0;
-  background: rgba(245,166,35,0.06);
-  pointer-events: none; z-index: 20;
-  opacity: 0;
-}
-@keyframes snap { 0%{opacity:1} 100%{opacity:0} }
-#snap-flash.go { animation: snap 0.3s ease-out forwards; }
-
-/* ── Ripple ── */
-@keyframes ripple-burst {
-  0%   { transform: scale(1);   opacity: 1; box-shadow: 0 0 0 0 rgba(245,166,35,0.8); }
-  60%  { transform: scale(3.5); opacity: 0.6; box-shadow: 0 0 0 10px rgba(245,166,35,0); }
-  100% { transform: scale(6);   opacity: 0; box-shadow: 0 0 0 16px rgba(245,166,35,0); }
-}
-.ripple-dot {
-  position: absolute;
-  width: 8px; height: 8px; margin: -4px 0 0 -4px;
-  border-radius: 50%;
-  background: var(--amber);
-  pointer-events: none; z-index: 30;
-  animation: ripple-burst 0.7s ease-out forwards;
-}
-
-/* ── Login pause overlay ── */
-#login-overlay {
-  position: absolute; inset: 0;
-  background: rgba(11,12,15,0.88);
-  backdrop-filter: blur(4px);
-  display: none; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 16px; z-index: 40;
-  text-align: center; padding: 30px;
-}
-#login-overlay.visible { display: flex; }
-.login-icon {
-  width: 56px; height: 56px;
-  border: 2px solid var(--amber);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--glow-amber);
-  animation: pulse-ring 2s ease-in-out infinite;
-}
-@keyframes pulse-ring {
-  0%,100% { box-shadow: var(--glow-amber); }
-  50%      { box-shadow: 0 0 24px rgba(245,166,35,0.6), 0 0 48px rgba(245,166,35,0.2); }
-}
-.login-icon svg { width: 24px; height: 24px; stroke: var(--amber); fill: none; stroke-width: 2; }
-.login-title {
-  font-family: var(--display);
-  font-size: 22px; letter-spacing: 0.1em;
-  color: var(--amber);
-}
-.login-msg {
-  font-size: 12px; color: var(--text-mid);
-  line-height: 1.7; max-width: 320px;
-}
-.login-msg strong { color: var(--text-hi); }
-
-/* ── Placeholder ── */
+/* Placeholder */
 #placeholder {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 12px; background: var(--base);
-  z-index: 5;
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  background:var(--bg1); z-index:5;
 }
-.ph-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 2px; width: 200px;
+.ph-icon { width:58px; height:58px; border:1.5px solid var(--b2); border-radius:50%; display:flex; align-items:center; justify-content:center }
+.ph-icon svg { width:26px; height:26px; stroke:var(--t2); fill:none; stroke-width:1.5 }
+.ph-t { font-family:var(--f-display); font-size:14px; letter-spacing:.1em; color:var(--t2) }
+.ph-s { font-family:var(--f-mono); font-size:10px; color:var(--t3) }
+
+/* Overlay modals */
+.overlay {
+  position:absolute; inset:0;
+  background:rgba(6,8,16,.92); backdrop-filter:blur(6px);
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; z-index:50; text-align:center; padding:32px;
 }
-.ph-cell {
-  height: 16px;
-  border: 1px solid var(--border);
-  border-radius: 2px;
+.overlay.show { display:flex }
+.ovi {
+  width:60px; height:60px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid; animation:po 2s ease-in-out infinite;
 }
-.ph-cell:nth-child(1)  { background: rgba(245,166,35,0.15); }
-.ph-cell:nth-child(7)  { background: rgba(245,166,35,0.08); }
-.ph-cell:nth-child(23) { background: rgba(245,166,35,0.12); }
-.ph-cell:nth-child(55) { background: rgba(245,166,35,0.10); }
-.ph-title {
-  font-family: var(--display); font-size: 15px;
-  letter-spacing: 0.14em; color: var(--text-lo);
-}
-.ph-sub { font-size: 10px; color: var(--text-lo); }
+.ovi.login { border-color:var(--amber); box-shadow:var(--glow-amber) }
+.ovi.stuck { border-color:var(--red);   box-shadow:var(--glow-red);  animation-duration:.8s }
+@keyframes po { 0%,100%{opacity:.8} 50%{opacity:1} }
+.ovi svg { width:26px; height:26px; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round }
+.ovi.login svg { stroke:var(--amber) }
+.ovi.stuck svg { stroke:var(--red) }
+.ovtitle { font-family:var(--f-display); font-size:20px; letter-spacing:.1em }
+.ovtitle.a { color:var(--amber) }
+.ovtitle.r { color:var(--red) }
+.ovbody { font-family:var(--f-mono); font-size:11px; color:var(--t1); line-height:1.7; max-width:300px }
+.ovbody strong { color:var(--t0) }
+.ovbtns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:4px }
 
 /* ═══════════════════════════════════════════════
-   RIGHT PANEL
+   CHAT PANEL (middle)
 ═══════════════════════════════════════════════ */
-#panel {
-  grid-area: panel;
-  display: flex; flex-direction: column;
-  background: var(--base);
-  overflow: hidden;
+#chat {
+  grid-area:chat;
+  display:flex; flex-direction:column;
+  background:var(--bg1);
+  border-right:1px solid var(--b0);
+  overflow:hidden;
 }
 
 /* Stats strip */
-#stats-strip {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+#stats {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid var(--b0); flex-shrink:0;
 }
-.stat {
-  padding: 8px 0; text-align: center;
-  border-right: 1px solid var(--border);
+.stat { padding:7px 0; text-align:center; border-right:1px solid var(--b0) }
+.stat:last-child { border-right:none }
+.sv { font-family:var(--f-display); font-size:18px; line-height:1 }
+.sv.t { color:var(--teal) }  .sv.v { color:var(--violet) }
+.sv.g { color:var(--green) } .sv.r { color:var(--red) }
+.sl { font-family:var(--f-mono); font-size:8px; letter-spacing:.1em; text-transform:uppercase; color:var(--t2); margin-top:2px }
+
+/* Feed */
+#feed { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:7px; scroll-behavior:smooth }
+#feed::-webkit-scrollbar { width:3px }
+#feed::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px }
+
+/* Message types */
+.msg { display:flex; flex-direction:column; gap:3px; animation:min .2s ease-out }
+@keyframes min { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+.mh { display:flex; align-items:center; gap:6px }
+.mr { font-family:var(--f-mono); font-size:8px; font-weight:500; letter-spacing:.14em; text-transform:uppercase }
+.mt { font-family:var(--f-mono); font-size:8px; color:var(--t2) }
+.mb { font-family:var(--f-mono); font-size:11px; line-height:1.6; padding:7px 10px; border-radius:4px; border-left:2px solid; white-space:pre-wrap; word-break:break-word }
+
+.msg.ai   .mr{color:var(--teal)}  .msg.ai   .mb{background:rgba(0,229,192,.04);border-color:var(--teal-dim);color:var(--t0)}
+.msg.plan .mr{color:var(--violet)}.msg.plan .mb{background:var(--violet-glo);border-color:var(--violet-dim);color:var(--violet);font-size:10.5px}
+.msg.cmd  .mr{color:var(--blue)}  .msg.cmd  .mb{background:rgba(96,165,250,.05);border-color:#1e3a6e;color:var(--blue);font-size:12px}
+.msg.ok   .mr{color:var(--green)} .msg.ok   .mb{background:rgba(52,211,153,.04);border-color:var(--green-dim);color:var(--green)}
+.msg.err  .mr{color:var(--red)}   .msg.err  .mb{background:rgba(248,113,113,.05);border-color:var(--red-dim);color:var(--red)}
+.msg.warn .mr{color:var(--amber)} .msg.warn .mb{background:rgba(251,191,36,.06);border-color:var(--amber-dim);color:var(--amber)}
+.msg.sys  .mr{color:var(--t2)}    .msg.sys  .mb{background:rgba(255,255,255,.02);border-color:var(--b1);color:var(--t2);font-size:10px}
+.msg.rpt  .mr{color:var(--violet)}.msg.rpt  .mb{background:var(--violet-glo);border-color:var(--violet-dim);color:var(--t0)}
+
+/* Typing */
+#typing { display:none; align-items:center; gap:5px; padding:5px 10px; flex-shrink:0 }
+#typing.on { display:flex }
+.td { width:5px; height:5px; border-radius:50%; background:var(--teal-dim); animation:tdb 1.2s ease-in-out infinite }
+.td:nth-child(2){animation-delay:.2s} .td:nth-child(3){animation-delay:.4s}
+@keyframes tdb { 0%,80%,100%{transform:scale(.7);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
+#tlbl { font-family:var(--f-mono); font-size:9px; color:var(--t2) }
+
+/* Cycle bar */
+#cbar { padding:7px 10px; background:var(--bg2); border-top:1px solid var(--b0); flex-shrink:0 }
+.cbl { display:flex; justify-content:space-between; font-family:var(--f-mono); font-size:9px; color:var(--t2); margin-bottom:4px }
+#ctrk { height:2px; background:var(--b1); border-radius:1px; overflow:hidden }
+#cfill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal-dim),var(--teal)); border-radius:1px; transition:width .08s linear }
+
+/* Phase badge in chat bar */
+#pbadge {
+  font-family:var(--f-mono); font-size:9px;
+  padding:2px 8px; background:var(--bg3);
+  border:1px solid var(--b1); border-radius:3px; color:var(--t2);
 }
-.stat:last-child { border-right: none; }
-.stat-n {
-  font-family: var(--display); font-size: 20px;
-  color: var(--amber); line-height: 1;
-}
-.stat-l {
-  font-size: 8px; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--text-lo);
-  margin-top: 2px;
+
+/* ═══════════════════════════════════════════════
+   PLAN & REPORT PANEL (right)
+═══════════════════════════════════════════════ */
+#planp {
+  grid-area:plan;
+  display:flex; flex-direction:column;
+  background:var(--bg1);
+  overflow:hidden;
 }
 
 /* Tabs */
-#tabs {
-  display: flex; border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+#ptabs { display:flex; border-bottom:1px solid var(--b0); flex-shrink:0 }
+.ptab {
+  flex:1; padding:8px 0; text-align:center; cursor:pointer;
+  font-family:var(--f-mono); font-size:9px; font-weight:500;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--t2); border-bottom:2px solid transparent;
+  transition:color .15s, border-color .15s;
 }
-.tab {
-  flex: 1; padding: 8px 0; text-align: center;
-  font-size: 10px; font-weight: 600;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--text-lo); cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
-}
-.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
-.tab:hover:not(.active) { color: var(--text-mid); }
+.ptab.on { color:var(--teal); border-bottom-color:var(--teal) }
+.ptab:hover:not(.on) { color:var(--t1) }
 
-/* Tab content */
-.tab-pane { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-.tab-pane.active { display: flex; }
+.ppane { display:none; flex:1; flex-direction:column; overflow:hidden }
+.ppane.on { display:flex }
 
-/* Activity feed */
-#activity-feed {
-  flex: 1; overflow-y: auto; padding: 10px;
-  display: flex; flex-direction: column; gap: 8px;
-  scroll-behavior: smooth;
-}
-#activity-feed::-webkit-scrollbar { width: 4px; }
-#activity-feed::-webkit-scrollbar-track { background: transparent; }
-#activity-feed::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+/* ── Plan pane ── */
+#plan-scroll { flex:1; overflow-y:auto; padding:10px }
+#plan-scroll::-webkit-scrollbar { width:3px }
+#plan-scroll::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px }
 
-/* Message types */
-.msg { display: flex; flex-direction: column; gap: 3px; animation: msg-slide 0.2s ease-out; }
-@keyframes msg-slide { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
-.msg-head { display: flex; align-items: center; gap: 6px; }
-.msg-role {
-  font-size: 8px; font-weight: 600;
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
-.msg-time { font-size: 9px; color: var(--text-lo); }
-.msg-body {
-  font-size: 11px; line-height: 1.6;
-  padding: 7px 10px; border-radius: 4px;
-  border-left: 2px solid;
-  white-space: pre-wrap; word-break: break-word;
-}
+.pe { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; height:100%; font-family:var(--f-mono); font-size:10px; color:var(--t2); text-align:center; padding:20px }
+.pe svg { color:var(--t2) }
 
-.msg.ai   .msg-role { color: var(--amber); }
-.msg.ai   .msg-body { background: rgba(245,166,35,0.05); border-left-color: var(--amber-dim); color: var(--text-hi); }
-.msg.cmd  .msg-role { color: var(--cyan); }
-.msg.cmd  .msg-body { background: rgba(0,212,255,0.05); border-left-color: var(--blue-dim); color: var(--cyan); font-size: 12px; letter-spacing: 0.04em; }
-.msg.ok   .msg-role { color: var(--green); }
-.msg.ok   .msg-body { background: rgba(57,232,124,0.04); border-left-color: var(--green-dim); color: var(--green); }
-.msg.err  .msg-role { color: var(--red); }
-.msg.err  .msg-body { background: rgba(255,75,75,0.05); border-left-color: var(--red-dim); color: var(--red); }
-.msg.sys  .msg-role { color: var(--text-lo); }
-.msg.sys  .msg-body { background: rgba(255,255,255,0.02); border-left-color: var(--border); color: var(--text-lo); font-size: 10px; }
-.msg.warn .msg-role { color: var(--amber); }
-.msg.warn .msg-body { background: var(--amber-glow); border-left-color: var(--amber); color: var(--amber); }
-.msg.report .msg-role { color: var(--blue); }
-.msg.report .msg-body { background: rgba(91,156,246,0.06); border-left-color: var(--blue-dim); color: var(--text-hi); font-size: 11px; }
+.plhd {
+  font-family:var(--f-display); font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--teal); margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.plhd span { font-family:var(--f-mono); font-size:8px; padding:2px 7px; background:var(--teal-g2); border:1px solid var(--teal-dim); border-radius:3px; color:var(--teal-dim) }
 
-/* Typing indicator */
-#typing {
-  display: none; align-items: center; gap: 5px;
-  padding: 6px 10px; flex-shrink: 0;
+.pstep { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--b0); transition:all .2s }
+.pstep:last-child { border-bottom:none }
+.pstep.cur { background:var(--teal-g2); margin:0 -10px; padding:8px 10px; border-radius:4px; border-bottom:none }
+.pstep.done .psn { background:var(--green); color:#000 }
+.pstep.done .pst { color:var(--t2); text-decoration:line-through }
+.pstep.cur  .psn { background:var(--teal); color:#000; box-shadow:0 0 8px var(--teal); animation:blink 1.3s ease-in-out infinite }
+.psn {
+  width:22px; height:22px; border-radius:50%;
+  background:var(--bg4); border:1px solid var(--b2);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-family:var(--f-display); font-size:10px; color:var(--t1);
+  transition:background .3s, color .3s;
 }
-#typing.on { display: flex; }
-.t-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--amber-dim);
-  animation: t-bounce 1.2s ease-in-out infinite;
+.pst { font-family:var(--f-mono); font-size:10px; color:var(--t0); line-height:1.5; padding-top:2px; transition:color .3s }
+.pss {
+  margin-left:auto; flex-shrink:0;
+  font-family:var(--f-mono); font-size:8px;
+  padding:2px 6px; border-radius:3px; background:var(--bg4); color:var(--t2);
 }
-.t-dot:nth-child(2){animation-delay:.2s}
-.t-dot:nth-child(3){animation-delay:.4s}
-@keyframes t-bounce { 0%,80%,100%{transform:scale(0.7);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
-#typing-label { font-size: 9px; color: var(--text-lo); }
+.pstep.cur .pss  { background:rgba(0,229,192,.1); color:var(--teal) }
+.pstep.done .pss { background:rgba(52,211,153,.1); color:var(--green) }
 
-/* Cycle bar */
-#cycle-bar-wrap {
-  padding: 8px 10px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.cb-label {
-  display: flex; justify-content: space-between;
-  font-size: 9px; color: var(--text-lo); margin-bottom: 5px;
-}
-#cycle-track {
-  height: 2px; background: var(--border); border-radius: 1px; overflow: hidden;
-}
-#cycle-fill {
-  height: 100%; width: 0%; border-radius: 1px;
-  background: linear-gradient(90deg, var(--amber-dim), var(--amber));
-  transition: width 0.08s linear;
-}
+/* Progress */
+.plprog { padding:10px 10px 0; border-top:1px solid var(--b0); flex-shrink:0 }
+.ppl { display:flex; justify-content:space-between; font-family:var(--f-mono); font-size:9px; color:var(--t2); margin-bottom:5px }
+.ppl em { color:var(--teal); font-style:normal }
+.pptr { height:3px; background:var(--b1); border-radius:2px; overflow:hidden }
+.ppf  { height:100%; background:linear-gradient(90deg,var(--teal-dim),var(--teal)); border-radius:2px; transition:width .4s ease }
 
-/* ── Reports tab ── */
-#reports-feed {
-  flex: 1; overflow-y: auto; padding: 10px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-#reports-feed::-webkit-scrollbar { width: 4px; }
-#reports-feed::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+/* ── Reports pane ── */
+#rpt-scroll { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:10px }
+#rpt-scroll::-webkit-scrollbar { width:3px }
+#rpt-scroll::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px }
 
-.report-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: 2px solid var(--amber);
-  border-radius: var(--radius);
-  padding: 12px;
-  animation: msg-slide 0.25s ease-out;
-}
-.report-card-title {
-  font-family: var(--display);
-  font-size: 14px; letter-spacing: 0.1em;
-  color: var(--amber); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
-}
-.report-card-title .rtag {
-  font-family: var(--mono); font-size: 9px;
-  padding: 2px 6px; background: var(--amber-glow);
-  border: 1px solid var(--amber-dim); border-radius: 3px;
-  color: var(--amber-dim);
-}
-.report-row {
-  display: flex; justify-content: space-between;
-  font-size: 11px; padding: 4px 0;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-mid);
-}
-.report-row:last-child { border-bottom: none; }
-.report-row .rv { color: var(--text-hi); font-weight: 500; }
-.report-row .rv.good { color: var(--green); }
-.report-row .rv.bad  { color: var(--red); }
-.report-section {
-  font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--text-lo);
-  margin: 10px 0 5px;
-}
-.report-bug {
-  font-size: 10px; color: var(--red);
-  padding: 3px 0 3px 10px; border-left: 2px solid var(--red-dim);
-  margin-bottom: 4px;
-}
-.report-page {
-  font-size: 10px; color: var(--green);
-  padding: 3px 0 3px 10px; border-left: 2px solid var(--green-dim);
-  margin-bottom: 4px;
-}
-.reports-empty {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 8px;
-  color: var(--text-lo); font-size: 11px; padding: 20px;
-  text-align: center;
-}
+.re { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height:100%; font-family:var(--f-mono); font-size:10px; color:var(--t2); text-align:center; padding:20px }
+
+.rc { background:var(--bg2); border:1px solid var(--b1); border-top:2px solid var(--teal); border-radius:var(--r); padding:11px; flex-shrink:0; animation:min .25s ease-out }
+.rchd { font-family:var(--f-display); font-size:12px; font-weight:700; letter-spacing:.1em; color:var(--teal); display:flex; justify-content:space-between; align-items:center; margin-bottom:9px }
+.rtag { font-family:var(--f-mono); font-size:8px; padding:2px 6px; background:var(--teal-g2); border:1px solid var(--teal-dim); border-radius:3px; color:var(--teal-dim) }
+.rrow { display:flex; justify-content:space-between; font-family:var(--f-mono); font-size:10px; color:var(--t1); padding:3px 0; border-bottom:1px solid var(--b0) }
+.rrow:last-of-type { border-bottom:none }
+.rv { font-weight:500 }
+.rv.g { color:var(--green) }  .rv.r { color:var(--red) }  .rv.a { color:var(--amber) }
+.rsec { font-family:var(--f-mono); font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:var(--t2); margin:9px 0 5px }
+.rbug { font-family:var(--f-mono); font-size:9px; color:var(--red); padding:2px 0 2px 8px; border-left:2px solid var(--red-dim); margin-bottom:3px }
+.rsum { font-family:var(--f-mono); font-size:10px; color:var(--t1); line-height:1.6; margin-top:6px; padding-top:6px; border-top:1px solid var(--b0) }
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ══════════════ TOP BAR ══════════════ -->
-<header id="topbar">
+<!-- ═══════ TOP BAR ═══════ -->
+<header id="bar">
 
   <div class="brand">
-    <div class="brand-mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round">
-        <rect x="2" y="3" width="20" height="14" rx="2"/>
-        <path d="M8 21h8M12 17v4"/>
-        <path d="M7 8l3 3-3 3M13 14h4"/>
-      </svg>
+    <div class="bmark">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M7 7l3 4-3 4M13 15h4"/></svg>
     </div>
-    <span class="brand-text">AI <em>TESTER</em></span>
+    <span class="btxt">AI <em>TESTER</em> <small>v3 ADVANCED</small></span>
   </div>
 
-  <div class="topbar-sep"></div>
+  <div class="sep"></div>
 
-  <!-- URL field -->
-  <div class="field-wrap">
-    <span class="field-label">URL</span>
-    <input id="url-input" class="field-input" type="text"
-      placeholder="https://example.com" value="https://example.com" autocomplete="off" spellcheck="false"/>
+  <div class="ig">
+    <span class="il c">TARGET</span>
+    <input id="url-inp" class="ifield" type="text" placeholder="https://example.com" value="https://example.com" autocomplete="off" spellcheck="false"/>
   </div>
 
-  <!-- API key field -->
-  <div class="field-wrap">
-    <span class="field-label">API KEY</span>
-    <input id="key-input" class="field-input" type="password"
-      placeholder="sk-ant-… (optional)" autocomplete="off"
-      oninput="CFG.anthropicKey=this.value.trim()"/>
+  <div class="ig">
+    <span class="il">API KEY</span>
+    <input id="key-inp" class="ifield" type="password" placeholder="sk-ant-… (optional)" autocomplete="off" oninput="CFG.anthropicKey=this.value.trim()"/>
   </div>
 
-  <div class="topbar-sep"></div>
+  <div class="sep"></div>
 
-  <button class="btn btn-start" id="btn-start" onclick="startTesting()">
-    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-    START
+  <button class="btn bp" id="btn-start" onclick="startTesting()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>START
   </button>
-
-  <button class="btn btn-stop" id="btn-stop" onclick="stopTesting()" disabled>
-    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-    STOP
+  <button class="btn bd" id="btn-stop" onclick="stopTesting()" disabled>
+    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>STOP
   </button>
-
-  <button class="btn btn-resume" id="btn-resume" onclick="resumeTesting()">
-    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-    RESUME TESTING
-  </button>
-
-  <button class="btn btn-ghost" id="btn-grid" onclick="toggleGrid()">GRID: ON</button>
+  <button class="btn bg" id="btn-grid" onclick="toggleLabels()" title="Toggle grid number visibility">LABELS: ON</button>
+  <button class="btn bg" id="btn-mode" onclick="toggleMode()" title="Switch grid resolution">GRID: 100</button>
+  <button class="btn bv" id="btn-assist" onclick="showAssist()" disabled>✦ ASSIST</button>
+  <button class="btn ba" id="btn-resume" onclick="resumeTesting()" style="display:none">▶ RESUME</button>
 
   <div class="spacer"></div>
 
-  <!-- Report countdown -->
-  <div id="report-timer">REPORT IN <span id="report-countdown">60s</span></div>
-
-  <div class="topbar-sep"></div>
-
-  <!-- Status -->
-  <div id="status-pill">
-    <div class="status-dot idle" id="status-dot"></div>
-    <span id="status-label">IDLE</span>
+  <div id="rtimer">REPORT IN <em id="rcd">—</em></div>
+  <div class="sep"></div>
+  <div id="gbadge">GRID <em>100</em></div>
+  <div class="sep"></div>
+  <div id="spill">
+    <div class="sdot idle" id="sdot"></div>
+    <span id="slbl">IDLE</span>
   </div>
 
 </header>
 
-<!-- ══════════════ PREVIEW PANEL ══════════════ -->
-<section id="preview">
-
-  <div class="panel-bar">
-    <span class="panel-title">Preview</span>
-    <span class="panel-info" id="url-display">No URL loaded</span>
-    <span class="panel-info" style="flex:0;white-space:nowrap" id="origin-tag"></span>
+<!-- ═══════ PREVIEW ═══════ -->
+<section id="prev">
+  <div class="pbar">
+    <span class="ptitle">Preview</span>
+    <span class="purl" id="purl">No target loaded</span>
+    <span class="otag" id="otag"></span>
   </div>
-
-  <div id="iframe-wrap">
-
-    <!-- Placeholder shown before load -->
+  <div id="fwrap">
     <div id="placeholder">
-      <div class="ph-grid" id="ph-grid"></div>
-      <span class="ph-title">AWAITING TARGET</span>
-      <span class="ph-sub">Enter a URL and click START</span>
+      <div class="ph-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M7 21h10M12 17v4M8 7l2 3-2 3M14 13h3"/></svg></div>
+      <div class="ph-t">NO TARGET LOADED</div>
+      <div class="ph-s">Enter a URL and click START</div>
     </div>
 
-    <!-- Target site iframe -->
-    <iframe id="site-frame"
-      sandbox="allow-scripts allow-forms allow-popups allow-pointer-lock"
-      style="display:none;"
-    ></iframe>
+    <iframe id="sframe" sandbox="allow-scripts allow-forms allow-popups allow-pointer-lock" style="display:none"></iframe>
+    <div id="goverlay" class="g100"></div>
+    <div id="sfl"></div>
 
-    <!-- 10×10 numbered grid -->
-    <div id="grid"></div>
-
-    <!-- Screenshot flash -->
-    <div id="snap-flash"></div>
-
-    <!-- Login pause overlay -->
-    <div id="login-overlay">
-      <div class="login-icon">
+    <!-- Login overlay -->
+    <div class="overlay" id="ov-login">
+      <div class="ovi login">
         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
-      <div class="login-title">LOGIN REQUIRED</div>
-      <div class="login-msg">
-        <strong>AI has detected a login or account creation page.</strong><br><br>
-        Screenshot capturing has been paused.<br>
-        Please log in manually, then press <strong>RESUME TESTING</strong>.
+      <div class="ovtitle a">LOGIN REQUIRED</div>
+      <div class="ovbody"><strong>AI detected a login or authentication page.</strong><br><br>Screenshot capture has been paused.<br>Please log in manually, then press RESUME.</div>
+      <div class="ovbtns">
+        <button class="btn bp" onclick="resumeTesting()">▶ RESUME TESTING</button>
+        <button class="btn bd" onclick="stopTesting()">■ STOP</button>
       </div>
     </div>
 
+    <!-- Stuck overlay -->
+    <div class="overlay" id="ov-stuck">
+      <div class="ovi stuck">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div class="ovtitle r">TESTING STUCK</div>
+      <div class="ovbody">AI repeated the same action <strong id="stuck-n">3</strong> times.<br><br>Stuck action: <strong id="stuck-c">—</strong></div>
+      <div class="ovbtns">
+        <button class="btn bg" onclick="switchPrecision()" style="border-color:var(--teal);color:var(--teal)">⊞ SWITCH TO PRECISION (1000)</button>
+        <button class="btn bv" onclick="doAssistFromStuck()">✦ ADJUST POSITION</button>
+        <button class="btn bp" onclick="dismissStuck()">▶ CONTINUE</button>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ══════════════ RIGHT PANEL ══════════════ -->
-<aside id="panel">
+<!-- ═══════ CHAT ═══════ -->
+<section id="chat">
+  <div class="pbar" style="justify-content:space-between">
+    <span class="ptitle">AI Activity</span>
+    <span id="pbadge">IDLE</span>
+  </div>
+  <div id="stats">
+    <div class="stat"><div class="sv t" id="sv0">0</div><div class="sl">Cycles</div></div>
+    <div class="stat"><div class="sv v" id="sv1">0</div><div class="sl">Actions</div></div>
+    <div class="stat"><div class="sv g" id="sv2">0</div><div class="sl">OK</div></div>
+    <div class="stat"><div class="sv r" id="sv3">0</div><div class="sl">Errors</div></div>
+  </div>
+  <div id="feed">
+    <div id="fempty" style="padding:28px 14px;text-align:center;color:var(--t2);font-family:var(--f-mono);font-size:10px;line-height:1.9">
+      Waiting to start.<br>AI will generate a plan then execute it step-by-step.
+    </div>
+  </div>
+  <div id="typing"><div class="td"></div><div class="td"></div><div class="td"></div><span id="tlbl">AI analysing…</span></div>
+  <div id="cbar">
+    <div class="cbl"><span>NEXT SCAN</span><span id="cbt">—</span></div>
+    <div id="ctrk"><div id="cfill"></div></div>
+  </div>
+</section>
 
-  <!-- Stats -->
-  <div id="stats-strip">
-    <div class="stat"><div class="stat-n" id="s-cycles">0</div><div class="stat-l">Cycles</div></div>
-    <div class="stat"><div class="stat-n" id="s-actions">0</div><div class="stat-l">Actions</div></div>
-    <div class="stat"><div class="stat-n" id="s-ok" style="color:var(--green)">0</div><div class="stat-l">OK</div></div>
-    <div class="stat"><div class="stat-n" id="s-err" style="color:var(--red)">0</div><div class="stat-l">Errors</div></div>
+<!-- ═══════ PLAN + REPORTS ═══════ -->
+<aside id="planp">
+  <div id="ptabs">
+    <div class="ptab on" data-p="plan" onclick="switchP('plan')">TEST PLAN</div>
+    <div class="ptab"    data-p="rpt"  onclick="switchP('rpt')">REPORTS</div>
   </div>
 
-  <!-- Tabs -->
-  <div id="tabs">
-    <div class="tab active" data-tab="activity" onclick="switchTab('activity')">Activity</div>
-    <div class="tab" data-tab="reports" onclick="switchTab('reports')">Reports</div>
-  </div>
-
-  <!-- Activity tab -->
-  <div class="tab-pane active" id="tab-activity">
-    <div id="activity-feed">
-      <div id="empty-msg" style="padding:30px 16px;text-align:center;color:var(--text-lo);font-size:11px;line-height:1.8">
-        No activity yet.<br>Enter a URL and click START TESTING.
+  <!-- Plan pane -->
+  <div class="ppane on" id="pp-plan">
+    <div id="plan-scroll">
+      <div class="pe" id="plan-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v14a2 2 0 01-2 2z"/></svg>
+        AI will generate a testing plan<br>from the first screenshot.
       </div>
     </div>
-    <div id="typing">
-      <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
-      <span id="typing-label">AI analysing screenshot…</span>
-    </div>
-    <div id="cycle-bar-wrap">
-      <div class="cb-label">
-        <span>NEXT SCAN</span><span id="cb-time">—</span>
-      </div>
-      <div id="cycle-track"><div id="cycle-fill"></div></div>
+    <div class="plprog" id="plprog" style="display:none">
+      <div class="ppl"><span>PROGRESS</span><em id="ppct">0%</em></div>
+      <div class="pptr"><div class="ppf" id="ppf" style="width:0%"></div></div>
     </div>
   </div>
 
-  <!-- Reports tab -->
-  <div class="tab-pane" id="tab-reports">
-    <div id="reports-feed">
-      <div class="reports-empty" id="reports-empty">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-lo)"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        Reports appear here every 60 seconds once testing starts.
+  <!-- Reports pane -->
+  <div class="ppane" id="pp-rpt">
+    <div id="rpt-scroll">
+      <div class="re" id="rpt-empty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v14a2 2 0 01-2 2z"/></svg>
+        60-second reports appear here.
       </div>
     </div>
   </div>
-
 </aside>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════
      JAVASCRIPT
-════════════════════════════════════════════════════════════ -->
+═══════════════════════════════════════════════ -->
 <script>
 'use strict';
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    CONFIG
-───────────────────────────────────────────────────────── */
+─────────────────────────────────────────────────── */
 const CFG = {
   anthropicKey:      '',
   anthropicEndpoint: 'https://corsproxy.io/?url=https://api.anthropic.com/v1/messages',
   anthropicModel:    'claude-haiku-4-5-20251001',
   hfKey:             'YOUR_API_KEY_HERE',
   hfEndpoint:        'https://corsproxy.io/?url=https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct',
-  cycleMs:           3000,   // screenshot every 3 seconds
-  reportIntervalMs:  60000,  // report every 60 seconds
-  gridCols:          10,
-  gridRows:          10,
-  useMock:           false,
+  cycleMs:           5000,   // 5 seconds between screenshots
+  reportMs:          60000,  // 60-second reports
+  stuckThresh:       3,      // repeated action count → stuck
 };
 
-/* ─────────────────────────────────────────────────────────
-   STATE
-───────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   APPLICATION STATE
+─────────────────────────────────────────────────── */
 const S = {
-  running:        false,
-  paused:         false,       // true while user is logging in
-  gridLabels:     true,
-  cycleTimer:     null,
-  countdownTimer: null,
-  reportTimer:    null,
-  reportCountdown:null,
-  cycleCount:     0,
-  actionsTotal:   0,
-  actionsOk:      0,
-  actionsErr:     0,
-  scrollOffsetY:  0,
-  reportSecondsLeft: 60,
+  running:      false,
+  paused:       false,
+  assistMode:   false,
+  phase:        'idle',        // idle | planning | executing | paused | stuck | stopped
+  gridMode:     100,           // 100 or 1000
+  gridLabels:   true,
+  scrollY:      0,             // virtual iframe scroll offset
 
-  // Per-report accumulators (reset each report)
-  rpt: {
-    actions: 0, ok: 0, fail: 0,
-    bugs: [], pages: [], errors: [],
-  },
+  // Timers
+  cycleTimer:   null,
+  cbarTimer:    null,
+  reportTimer:  null,
+  rptCdTimer:   null,
+  rptSecs:      60,
+
+  // Counters
+  cycles: 0, total: 0, ok: 0, err: 0,
+
+  // Test plan
+  plan:      [],   // [{text, status: pending|current|done}]
+  planStep:  -1,   // current active step
+  planReady: false,
+
+  // Stuck detection — rolling buffer of last N commands
+  lastCmds: [],
+  stuckCmd: '',
+
+  // Per-60s report accumulators
+  rpt: { actions:0, ok:0, fail:0, bugs:[], errors:[] },
 };
 
-/* ─────────────────────────────────────────────────────────
-   DOM SHORTCUTS
-───────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   DOM REFERENCES
+─────────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 const D = {
-  urlInput:      $('url-input'),
-  keyInput:      $('key-input'),
-  btnStart:      $('btn-start'),
-  btnStop:       $('btn-stop'),
-  btnResume:     $('btn-resume'),
-  btnGrid:       $('btn-grid'),
-  statusDot:     $('status-dot'),
-  statusLabel:   $('status-label'),
-  frame:         $('site-frame'),
-  placeholder:   $('placeholder'),
-  grid:          $('grid'),
-  snapFlash:     $('snap-flash'),
-  loginOverlay:  $('login-overlay'),
-  urlDisplay:    $('url-display'),
-  originTag:     $('origin-tag'),
-  feed:          $('activity-feed'),
-  typing:        $('typing'),
-  typingLabel:   $('typing-label'),
-  cycleFill:     $('cycle-fill'),
-  cbTime:        $('cb-time'),
-  reportsCon:    $('reports-feed'),
-  reportsEmpty:  $('reports-empty'),
-  reportCountdown: $('report-countdown'),
-  sCycles:  $('s-cycles'),
-  sActions: $('s-actions'),
-  sOk:      $('s-ok'),
-  sErr:     $('s-err'),
+  urlInp:    $('url-inp'),
+  keyInp:    $('key-inp'),
+  btnStart:  $('btn-start'),
+  btnStop:   $('btn-stop'),
+  btnGrid:   $('btn-grid'),
+  btnMode:   $('btn-mode'),
+  btnAssist: $('btn-assist'),
+  btnResume: $('btn-resume'),
+  sdot:      $('sdot'),
+  slbl:      $('slbl'),
+  gbadge:    $('gbadge'),
+  rcd:       $('rcd'),
+  frame:     $('sframe'),
+  placeholder: $('placeholder'),
+  goverlay:  $('goverlay'),
+  sfl:       $('sfl'),
+  ovLogin:   $('ov-login'),
+  ovStuck:   $('ov-stuck'),
+  purl:      $('purl'),
+  otag:      $('otag'),
+  pbadge:    $('pbadge'),
+  feed:      $('feed'),
+  fempty:    $('fempty'),
+  typing:    $('typing'),
+  tlbl:      $('tlbl'),
+  cfill:     $('cfill'),
+  cbt:       $('cbt'),
+  planScroll:$('plan-scroll'),
+  planEmpty: $('plan-empty'),
+  plprog:    $('plprog'),
+  ppf:       $('ppf'),
+  ppct:      $('ppct'),
+  rptScroll: $('rpt-scroll'),
+  rptEmpty:  $('rpt-empty'),
+  stuckN:    $('stuck-n'),
+  stuckC:    $('stuck-c'),
+  sv:        [$('sv0'),$('sv1'),$('sv2'),$('sv3')],
 };
 
-/* ─────────────────────────────────────────────────────────
-   BUILD GRID
-───────────────────────────────────────────────────────── */
-(function buildGrid(){
+/* ───────────────────────────────────────────────────
+   BUILD GRID OVERLAY
+   Normal:    10×10  = 100 cells (numbers 1-100)
+   Precision: 40×25  = 1000 cells (numbers 1-1000)
+─────────────────────────────────────────────────── */
+function buildGrid(mode) {
+  const cols  = mode === 1000 ? 40 : 10;
+  const rows  = mode === 1000 ? 25 : 10;
+  const total = cols * rows;
+
+  D.goverlay.innerHTML = '';
+  D.goverlay.className = `g${mode}${S.gridLabels ? '' : ' loff'}`;
+
   const frag = document.createDocumentFragment();
-  for(let i=1;i<=100;i++){
-    const cell=document.createElement('div');
-    cell.className='g-cell'; cell.id=`gc${i}`;
-    const n=document.createElement('span');
-    n.className='g-num'; n.textContent=i;
-    cell.appendChild(n);
+  for (let i = 1; i <= total; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'gc';
+    cell.id = `gc${i}`;
+    const num = document.createElement('span');
+    num.className = 'gn';
+    num.textContent = i;
+    cell.appendChild(num);
     frag.appendChild(cell);
   }
-  D.grid.appendChild(frag);
+  D.goverlay.appendChild(frag);
+}
 
-  // Placeholder mini-grid
-  const ph = $('ph-grid');
-  for(let i=0;i<50;i++){
-    const c=document.createElement('div');
-    c.className='ph-cell'; ph.appendChild(c);
-  }
-})();
-
-/* ─────────────────────────────────────────────────────────
-   GRID HELPERS
-───────────────────────────────────────────────────────── */
-/** Convert grid number 1-100 → pixel centre in iframe-wrap */
-function gridToPx(n){
-  n = Math.max(1, Math.min(100, n));
-  const col = (n-1) % CFG.gridCols;
-  const row = Math.floor((n-1) / CFG.gridCols);
-  const W = $('iframe-wrap').clientWidth;
-  const H = $('iframe-wrap').clientHeight;
+/* ───────────────────────────────────────────────────
+   GRID COORDINATE HELPERS
+─────────────────────────────────────────────────── */
+/** Map grid number → pixel centre within fwrap */
+function gridToPx(n) {
+  const cols = S.gridMode === 1000 ? 40 : 10;
+  const rows = S.gridMode === 1000 ? 25 : 10;
+  const maxN = cols * rows;
+  n = Math.max(1, Math.min(maxN, n));
+  const col = (n - 1) % cols;
+  const row = Math.floor((n - 1) / cols);
+  const W   = $('fwrap').clientWidth;
+  const H   = $('fwrap').clientHeight;
   return {
-    x: Math.round(col * (W/CFG.gridCols) + (W/CFG.gridCols)/2),
-    y: Math.round(row * (H/CFG.gridRows) + (H/CFG.gridRows)/2),
+    x: Math.round(col * (W / cols) + (W / cols) / 2),
+    y: Math.round(row * (H / rows) + (H / rows) / 2),
   };
 }
 
-function flashCell(n){
-  const c=$(`gc${n}`); if(!c) return;
-  c.classList.remove('flash-cell'); void c.offsetWidth;
-  c.classList.add('flash-cell');
-  setTimeout(()=>c.classList.remove('flash-cell'), 700);
+/** Flash grid cell */
+function flashCell(n) {
+  const c = $(`gc${n}`);
+  if (!c) return;
+  c.classList.remove('fl');
+  void c.offsetWidth;
+  c.classList.add('fl');
+  setTimeout(() => c.classList.remove('fl'), 650);
 }
 
-function spawnRipple(x, y){
-  const r=document.createElement('div');
-  r.className='ripple-dot';
-  r.style.left=x+'px'; r.style.top=y+'px';
-  $('iframe-wrap').appendChild(r);
-  setTimeout(()=>r.remove(), 800);
+/** Animate a ripple at pixel coordinates */
+function ripple(x, y) {
+  const r = document.createElement('div');
+  r.className = 'rip';
+  r.style.left = x + 'px';
+  r.style.top  = y + 'px';
+  $('fwrap').appendChild(r);
+  setTimeout(() => r.remove(), 800);
 }
 
-/* ─────────────────────────────────────────────────────────
-   GRID TOGGLE
-───────────────────────────────────────────────────────── */
-function toggleGrid(){
+/** Show a scroll direction indicator */
+function scrollArrow(dir) {
+  const a = document.createElement('div');
+  a.className = 'sarrow';
+  a.style.top = dir > 0 ? '38%' : '52%';
+  a.textContent = dir > 0 ? '▼ SCROLLING' : '▲ SCROLLING';
+  $('fwrap').appendChild(a);
+  setTimeout(() => a.remove(), 950);
+}
+
+/* ───────────────────────────────────────────────────
+   GRID CONTROLS
+─────────────────────────────────────────────────── */
+function toggleLabels() {
   S.gridLabels = !S.gridLabels;
-  D.grid.classList.toggle('labels-hidden', !S.gridLabels);
-  D.btnGrid.textContent = S.gridLabels ? 'GRID: ON' : 'GRID: OFF';
+  D.goverlay.classList.toggle('loff', !S.gridLabels);
+  D.btnGrid.textContent = S.gridLabels ? 'LABELS: ON' : 'LABELS: OFF';
+  D.btnGrid.classList.toggle('on', !S.gridLabels);
 }
 
-/* ─────────────────────────────────────────────────────────
-   STATUS
-───────────────────────────────────────────────────────── */
-function setStatus(mode, label){
-  D.statusDot.className = 'status-dot ' + mode;
-  D.statusLabel.textContent = label;
-}
-function updateStats(){
-  D.sCycles.textContent  = S.cycleCount;
-  D.sActions.textContent = S.actionsTotal;
-  D.sOk.textContent      = S.actionsOk;
-  D.sErr.textContent     = S.actionsErr;
+function toggleMode() {
+  applyGridMode(S.gridMode === 100 ? 1000 : 100);
+  log('sys', 'GRID', `Grid switched to ${S.gridMode} cells`);
 }
 
-/* ─────────────────────────────────────────────────────────
-   TABS
-───────────────────────────────────────────────────────── */
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active', p.id==='tab-'+name));
+function applyGridMode(mode) {
+  S.gridMode = mode;
+  buildGrid(mode);
+  D.btnMode.textContent = `GRID: ${mode}`;
+  D.gbadge.innerHTML    = `GRID <em>${mode}</em>`;
+  D.btnMode.classList.toggle('on', mode === 1000);
 }
 
-/* ─────────────────────────────────────────────────────────
+function switchPrecision() {
+  applyGridMode(1000);
+  log('sys', 'GRID', 'Switched to PRECISION grid (1000 cells) for finer targeting');
+  dismissStuck();
+}
+
+/* ───────────────────────────────────────────────────
+   STATUS & UI HELPERS
+─────────────────────────────────────────────────── */
+function setStatus(mode, text) {
+  D.sdot.className = 'sdot ' + mode;
+  D.slbl.textContent = text;
+}
+
+const phaseColors = { idle:'var(--t2)', planning:'var(--violet)', executing:'var(--teal)', paused:'var(--amber)', stuck:'var(--red)', stopped:'var(--t2)' };
+function setPhase(phase, text) {
+  S.phase = phase;
+  D.pbadge.textContent = text;
+  const c = phaseColors[phase] || 'var(--t2)';
+  D.pbadge.style.color = c;
+  D.pbadge.style.borderColor = c;
+}
+
+function updateStats() {
+  D.sv[0].textContent = S.cycles;
+  D.sv[1].textContent = S.total;
+  D.sv[2].textContent = S.ok;
+  D.sv[3].textContent = S.err;
+}
+
+function showTyping(on, lbl = 'AI analysing screenshot…') {
+  D.typing.classList.toggle('on', on);
+  if (on) { D.tlbl.textContent = lbl; D.feed.scrollTop = D.feed.scrollHeight; }
+}
+
+/* ───────────────────────────────────────────────────
+   PANEL TAB SWITCH
+─────────────────────────────────────────────────── */
+function switchP(name) {
+  document.querySelectorAll('.ptab').forEach(t => t.classList.toggle('on', t.dataset.p === name));
+  document.querySelectorAll('.ppane').forEach(p => p.classList.toggle('on', p.id === 'pp-' + name));
+}
+
+/* ───────────────────────────────────────────────────
    LOGGING
-───────────────────────────────────────────────────────── */
-function removeEmptyMsg(){
-  const e=$('empty-msg');
-  if(e) e.remove();
-}
-function now(){
-  const d=new Date();
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-}
-function escHtml(s){
+─────────────────────────────────────────────────── */
+function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function log(type, role, body){
-  removeEmptyMsg();
-  const el=document.createElement('div');
-  el.className=`msg ${type}`;
-  el.innerHTML=`<div class="msg-head"><span class="msg-role">${escHtml(role)}</span><span class="msg-time">${now()}</span></div><div class="msg-body">${escHtml(body)}</div>`;
+function nowTS() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+function log(type, role, body) {
+  if (D.fempty) { D.fempty.remove(); D.fempty = null; }
+  const el = document.createElement('div');
+  el.className = `msg ${type}`;
+  el.innerHTML = `<div class="mh"><span class="mr">${esc(role)}</span><span class="mt">${nowTS()}</span></div><div class="mb">${esc(body)}</div>`;
   D.feed.appendChild(el);
-  D.feed.scrollTop=D.feed.scrollHeight;
-}
-function showTyping(on){
-  D.typing.classList.toggle('on', on);
-  if(on) D.feed.scrollTop=D.feed.scrollHeight;
+  D.feed.scrollTop = D.feed.scrollHeight;
 }
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    CYCLE COUNTDOWN BAR
-───────────────────────────────────────────────────────── */
-function startCyclebar(){
-  clearInterval(S.countdownTimer);
-  const total=CFG.cycleMs, t0=Date.now();
-  D.cycleFill.style.width='0%'; D.cbTime.textContent=`${(total/1000).toFixed(1)}s`;
-  S.countdownTimer=setInterval(()=>{
-    const e=Date.now()-t0, pct=Math.min(100,(e/total)*100);
-    D.cycleFill.style.width=pct+'%';
-    D.cbTime.textContent=`${Math.max(0,(total-e)/1000).toFixed(1)}s`;
-    if(pct>=100) clearInterval(S.countdownTimer);
-  },50);
+─────────────────────────────────────────────────── */
+function startCbar() {
+  clearInterval(S.cbarTimer);
+  const total = CFG.cycleMs, t0 = Date.now();
+  D.cfill.style.width = '0%';
+  D.cbt.textContent = (total / 1000).toFixed(1) + 's';
+  S.cbarTimer = setInterval(() => {
+    const e = Date.now() - t0;
+    const pct = Math.min(100, (e / total) * 100);
+    D.cfill.style.width = pct + '%';
+    D.cbt.textContent = Math.max(0, (total - e) / 1000).toFixed(1) + 's';
+    if (pct >= 100) clearInterval(S.cbarTimer);
+  }, 50);
 }
-function resetCyclebar(){
-  clearInterval(S.countdownTimer);
-  D.cycleFill.style.width='0%'; D.cbTime.textContent='—';
-}
-
-/* ─────────────────────────────────────────────────────────
-   REPORT COUNTDOWN TIMER
-───────────────────────────────────────────────────────── */
-function startReportCountdown(){
-  clearInterval(S.reportCountdown);
-  S.reportSecondsLeft=60;
-  D.reportCountdown.textContent='60s';
-  S.reportCountdown=setInterval(()=>{
-    S.reportSecondsLeft=Math.max(0, S.reportSecondsLeft-1);
-    D.reportCountdown.textContent=S.reportSecondsLeft+'s';
-  },1000);
-}
-function stopReportCountdown(){
-  clearInterval(S.reportCountdown);
-  D.reportCountdown.textContent='—';
+function stopCbar() {
+  clearInterval(S.cbarTimer);
+  D.cfill.style.width = '0%';
+  D.cbt.textContent = '—';
 }
 
-/* ─────────────────────────────────────────────────────────
-   SCREENSHOT CAPTURE
-───────────────────────────────────────────────────────── */
-async function captureScreenshot(){
-  D.snapFlash.classList.remove('go'); void D.snapFlash.offsetWidth;
-  D.snapFlash.classList.add('go');
+/* ───────────────────────────────────────────────────
+   REPORT COUNTDOWN
+─────────────────────────────────────────────────── */
+function startRptCd() {
+  clearInterval(S.rptCdTimer);
+  S.rptSecs = 60;
+  D.rcd.textContent = '60s';
+  S.rptCdTimer = setInterval(() => {
+    S.rptSecs = Math.max(0, S.rptSecs - 1);
+    D.rcd.textContent = S.rptSecs + 's';
+  }, 1000);
+}
+function stopRptCd() { clearInterval(S.rptCdTimer); D.rcd.textContent = '—'; }
+
+/* ───────────────────────────────────────────────────
+   SCREENSHOT CAPTURE (html2canvas)
+─────────────────────────────────────────────────── */
+async function screenshot() {
+  D.sfl.classList.remove('go');
+  void D.sfl.offsetWidth;
+  D.sfl.classList.add('go');
   try {
-    const canvas = await html2canvas($('iframe-wrap'),{
+    const canvas = await html2canvas($('fwrap'), {
       useCORS: true, allowTaint: true,
-      backgroundColor:'#0b0c0f', scale:0.55, logging:false,
+      backgroundColor: '#060810', scale: 0.5, logging: false,
     });
-    return canvas.toDataURL('image/jpeg',0.65).replace(/^data:image\/jpeg;base64,/,'');
-  } catch(e){
-    log('err','SCREENSHOT',`Capture failed: ${e.message}`);
-    S.actionsErr++; updateStats();
-    return null;
+    return canvas.toDataURL('image/jpeg', 0.6).replace(/^data:image\/jpeg;base64,/, '');
+  } catch (e) {
+    log('err', 'SCREENSHOT', `Capture failed: ${e.message}`);
+    S.err++; updateStats(); return null;
   }
 }
 
-/* ─────────────────────────────────────────────────────────
-   AI SYSTEM PROMPT
-───────────────────────────────────────────────────────── */
-const SYSTEM_PROMPT = `You are an autonomous AI website testing agent.
+/* ───────────────────────────────────────────────────
+   AI SYSTEM PROMPTS
+─────────────────────────────────────────────────── */
+/** Phase 1 — Planning */
+const PLAN_PROMPT = `You are an expert website QA planner.
 
-You analyse screenshots of websites that have a numbered grid overlay (1–100, arranged 10×10, left-to-right top-to-bottom: 1 is top-left, 100 is bottom-right).
+You receive a screenshot of a website with a numbered grid overlay (1-100 in a 10x10 grid, or 1-1000 in a 40x25 grid). Numbers are arranged left-to-right, top-to-bottom.
 
-Your goals:
-- Explore navigation menus
-- Click buttons and links
-- Scroll through content
-- Fill and submit forms
-- Detect UI errors and broken elements
-- Detect login/signup/authentication pages
+TASK: Analyse the screenshot and generate a structured, logical testing plan with 5-8 numbered steps covering:
+- Navigation exploration
+- Content and scroll testing
+- Form and button testing  
+- Login/auth detection
+- Image and media checks
+- Footer and link verification
 
-CRITICAL: If you detect a login page, signup page, password field, or any authentication form, you MUST respond with exactly:
+If you see a login/signup page, make step 1: "Handle authentication — pause for user login"
+
+Respond ONLY in this exact format:
+PLAN:
+1. [concise step description]
+2. [concise step description]
+[3-8 more steps]
+READY`;
+
+/** Phase 2 — Execution (generated per request) */
+function execPrompt() {
+  const maxN = S.gridMode;
+  const stepsText = S.plan.map((s, i) => `${i + 1}. ${s.text} [${s.status}]`).join('\n');
+  const current   = S.plan[S.planStep]?.text || 'Explore the page';
+  return `You are an autonomous website testing agent.
+
+Grid: ${maxN} cells (1-${maxN}), arranged left-to-right top-to-bottom. Cell 1 = top-left, ${maxN} = bottom-right.
+
+FULL TEST PLAN:
+${stepsText}
+
+CURRENT STEP: Step ${S.planStep + 1} — "${current}"
+
+RULES:
+- If you see a login/signup/password/auth page → respond: Command: pause
+- Choose an action that makes progress on the current step
+- Use only grid numbers 1-${maxN}
+- One command per response only
+
+Respond ONLY in this exact format (no extra text):
 Reason:
-Login or signup page detected.
+[1-2 sentences: what you observe and why this action]
+
+Plan Step:
+[what this action achieves toward the current plan step]
+
 Command:
-pause
-Message:
-Login or account creation required. Please login manually.
-
-For all other actions respond ONLY in this exact format:
-Reason:
-<1-3 sentences explaining what you see and why you are taking this action>
-Command:
-<exactly one of: tap(N) | scroll(A,B) | wait(S) | type(N,"text")>
-
-Rules:
-- N must be between 1 and 100
-- scroll(A,B): A and B are grid numbers, scrolls from A toward B
-- Only one command per response
-- Be methodical: explore navigation first, then content, then forms`;
-
-/* ─────────────────────────────────────────────────────────
-   MOCK RESPONSES (fallback)
-───────────────────────────────────────────────────────── */
-const MOCKS = [
-  {r:'I see the top of the page. I will explore the main navigation links.',       c:'tap(5)'},
-  {r:'Scrolling down to see more page content below the visible area.',            c:'scroll(20,70)'},
-  {r:'I notice a button in the upper-right area. Clicking to explore.',            c:'tap(9)'},
-  {r:'Continuing to scroll down to reach the footer and discover more content.',   c:'scroll(60,95)'},
-  {r:'Clicking the centre of the page to interact with the main content section.', c:'tap(55)'},
-  {r:'Scrolling back to the top to restart systematic exploration.',               c:'scroll(90,10)'},
-  {r:'I see what appears to be a search input area. Attempting to type a query.',  c:'type(15,"test search")'},
-  {r:'Pausing briefly to allow any dynamic content or animations to complete.',    c:'wait(2)'},
-  {r:'Exploring the left navigation column for additional links.',                 c:'tap(21)'},
-  {r:'Checking the bottom of the page for footer links and contact information.',  c:'scroll(50,99)'},
-];
-let mockIdx = 0;
-function getMock(){
-  const m=MOCKS[mockIdx++ % MOCKS.length];
-  return `Reason:\n${m.r}\nCommand:\n${m.c}`;
+[exactly one of: tap(N) | scroll(A,B) | wait(S) | type(N,"text") | pause]`;
 }
 
-/* ─────────────────────────────────────────────────────────
-   API CALLS
-───────────────────────────────────────────────────────── */
-async function callAnthropic(b64){
-  const userContent = b64
-    ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-       {type:'text',text:`Cycle ${S.cycleCount}: analyse the screenshot with the numbered 10×10 grid and choose the next test action.`}]
-    : [{type:'text',text:`Cycle ${S.cycleCount}: choose the next exploratory test action.`}];
+/* ───────────────────────────────────────────────────
+   MOCK RESPONSES (API unavailable fallback)
+─────────────────────────────────────────────────── */
+const MOCK_PLAN_RESP = `PLAN:
+1. Explore main navigation menu and header links
+2. Scroll through homepage content sections
+3. Identify and test primary CTA buttons
+4. Check for login, signup, or account forms
+5. Test any visible search or filter functionality
+6. Verify images and media load correctly
+7. Check footer links and contact information
+8. Test responsive behaviour by scrolling full page
+READY`;
 
-  const res = await fetch(CFG.anthropicEndpoint,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':CFG.anthropicKey,'anthropic-version':'2023-06-01'},
-    body:JSON.stringify({model:CFG.anthropicModel, max_tokens:300, system:SYSTEM_PROMPT, messages:[{role:'user',content:userContent}]}),
+const MOCK_EXEC = [
+  {r:'The navigation bar is visible at the top. Testing the main menu links.',  ps:'Step 1: Navigation',  c:'tap(5)'},
+  {r:'Scrolling down to explore the hero section and featured content.',         ps:'Step 2: Homepage',    c:'scroll(20,65)'},
+  {r:'I can see a prominent call-to-action button in the page centre.',          ps:'Step 3: CTAs',        c:'tap(55)'},
+  {r:'Continuing scroll to reach below-the-fold content.',                       ps:'Step 2: Homepage',    c:'scroll(65,90)'},
+  {r:'Checking the top-right corner for login or user account links.',           ps:'Step 4: Auth check',  c:'tap(9)'},
+  {r:'Scrolling back to top to restart the exploration cycle.',                  ps:'Step 2: Reset',       c:'scroll(90,5)'},
+  {r:'Testing what appears to be a search input field near the header.',         ps:'Step 5: Search',      c:'type(15,"test")'},
+  {r:'Pausing briefly to allow any dynamic or lazy-loaded content to appear.',   ps:'Step 6: Media',       c:'wait(2)'},
+  {r:'Exploring the left side of the page for additional navigation elements.', ps:'Step 1: Navigation',  c:'tap(21)'},
+  {r:'Scrolling to the footer section to check links and contact information.',  ps:'Step 7: Footer',      c:'scroll(50,99)'},
+];
+let mockExecIdx = 0;
+
+/* ───────────────────────────────────────────────────
+   API CALLS
+─────────────────────────────────────────────────── */
+async function callAnthropic(b64, systemPrompt, userText) {
+  const userContent = b64
+    ? [{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } },
+       { type:'text', text:userText }]
+    : [{ type:'text', text:userText }];
+
+  const res = await fetch(CFG.anthropicEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-api-key':         CFG.anthropicKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: CFG.anthropicModel, max_tokens: 450,
+      system: systemPrompt,
+      messages: [{ role:'user', content:userContent }],
+    }),
   });
-  if(!res.ok){const t=await res.text().catch(()=>res.statusText); throw new Error(`Anthropic ${res.status}: ${t.slice(0,200)}`);}
-  const d=await res.json();
-  if(d?.content?.[0]?.text) return d.content[0].text.trim();
-  if(d?.error?.message) throw new Error(d.error.message);
+  if (!res.ok) { const t = await res.text().catch(()=>res.statusText); throw new Error(`Anthropic ${res.status}: ${t.slice(0,200)}`); }
+  const d = await res.json();
+  if (d?.content?.[0]?.text) return d.content[0].text.trim();
+  if (d?.error?.message) throw new Error(d.error.message);
   throw new Error('Unexpected Anthropic response');
 }
 
-async function callHF(){
-  const prompt=`<|im_start|>system\n${SYSTEM_PROMPT}<|im_end|>\n<|im_start|>user\nCycle ${S.cycleCount}. Choose next action.<|im_end|>\n<|im_start|>assistant\n`;
-  const res=await fetch(CFG.hfEndpoint,{
+async function callHF(systemPrompt) {
+  const prompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n<|im_start|>user\nCycle ${S.cycles}: choose next action.<|im_end|>\n<|im_start|>assistant\n`;
+  const res = await fetch(CFG.hfEndpoint, {
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${CFG.hfKey}`},
-    body:JSON.stringify({inputs:prompt,parameters:{max_new_tokens:220,temperature:0.7,do_sample:true,return_full_text:false}}),
+    body:JSON.stringify({ inputs:prompt, parameters:{ max_new_tokens:280, temperature:0.7, do_sample:true, return_full_text:false } }),
   });
-  if(!res.ok){const t=await res.text().catch(()=>res.statusText); throw new Error(`HF ${res.status}: ${t.slice(0,200)}`);}
-  const d=await res.json();
-  if(Array.isArray(d)&&d[0]?.generated_text) return d[0].generated_text.trim();
-  if(d?.generated_text) return d.generated_text.trim();
-  if(d?.error) throw new Error(`HF: ${d.error}`);
+  if (!res.ok) { const t = await res.text().catch(()=>res.statusText); throw new Error(`HF ${res.status}: ${t.slice(0,200)}`); }
+  const d = await res.json();
+  if (Array.isArray(d) && d[0]?.generated_text) return d[0].generated_text.trim();
+  if (d?.generated_text) return d.generated_text.trim();
+  if (d?.error) throw new Error(`HF: ${d.error}`);
   throw new Error('Unexpected HF response');
 }
 
-async function callAI(b64){
-  if(CFG.useMock){ await sleep(500+Math.random()*400); return getMock(); }
-  if(CFG.anthropicKey){
-    try{ log('sys','API','Calling Anthropic Claude…'); return await callAnthropic(b64); }
-    catch(e){ log('err','API',`Anthropic: ${e.message} → trying HuggingFace`); }
+async function callAI(b64) {
+  const isPlan = S.phase === 'planning';
+  const sysP   = isPlan ? PLAN_PROMPT : execPrompt();
+  const usrT   = isPlan
+    ? 'Analyse this website screenshot and generate a comprehensive testing plan.'
+    : `Cycle ${S.cycles}: analyse the screenshot and execute step ${S.planStep + 1} of the test plan.`;
+
+  // Anthropic (vision-capable, best results)
+  if (CFG.anthropicKey) {
+    try {
+      log('sys', 'API', `Anthropic Claude → ${isPlan ? 'planning' : `step ${S.planStep + 1}`}`);
+      return await callAnthropic(b64, sysP, usrT);
+    } catch (e) {
+      log('err', 'API', `Anthropic: ${e.message} → trying HuggingFace`);
+    }
   }
-  try{ log('sys','API','Calling HuggingFace Qwen…'); return await callHF(); }
-  catch(e){
-    log('err','API',`HuggingFace: ${e.message} → switching to demo mode`);
-    CFG.useMock=true;
-    await sleep(300);
-    return getMock();
+
+  // HuggingFace (text only)
+  try {
+    log('sys', 'API', 'HuggingFace Qwen…');
+    return await callHF(sysP);
+  } catch (e) {
+    log('err', 'API', `HuggingFace: ${e.message} → mock mode`);
   }
+
+  // Mock fallback
+  await sleep(500 + Math.random() * 400);
+  if (isPlan) return MOCK_PLAN_RESP;
+  const m = MOCK_EXEC[mockExecIdx++ % MOCK_EXEC.length];
+  return `Reason:\n${m.r}\n\nPlan Step:\n${m.ps}\n\nCommand:\n${m.c}`;
 }
 
-/* ─────────────────────────────────────────────────────────
-   PARSE AI RESPONSE
-───────────────────────────────────────────────────────── */
-function parseAI(text){
-  const reasonM  = text.match(/Reason:\s*([\s\S]*?)(?=Command:|$)/i);
-  const commandM = text.match(/Command:\s*([\s\S]*?)(?=Message:|$)/i);
-  const messageM = text.match(/Message:\s*([\s\S]*?)$/i);
+/* ───────────────────────────────────────────────────
+   RESPONSE PARSERS
+─────────────────────────────────────────────────── */
+function parsePlan(text) {
+  const match = text.match(/PLAN:\s*([\s\S]*?)(?:READY|$)/i);
+  if (!match) return [];
+  const steps = [];
+  for (const line of match[1].trim().split('\n')) {
+    const m = line.match(/^\d+\.\s+(.+)/);
+    if (m) steps.push({ text: m[1].trim(), status: 'pending' });
+  }
+  return steps;
+}
+
+function parseExec(text) {
   return {
-    reason:  reasonM  ? reasonM[1].trim()  : text.trim(),
-    command: commandM ? commandM[1].trim() : '',
-    message: messageM ? messageM[1].trim() : '',
+    reason:  (text.match(/Reason:\s*([\s\S]*?)(?=Plan Step:|Command:|$)/i)  || [])[1]?.trim() || '',
+    planSt:  (text.match(/Plan Step:\s*([\s\S]*?)(?=Command:|$)/i)           || [])[1]?.trim() || '',
+    command: (text.match(/Command:\s*([\s\S]*?)(?=Message:|$)/i)             || [])[1]?.trim() || '',
+    message: (text.match(/Message:\s*([\s\S]*?)$/i)                          || [])[1]?.trim() || '',
   };
 }
 
-/* ─────────────────────────────────────────────────────────
-   CROSS-ORIGIN SAFE INTERACTIONS
-   The browser's Same-Origin Policy blocks ALL DOM access to
-   cross-origin frames. We therefore simulate actions visually:
-   • tap    → ripple animation at grid coordinates
-   • scroll → CSS translateY on the iframe element
+/* ───────────────────────────────────────────────────
+   PLAN RENDER & MANAGEMENT
+─────────────────────────────────────────────────── */
+function renderPlan(steps) {
+  // Clear and rebuild plan pane
+  D.planScroll.innerHTML = '';
+  D.planEmpty = null;
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'plhd';
+  hdr.innerHTML = `AI TEST PLAN <span>${steps.length} STEPS</span>`;
+  D.planScroll.appendChild(hdr);
+
+  // Steps list
+  steps.forEach((step, i) => {
+    const el = document.createElement('div');
+    el.className = `pstep ${step.status}`;
+    el.id = `ps${i}`;
+    el.innerHTML = `
+      <div class="psn">${i + 1}</div>
+      <div class="pst">${esc(step.text)}</div>
+      <div class="pss">${step.status === 'done' ? '✓ done' : step.status === 'current' ? '▶ active' : 'pending'}</div>
+    `;
+    D.planScroll.appendChild(el);
+  });
+
+  D.plprog.style.display = 'block';
+  refreshProgress();
+  switchP('plan');
+}
+
+function refreshProgress() {
+  if (!S.plan.length) return;
+  const done = S.plan.filter(s => s.status === 'done').length;
+  const pct  = Math.round((done / S.plan.length) * 100);
+  D.ppf.style.width   = pct + '%';
+  D.ppct.textContent  = pct + '%';
+}
+
+/** Move to the next plan step */
+function advancePlanStep() {
+  // Mark current as done
+  if (S.planStep >= 0 && S.planStep < S.plan.length) {
+    S.plan[S.planStep].status = 'done';
+    const el = $(`ps${S.planStep}`);
+    if (el) { el.className = 'pstep done'; el.querySelector('.pss').textContent = '✓ done'; }
+  }
+  S.planStep++;
+
+  if (S.planStep < S.plan.length) {
+    // Activate new step
+    S.plan[S.planStep].status = 'current';
+    const el = $(`ps${S.planStep}`);
+    if (el) {
+      el.className = 'pstep cur';
+      el.querySelector('.pss').textContent = '▶ active';
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    log('plan', `STEP ${S.planStep + 1}`, S.plan[S.planStep].text);
+  } else {
+    // All done — restart plan
+    log('ok', 'PLAN', 'All plan steps completed! Restarting from step 1.');
+    S.planStep = 0;
+    S.plan.forEach((s, i) => { s.status = i === 0 ? 'current' : 'pending'; });
+    renderPlan(S.plan);
+  }
+  refreshProgress();
+}
+
+/* ───────────────────────────────────────────────────
+   STUCK DETECTION
+─────────────────────────────────────────────────── */
+function trackCmd(cmd) {
+  S.lastCmds.push(cmd);
+  if (S.lastCmds.length > CFG.stuckThresh) S.lastCmds.shift();
+  return (
+    S.lastCmds.length >= CFG.stuckThresh &&
+    S.lastCmds.every(c => c === S.lastCmds[0])
+  );
+}
+
+function triggerStuck() {
+  S.paused = true;
+  clearTimeout(S.cycleTimer);
+  stopCbar();
+  showTyping(false);
+  setPhase('stuck', 'STUCK');
+  setStatus('stuck', 'STUCK');
+  D.ovStuck.classList.add('show');
+  D.stuckN.textContent = CFG.stuckThresh;
+  D.stuckC.textContent = S.stuckCmd;
+  log('err', 'STUCK', `AI is repeating "${S.stuckCmd}" — testing stuck`);
+  log('warn', 'STUCK', 'Choose: Precision Grid, Adjust Position, or Continue');
+}
+
+function dismissStuck() {
+  S.paused = false;
+  S.lastCmds = [];
+  D.ovStuck.classList.remove('show');
+  setPhase('executing', 'EXECUTING');
+  setStatus('run', 'RUNNING');
+  scheduleNext();
+}
+
+/* ───────────────────────────────────────────────────
+   USER ASSIST MODE
+─────────────────────────────────────────────────── */
+function showAssist() {
+  if (!S.running) return;
+  S.paused = S.assistMode = true;
+  clearTimeout(S.cycleTimer);
+  stopCbar();
+  D.btnAssist.textContent = '✓ DONE';
+  D.btnAssist.onclick = finishAssist;
+  D.btnResume.style.display = 'inline-flex';
+  setStatus('paused', 'ASSIST');
+  log('warn', 'ASSIST', 'Paused. Scroll/reposition the page, then click DONE or RESUME.');
+}
+
+function doAssistFromStuck() {
+  D.ovStuck.classList.remove('show');
+  showAssist();
+}
+
+function finishAssist() {
+  S.paused = S.assistMode = false;
+  S.lastCmds = [];
+  D.btnAssist.textContent = '✦ ASSIST';
+  D.btnAssist.onclick = showAssist;
+  D.btnResume.style.display = 'none';
+  setStatus('run', 'RUNNING');
+  setPhase('executing', 'EXECUTING');
+  log('ok', 'ASSIST', 'User repositioned. Resuming AI testing.');
+  scheduleNext();
+}
+
+/* ───────────────────────────────────────────────────
+   LOGIN PAUSE / RESUME
+─────────────────────────────────────────────────── */
+function loginPause() {
+  S.paused = true;
+  clearTimeout(S.cycleTimer);
+  stopCbar();
+  showTyping(false);
+  D.ovLogin.classList.add('show');
+  D.btnResume.style.display = 'inline-flex';
+  D.btnStop.disabled = true;
+  setStatus('paused', 'LOGIN PAUSE');
+  setPhase('paused', 'LOGIN PAUSED');
+  log('warn', 'AI', 'Login / authentication page detected. Testing paused.');
+  log('sys', 'SYSTEM', 'Log in manually in the iframe, then click RESUME.');
+}
+
+function resumeTesting() {
+  S.paused = S.assistMode = false;
+  D.ovLogin.classList.remove('show');
+  D.ovStuck.classList.remove('show');
+  D.btnResume.style.display = 'none';
+  D.btnStop.disabled = false;
+  D.btnAssist.textContent = '✦ ASSIST';
+  D.btnAssist.onclick = showAssist;
+  S.scrollY = 0;
+  D.frame.style.transform = '';
+  S.lastCmds = [];
+  setStatus('run', 'RUNNING');
+  setPhase('executing', 'EXECUTING');
+  log('ok', 'SYSTEM', 'Testing resumed.');
+  scheduleNext();
+}
+
+/* ───────────────────────────────────────────────────
+   CROSS-ORIGIN SAFE IFRAME INTERACTIONS
+   The browser's Same-Origin Policy prevents ANY DOM
+   access to cross-origin iframes. All interactions
+   are safely simulated on the host page:
+   • scroll → CSS translateY  (visual, no DOM access)
+   • tap    → ripple dot animation at grid position
    • type   → ripple + log note
-───────────────────────────────────────────────────────── */
-function doScroll(startN, endN){
-  const H      = D.frame.offsetHeight || $('iframe-wrap').clientHeight;
-  const cellH  = H / CFG.gridRows;
-  const sRow   = Math.floor((startN-1) / CFG.gridCols);
-  const eRow   = Math.floor((endN-1)   / CFG.gridCols);
-  const delta  = (eRow - sRow) * cellH;
-  S.scrollOffsetY = Math.min(0, Math.max(-(H*3), S.scrollOffsetY - delta));
+─────────────────────────────────────────────────── */
+function doScroll(startN, endN) {
+  const H    = D.frame.offsetHeight || $('fwrap').clientHeight;
+  const cols = S.gridMode === 1000 ? 40 : 10;
+  const rows = S.gridMode === 1000 ? 25 : 10;
+  const cellH = H / rows;
+  const sRow  = Math.floor((startN - 1) / cols);
+  const eRow  = Math.floor((endN   - 1) / cols);
+  const delta = (eRow - sRow) * cellH;
+  S.scrollY = Math.min(0, Math.max(-(H * 3), S.scrollY - delta));
   D.frame.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1)';
-  D.frame.style.transform  = `translateY(${S.scrollOffsetY}px)`;
+  D.frame.style.transform  = `translateY(${S.scrollY}px)`;
+  scrollArrow(delta);
 }
 
-function doTap(n){
-  const {x,y} = gridToPx(n);
+function doTap(n) {
+  const { x, y } = gridToPx(n);
   flashCell(n);
-  spawnRipple(x, y);
+  ripple(x, y);
 }
 
-function doType(n, text){
-  const {x,y} = gridToPx(n);
+function doType(n, text) {
+  const { x, y } = gridToPx(n);
   flashCell(n);
-  spawnRipple(x, y);
-  log('sys','EXEC',`type("${text}") visualised at grid ${n} — direct input blocked by browser cross-origin policy`);
+  ripple(x, y);
+  // DOM input blocked cross-origin — log as informational
+  log('sys', 'EXEC', `type("${text}") at grid ${n} — DOM input blocked by cross-origin policy; visualised only`);
 }
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    COMMAND EXECUTOR
-───────────────────────────────────────────────────────── */
-async function execCommand(raw){
+─────────────────────────────────────────────────── */
+async function execCmd(raw) {
   const cmd = raw.trim();
-  if(!cmd){ log('sys','EXEC','No command in AI response.'); return; }
+  if (!cmd) { log('sys', 'EXEC', 'No command found.'); return; }
 
-  log('cmd','CMD',`▶ ${cmd}`);
+  log('cmd', 'EXEC', `▶ ${cmd}`);
 
-  /* pause — login detected */
-  if(/^pause$/i.test(cmd)){
-    triggerLoginPause();
+  // Stuck detection
+  if (trackCmd(cmd)) {
+    S.stuckCmd = cmd;
+    triggerStuck();
     return;
   }
 
+  const maxN = S.gridMode === 1000 ? 1000 : 100;
+
+  /* pause — login detected */
+  if (/^pause$/i.test(cmd)) { loginPause(); return; }
+
   /* tap(N) */
   const tapM = cmd.match(/^tap\((\d+)\)/i);
-  if(tapM){
-    const n=parseInt(tapM[1]);
-    if(n<1||n>100){ log('err','EXEC',`Invalid grid number ${n} (must be 1–100)`); S.actionsErr++; S.rpt.fail++; updateStats(); return; }
+  if (tapM) {
+    const n = parseInt(tapM[1]);
+    if (n < 1 || n > maxN) {
+      log('err', 'EXEC', `Grid ${n} out of range (1-${maxN})`);
+      S.err++; S.rpt.fail++;
+      S.rpt.bugs.push(`Invalid grid reference: tap(${n})`);
+      updateStats(); return;
+    }
     doTap(n);
-    const {x,y}=gridToPx(n);
-    log('ok','EXEC',`Tapped grid ${n} → (${x}px, ${y}px)`);
-    S.actionsOk++; S.rpt.ok++; updateStats();
-    return;
+    const { x, y } = gridToPx(n);
+    log('ok', 'EXEC', `Tap grid ${n} → (${x}px, ${y}px)`);
+    S.ok++; S.total++; S.rpt.ok++; updateStats(); return;
   }
 
   /* scroll(A,B) */
   const scrM = cmd.match(/^scroll\((\d+),\s*(\d+)\)/i);
-  if(scrM){
-    const a=parseInt(scrM[1]), b=parseInt(scrM[2]);
+  if (scrM) {
+    const a = parseInt(scrM[1]), b = parseInt(scrM[2]);
     doScroll(a, b);
-    log('ok','EXEC',`Scrolled grid ${a} → ${b}`);
-    S.actionsOk++; S.rpt.ok++; updateStats();
-    return;
+    log('ok', 'EXEC', `Scroll grid ${a} → ${b}`);
+    S.ok++; S.total++; S.rpt.ok++; updateStats(); return;
   }
 
   /* wait(S) */
   const waitM = cmd.match(/^wait\((\d+(?:\.\d+)?)\)/i);
-  if(waitM){
-    const sec=parseFloat(waitM[1]);
-    log('sys','EXEC',`Waiting ${sec}s…`);
-    await sleep(sec*1000);
-    log('ok','EXEC',`Wait complete (${sec}s)`);
-    S.actionsOk++; S.rpt.ok++; updateStats();
-    return;
+  if (waitM) {
+    const sec = parseFloat(waitM[1]);
+    log('sys', 'EXEC', `Waiting ${sec}s…`);
+    await sleep(sec * 1000);
+    log('ok', 'EXEC', `Wait ${sec}s done`);
+    S.ok++; S.total++; S.rpt.ok++; updateStats(); return;
   }
 
   /* type(N,"text") */
   const typeM = cmd.match(/^type\((\d+),\s*["'](.+?)["']\)/i);
-  if(typeM){
-    const n=parseInt(typeM[1]), text=typeM[2];
+  if (typeM) {
+    const n = parseInt(typeM[1]), text = typeM[2];
     doType(n, text);
-    S.actionsOk++; S.rpt.ok++; updateStats();
-    return;
+    S.ok++; S.total++; S.rpt.ok++; updateStats(); return;
   }
 
   /* unknown */
-  log('err','EXEC',`Unrecognised command: "${cmd}"`);
-  S.actionsErr++; S.rpt.fail++;
-  S.rpt.errors.push(`Unrecognised command: ${cmd}`);
+  log('err', 'EXEC', `Unknown command: "${cmd}"`);
+  S.err++; S.rpt.fail++;
+  S.rpt.errors.push(`Unknown command: ${cmd}`);
   updateStats();
 }
 
-/* ─────────────────────────────────────────────────────────
-   LOGIN PAUSE / RESUME
-───────────────────────────────────────────────────────── */
-function triggerLoginPause(){
-  S.paused = true;
-  clearTimeout(S.cycleTimer);
-  clearInterval(S.countdownTimer);
-  resetCyclebar();
-  setStatus('paused','PAUSED');
+/* ───────────────────────────────────────────────────
+   PHASE 1: PLANNING
+   Take screenshot → ask AI for a test plan → display
+─────────────────────────────────────────────────── */
+async function runPlanning() {
+  if (!S.running) return;
+  setPhase('planning', 'PLANNING');
+  setStatus('plan', 'PLANNING');
+
+  log('sys', 'SYSTEM', '── Planning Phase ──────────────────────────');
+  log('sys', 'SYSTEM', 'Capturing screenshot to generate AI testing plan…');
+
+  const b64 = await screenshot();
+
+  showTyping(true, 'AI generating test plan…');
+  let rawPlan = '';
+  try { rawPlan = await callAI(b64); }
+  catch (e) { log('err', 'AI', `Plan request failed: ${e.message}`); }
   showTyping(false);
 
-  D.loginOverlay.classList.add('visible');
-  D.btnResume.classList.add('visible');
-  D.btnStop.disabled = true;
+  let steps = parsePlan(rawPlan);
 
-  log('warn','AI','Login or account creation page detected. Testing paused.');
-  log('sys','SYSTEM','Screenshot loop paused. Please log in manually, then press RESUME TESTING.');
+  // Fallback default plan if parsing fails
+  if (steps.length === 0) {
+    ['Explore main navigation', 'Scroll through homepage', 'Test primary buttons',
+     'Check for forms and inputs', 'Detect authentication pages',
+     'Verify images load correctly', 'Test footer links'].forEach(t =>
+      steps.push({ text: t, status: 'pending' }));
+    log('warn', 'PLAN', 'Could not parse AI plan — using default plan.');
+  }
 
-  // Switch to activity tab so user sees the message
-  switchTab('activity');
+  // Activate first step
+  steps[0].status = 'current';
+  S.plan      = steps;
+  S.planStep  = 0;
+  S.planReady = true;
+
+  renderPlan(S.plan);
+  log('plan', 'AI TEST PLAN', steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n'));
+
+  // Switch to execution phase
+  setPhase('executing', 'EXECUTING');
+  setStatus('run', 'RUNNING');
+  scheduleNext();
 }
 
-function resumeTesting(){
-  S.paused = false;
-  D.loginOverlay.classList.remove('visible');
-  D.btnResume.classList.remove('visible');
-  D.btnStop.disabled = false;
-  setStatus('running','RUNNING');
-  log('sys','SYSTEM','Testing resumed by user.');
+/* ───────────────────────────────────────────────────
+   PHASE 2: EXECUTION CYCLE
+   Screenshot → AI → parse → execute → repeat
+─────────────────────────────────────────────────── */
+async function runCycle() {
+  if (!S.running || S.paused) return;
 
-  // Reset iframe scroll since page likely changed
-  S.scrollOffsetY = 0;
-  D.frame.style.transform = '';
-  scheduleNextCycle();
-}
-
-/* ─────────────────────────────────────────────────────────
-   REPORT GENERATION
-───────────────────────────────────────────────────────── */
-async function generateReport(){
-  const rpt = { ...S.rpt };
-  // Reset accumulator
-  S.rpt = { actions:0, ok:0, fail:0, bugs:[], pages:[], errors:[] };
-  startReportCountdown();
-
-  // Ask AI to generate a qualitative summary (best-effort)
-  let aiSummary = '';
-  try {
-    showTyping(true);
-    D.typingLabel.textContent = 'AI generating report…';
-    const b64 = await captureScreenshot();
-    const reportPrompt = b64
-      ? [
-          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-          {type:'text',text:`You have just completed 60 seconds of website testing (${rpt.ok} successful actions, ${rpt.fail} failed). Look at the current screenshot and write a brief QA summary: what page is visible, any UI issues you notice, and what was tested. Keep it to 3-5 sentences.`}
-        ]
-      : [{type:'text',text:`Summarise 60 seconds of testing: ${rpt.ok} actions succeeded, ${rpt.fail} failed. Describe what was likely tested and any potential issues.`}];
-
-    if(CFG.anthropicKey && !CFG.useMock){
-      const res = await fetch(CFG.anthropicEndpoint,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':CFG.anthropicKey,'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({model:CFG.anthropicModel,max_tokens:200,system:'You are a concise QA report writer.',messages:[{role:'user',content:reportPrompt}]}),
-      });
-      const d=await res.json();
-      if(d?.content?.[0]?.text) aiSummary=d.content[0].text.trim();
-    }
-  } catch{ /* summary is optional */ }
-  showTyping(false);
-  D.typingLabel.textContent = 'AI analysing screenshot…';
-
-  // Render report card
-  const totalActions = rpt.ok + rpt.fail;
-  const card = document.createElement('div');
-  card.className = 'report-card';
-  const ts = new Date().toLocaleTimeString();
-
-  card.innerHTML = `
-    <div class="report-card-title">
-      TEST REPORT
-      <span class="rtag">${ts}</span>
-    </div>
-    <div class="report-row"><span>Total actions</span><span class="rv">${totalActions}</span></div>
-    <div class="report-row"><span>Successful</span><span class="rv good">${rpt.ok}</span></div>
-    <div class="report-row"><span>Failed</span><span class="rv ${rpt.fail>0?'bad':''}">${rpt.fail}</span></div>
-    <div class="report-row"><span>Total cycles</span><span class="rv">${S.cycleCount}</span></div>
-    <div class="report-row"><span>Errors logged</span><span class="rv ${rpt.errors.length>0?'bad':''}">${rpt.errors.length}</span></div>
-    ${rpt.errors.length>0?`
-      <div class="report-section">Errors Detected</div>
-      ${rpt.errors.map(e=>`<div class="report-bug">⚠ ${escHtml(e)}</div>`).join('')}
-    `:''}
-    ${aiSummary?`
-      <div class="report-section">AI Summary</div>
-      <div style="font-size:11px;color:var(--text-mid);line-height:1.6;padding:4px 0">${escHtml(aiSummary)}</div>
-    `:''}
-  `;
-
-  // Remove empty state
-  if(D.reportsEmpty) D.reportsEmpty.remove();
-  D.reportsCon.insertBefore(card, D.reportsCon.firstChild);
-
-  // Also log to activity feed
-  log('report','REPORT',`60-sec report: ${totalActions} actions, ${rpt.ok} ok, ${rpt.fail} failed${rpt.errors.length?`, ${rpt.errors.length} error(s)`:''}. See Reports tab.`);
-  switchTab('reports');
-  setTimeout(()=>switchTab('activity'), 3000);
-}
-
-/* ─────────────────────────────────────────────────────────
-   MAIN TESTING LOOP
-───────────────────────────────────────────────────────── */
-async function runCycle(){
-  if(!S.running || S.paused) return;
-
-  S.cycleCount++;
+  S.cycles++;
+  S.total++;
   S.rpt.actions++;
-  S.actionsTotal++;
   updateStats();
 
-  log('sys','CYCLE',`── Cycle ${S.cycleCount} ──────────────`);
+  log('sys', 'CYCLE', `── Cycle ${S.cycles} | Plan step ${S.planStep + 1}/${S.plan.length} ──`);
 
-  // 1. Screenshot
-  const b64 = await captureScreenshot();
+  // 1. Capture screenshot
+  const b64 = await screenshot();
 
   // 2. Call AI
-  showTyping(true);
-  let aiText='';
+  showTyping(true, `Executing step ${S.planStep + 1}: "${S.plan[S.planStep]?.text || '…'}"`);
+  let aiText = '';
   try { aiText = await callAI(b64); }
-  catch(e){ showTyping(false); log('err','AI',`API error: ${e.message}`); S.actionsErr++; S.rpt.fail++; updateStats(); scheduleNextCycle(); return; }
+  catch (e) {
+    showTyping(false);
+    log('err', 'AI', `API error: ${e.message}`);
+    S.err++; S.rpt.fail++; updateStats();
+    scheduleNext(); return;
+  }
   showTyping(false);
 
   // 3. Parse
-  const {reason, command, message} = parseAI(aiText);
-  if(reason) log('ai','AI REASON', reason);
-  if(message) log('warn','AI MESSAGE', message);
+  const { reason, planSt, command, message } = parseExec(aiText);
+  if (reason)  log('ai',   'AI REASON',  reason);
+  if (planSt)  log('plan', 'PLAN ACTION', planSt);
+  if (message) log('warn', 'AI MESSAGE', message);
 
   // 4. Execute
-  if(command) await execCommand(command);
+  if (command) {
+    await execCmd(command);
+    // Advance plan step every 3 cycles to keep progressing through the plan
+    if (!S.paused && S.cycles % 3 === 0) advancePlanStep();
+  } else {
+    log('sys', 'EXEC', 'No executable command found in AI response.');
+  }
 
   // 5. Schedule next
-  scheduleNextCycle();
+  scheduleNext();
 }
 
-function scheduleNextCycle(){
-  if(!S.running || S.paused) return;
-  startCyclebar();
+function scheduleNext() {
+  if (!S.running || S.paused) return;
+  startCbar();
   S.cycleTimer = setTimeout(runCycle, CFG.cycleMs);
 }
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
+   60-SECOND REPORT GENERATION
+─────────────────────────────────────────────────── */
+async function generateReport() {
+  if (!S.running) return;
+  const snap = { ...S.rpt };
+  // Reset accumulators for next period
+  S.rpt = { actions:0, ok:0, fail:0, bugs:[], errors:[] };
+  startRptCd();
+
+  // Optional: get AI text summary
+  let aiSummary = '';
+  try {
+    showTyping(true, 'Generating 60-second report…');
+    const b64 = await screenshot();
+    if (CFG.anthropicKey && b64) {
+      const res = await fetch(CFG.anthropicEndpoint, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json','x-api-key':CFG.anthropicKey,'anthropic-version':'2023-06-01' },
+        body:JSON.stringify({
+          model: CFG.anthropicModel, max_tokens:160,
+          system:'You are a concise QA reporter. Write 2-3 sentences summarising what you see and any notable issues.',
+          messages:[{ role:'user', content:[
+            { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } },
+            { type:'text', text:`QA summary: ${snap.ok} actions OK, ${snap.fail} failed in 60 seconds.` }
+          ] }]
+        }),
+      });
+      const d = await res.json();
+      if (d?.content?.[0]?.text) aiSummary = d.content[0].text.trim();
+    }
+  } catch { /* summary is optional */ }
+  showTyping(false);
+
+  const total = snap.ok + snap.fail;
+  const time  = new Date().toLocaleTimeString();
+
+  // Build report card
+  const card = document.createElement('div');
+  card.className = 'rc';
+  card.innerHTML = `
+    <div class="rchd">AI TEST REPORT <span class="rtag">${time}</span></div>
+    <div class="rrow"><span>Actions executed</span><span class="rv">${total}</span></div>
+    <div class="rrow"><span>Successful</span><span class="rv g">${snap.ok}</span></div>
+    <div class="rrow"><span>Failed</span><span class="rv ${snap.fail > 0 ? 'r' : ''}">${snap.fail}</span></div>
+    <div class="rrow"><span>Total cycles</span><span class="rv">${S.cycles}</span></div>
+    <div class="rrow"><span>Plan step</span><span class="rv">${S.planStep + 1} / ${S.plan.length}</span></div>
+    <div class="rrow"><span>Grid mode</span><span class="rv">${S.gridMode} cells</span></div>
+    ${snap.bugs.length ? `<div class="rsec">Detected Issues</div>${snap.bugs.map(b=>`<div class="rbug">⚠ ${esc(b)}</div>`).join('')}` : ''}
+    ${snap.errors.length ? `<div class="rsec">Errors</div>${snap.errors.map(e=>`<div class="rbug">✕ ${esc(e)}</div>`).join('')}` : ''}
+    ${aiSummary ? `<div class="rsum">${esc(aiSummary)}</div>` : ''}
+  `;
+
+  if (D.rptEmpty) { D.rptEmpty.remove(); D.rptEmpty = null; }
+  D.rptScroll.insertBefore(card, D.rptScroll.firstChild);
+
+  log('rpt', 'REPORT', `60s: ${total} actions | ${snap.ok} OK | ${snap.fail} failed${snap.bugs.length ? ` | ${snap.bugs.length} issue(s)` : ''}. → Reports tab`);
+  switchP('rpt');
+  setTimeout(() => switchP('plan'), 4500);
+}
+
+/* ───────────────────────────────────────────────────
    START / STOP
-───────────────────────────────────────────────────────── */
-function startTesting(){
-  const url = D.urlInput.value.trim();
-  if(!url){ log('err','SYSTEM','Please enter a URL.'); return; }
-  const normUrl = url.startsWith('http') ? url : 'https://'+url;
+─────────────────────────────────────────────────── */
+function startTesting() {
+  const url = D.urlInp.value.trim();
+  if (!url) { log('err', 'SYSTEM', 'Please enter a URL.'); return; }
+  const normUrl = url.startsWith('http') ? url : 'https://' + url;
 
   // Load iframe
-  D.placeholder.style.display  = 'none';
-  D.frame.style.display         = 'block';
-  D.frame.src                   = normUrl;
-  D.urlDisplay.innerHTML        = `<span>${escHtml(normUrl)}</span>`;
+  D.placeholder.style.display = 'none';
+  D.frame.style.display = 'block';
+  D.frame.src = normUrl;
+  D.purl.innerHTML = `<em>${esc(normUrl)}</em>`;
 
-  // Reset state
-  S.running=true; S.paused=false;
-  S.cycleCount=0; S.actionsTotal=0; S.actionsOk=0; S.actionsErr=0;
-  S.scrollOffsetY=0;
-  S.rpt={actions:0,ok:0,fail:0,bugs:[],pages:[],errors:[]};
-  D.frame.style.transform=''; D.frame.style.transition='';
-  D.loginOverlay.classList.remove('visible');
-  D.btnResume.classList.remove('visible');
+  // Reset all state
+  Object.assign(S, {
+    running:true, paused:false, assistMode:false,
+    phase:'idle', scrollY:0, planReady:false,
+    planStep:-1, plan:[], lastCmds:[], stuckCmd:'',
+    cycles:0, total:0, ok:0, err:0,
+    rpt:{ actions:0, ok:0, fail:0, bugs:[], errors:[] },
+  });
+  D.frame.style.transform = '';
+  D.frame.style.transition = '';
+  D.ovLogin.classList.remove('show');
+  D.ovStuck.classList.remove('show');
+  D.btnResume.style.display = 'none';
+  D.btnAssist.textContent = '✦ ASSIST';
+  D.btnAssist.onclick = showAssist;
+
+  // Rebuild plan empty state
+  D.planScroll.innerHTML = '';
+  const pe = document.createElement('div'); pe.className='pe'; pe.id='plan-empty';
+  pe.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--t2)"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v14a2 2 0 01-2 2z"/></svg>AI will generate a testing plan<br>from the first screenshot.';
+  D.planScroll.appendChild(pe);
+  D.planEmpty = pe;
+  D.plprog.style.display = 'none';
+
   updateStats();
+  D.btnStart.disabled  = true;
+  D.btnStop.disabled   = false;
+  D.btnAssist.disabled = false;
 
-  D.btnStart.disabled=true;
-  D.btnStop.disabled=false;
-  setStatus('running','RUNNING');
+  const backend = CFG.anthropicKey ? 'Anthropic Claude (vision)' : 'HuggingFace Qwen / mock';
+  log('sys', 'SYSTEM', `Testing started → ${normUrl}`);
+  log('sys', 'SYSTEM', `Backend: ${backend} | Cycle: ${CFG.cycleMs/1000}s | Grid: ${S.gridMode} cells | Stuck threshold: ${CFG.stuckThresh}`);
 
-  log('sys','SYSTEM',`Testing started → ${normUrl}`);
-  const backend = CFG.useMock ? 'DEMO MODE' : CFG.anthropicKey ? 'Anthropic Claude' : 'HuggingFace Qwen';
-  log('sys','SYSTEM',`Backend: ${backend} | Cycle: ${CFG.cycleMs/1000}s | Grid: 10×10`);
+  startRptCd();
+  S.reportTimer = setInterval(generateReport, CFG.reportMs);
 
-  // 60-second report timer
-  startReportCountdown();
-  S.reportTimer = setInterval(generateReport, CFG.reportIntervalMs);
-
-  D.frame.onload = ()=>{
-    // Check cross-origin
-    let xo=false; try{ void D.frame.contentDocument; } catch{ xo=true; }
-    D.originTag.textContent = xo ? '⚠ cross-origin' : '✓ same-origin';
-    D.originTag.style.color = xo ? 'var(--amber-dim)' : 'var(--green-dim)';
-    log(xo?'sys':'ok','IFRAME', xo
-      ? 'Loaded (cross-origin — actions are visually simulated; browser blocks direct DOM access)'
-      : 'Loaded (same-origin)');
-    if(S.running && !S.paused) scheduleNextCycle();
+  D.frame.onload = () => {
+    let xo = false;
+    try { void D.frame.contentDocument; } catch { xo = true; }
+    D.otag.style.display = 'inline-block';
+    D.otag.className = 'otag ' + (xo ? 'xo' : 'so');
+    D.otag.textContent = xo ? '⚠ cross-origin' : '✓ same-origin';
+    log(xo ? 'sys' : 'ok', 'IFRAME',
+      xo ? 'Loaded (cross-origin — actions visualised; DOM access blocked by browser security)'
+         : 'Loaded (same-origin)');
+    if (S.running) runPlanning();
   };
-  D.frame.onerror = ()=>{
-    log('err','IFRAME','Failed to load URL. The site may block iframe embedding (X-Frame-Options / CSP).');
-    S.actionsErr++; updateStats();
+  D.frame.onerror = () => {
+    log('err', 'IFRAME', 'Failed to load URL. Site may use X-Frame-Options or CSP to block iframes.');
+    S.err++; updateStats();
   };
 }
 
-function stopTesting(){
-  S.running=false; S.paused=false;
+function stopTesting() {
+  S.running = S.paused = S.assistMode = false;
   clearTimeout(S.cycleTimer);
-  clearInterval(S.countdownTimer);
+  clearInterval(S.cbarTimer);
   clearInterval(S.reportTimer);
-  stopReportCountdown();
-  resetCyclebar();
+  stopCbar();
+  stopRptCd();
   showTyping(false);
-  D.loginOverlay.classList.remove('visible');
-  D.btnResume.classList.remove('visible');
-  D.btnStart.disabled=false;
-  D.btnStop.disabled=true;
-  setStatus('idle','STOPPED');
-  log('sys','SYSTEM',`Testing stopped. ${S.cycleCount} cycles | ${S.actionsTotal} actions | ${S.actionsOk} ok | ${S.actionsErr} errors`);
+  D.ovLogin.classList.remove('show');
+  D.ovStuck.classList.remove('show');
+  D.btnResume.style.display = 'none';
+  D.btnStart.disabled  = false;
+  D.btnStop.disabled   = true;
+  D.btnAssist.disabled = true;
+  D.btnAssist.textContent = '✦ ASSIST';
+  D.btnAssist.onclick = showAssist;
+  setStatus('stop', 'STOPPED');
+  setPhase('stopped', 'STOPPED');
+  log('sys', 'SYSTEM', `Stopped. ${S.cycles} cycles | ${S.total} actions | ${S.ok} OK | ${S.err} errors`);
 }
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    UTILITY
-───────────────────────────────────────────────────────── */
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
+─────────────────────────────────────────────────── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-/* ─────────────────────────────────────────────────────────
+/* ───────────────────────────────────────────────────
    INIT
-───────────────────────────────────────────────────────── */
-window.addEventListener('load',()=>{
-  log('sys','SYSTEM','AI Website Tester v2 ready.');
-  log('sys','SYSTEM','Enter a URL and click START. Paste an Anthropic API key for best results, or leave blank for HuggingFace / demo mode.');
+─────────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  buildGrid(100);
+  log('sys', 'SYSTEM', 'AI Website Tester v3 — Advanced Edition ready');
+  log('sys', 'SYSTEM', 'New: AI test planning, dual grid (100/1000), stuck detection (3× repeat), user assist, 60s reports');
+  log('sys', 'SYSTEM', 'Paste an Anthropic API key for full vision analysis, or leave blank for HuggingFace / demo mode');
 });
 </script>
 </body>

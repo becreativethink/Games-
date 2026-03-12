@@ -161,8 +161,139 @@
   </div>
 </div>
 
+<!-- SPEED MODE SETUP -->
+<div id="screen-speed" class="hidden setup-wrap">
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:400px;width:calc(100%-32px);text-align:center;">
+    <div style="font-size:3rem;margin-bottom:12px;filter:drop-shadow(0 0 18px rgba(240,64,96,.6));">⚡</div>
+    <h2 style="font-family:var(--font-display);font-size:1.25rem;font-weight:900;letter-spacing:.04em;margin-bottom:6px;color:#ff6b6b;">SPEED MODE</h2>
+    <p style="font-size:.78rem;color:var(--text3);margin-bottom:20px;">Guess the word in <strong style="color:#f0b429;">20 seconds</strong>. Solve fast for bonus rewards!</p>
+    <div style="background:rgba(240,64,96,.07);border:1px solid rgba(240,64,96,.2);border-radius:16px;padding:16px 18px;margin-bottom:20px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:.8rem;color:var(--text3);">⏱ Timer</span><span style="font-family:var(--mono);font-weight:700;color:#f04060;">20 Seconds</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:.8rem;color:var(--text3);">🏆 Speed Bonus</span><span style="font-family:var(--mono);font-weight:700;color:#f0b429;">+15⭐ +10💰</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:.8rem;color:var(--text3);">📏 Difficulty</span><span id="sp-diff-label" style="font-family:var(--mono);font-weight:700;color:#b0a0ff;">Medium (5)</span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="diff-btn active" data-diff="easy" onclick="selectSpeedDiff(this,'easy')" style="flex:1;padding:10px 8px;border-radius:10px;background:rgba(22,194,106,.12);border:1px solid rgba(22,194,106,.25);color:#16c26a;font-size:.72rem;font-weight:700;cursor:pointer;">Easy<br><span style="font-size:.65rem;opacity:.7;">4 letters</span></button>
+      <button class="diff-btn" data-diff="medium" onclick="selectSpeedDiff(this,'medium')" style="flex:1;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--text2);font-size:.72rem;font-weight:700;cursor:pointer;">Medium<br><span style="font-size:.65rem;opacity:.7;">5 letters</span></button>
+      <button class="diff-btn" data-diff="hard" onclick="selectSpeedDiff(this,'hard')" style="flex:1;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--text2);font-size:.72rem;font-weight:700;cursor:pointer;">Hard<br><span style="font-size:.65rem;opacity:.7;">6 letters</span></button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-danger" style="flex:1;padding:14px;" onclick="startSpeedGame()">⚡ Start Speed Mode</button>
+      <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+    </div>
+  </div>
+</div>
+
+<!-- BLIND MODE SETUP -->
+<div id="screen-blind" class="hidden setup-wrap">
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:400px;width:calc(100%-32px);text-align:center;">
+    <div style="font-size:3rem;margin-bottom:12px;filter:drop-shadow(0 0 18px rgba(180,76,255,.6));">🙈</div>
+    <h2 style="font-family:var(--font-display);font-size:1.25rem;font-weight:900;letter-spacing:.04em;margin-bottom:6px;color:#b44cff;">BLIND MODE</h2>
+    <p style="font-size:.78rem;color:var(--text3);margin-bottom:20px;">Guess <strong>without seeing letter colors</strong> until all attempts used. Results revealed at the end!</p>
+    <div style="background:rgba(180,76,255,.07);border:1px solid rgba(180,76,255,.2);border-radius:16px;padding:16px 18px;margin-bottom:20px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:.8rem;color:var(--text3);">🙈 Colors</span><span style="font-family:var(--mono);font-weight:700;color:#b44cff;">Hidden until end</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:.8rem;color:var(--text3);">🏆 Win Bonus</span><span style="font-family:var(--mono);font-weight:700;color:#f0b429;">+50⭐ +30💰</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:.8rem;color:var(--text3);">🎯 Attempts</span><span style="font-family:var(--mono);font-weight:700;color:#b0a0ff;">6 tries</span></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary" style="flex:1;padding:14px;background:linear-gradient(135deg,#6d51f5,#b44cff);" onclick="startBlindGame()">🙈 Start Blind Mode</button>
+      <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+    </div>
+  </div>
+</div>
+
+<!-- BATTLE ROYALE SETUP -->
+<div id="screen-royale" class="hidden setup-wrap">
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:480px;width:calc(100% - 32px);">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07);">
+      <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(240,64,96,.35),rgba(240,180,41,.2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">👑</div>
+      <div><h2 style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;margin:0 0 3px;letter-spacing:.03em;">Word Battle Royale</h2><p style="font-size:.75rem;color:var(--text3);margin:0;">Up to 10 players. First to solve wins!</p></div>
+    </div>
+
+    <!-- Tab host/join -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;background:rgba(255,255,255,.05);border-radius:12px;padding:3px;margin-bottom:20px;">
+      <button class="tab-btn active" id="rtab-host" onclick="switchRoyaleTab('host')" style="padding:10px;border-radius:9px;font-size:.8rem;font-weight:700;">👑 Host Room</button>
+      <button class="tab-btn" id="rtab-join" onclick="switchRoyaleTab('join')" style="padding:10px;border-radius:9px;font-size:.8rem;font-weight:700;">🚪 Join Room</button>
+    </div>
+
+    <!-- Host panel -->
+    <div id="royale-host-panel">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🔑 Secret Word (everyone guesses this)</label>
+        <input class="form-control" id="ry-secret" type="password" placeholder="Choose a word…" maxlength="10" style="font-family:var(--mono);letter-spacing:.1em;font-size:1rem;"/>
+      </div>
+      <div style="background:rgba(240,64,96,.07);border:1px solid rgba(240,64,96,.18);border-radius:14px;padding:14px 16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:8px;"><span style="color:var(--text3);">👥 Max Players</span><span style="font-family:var(--mono);font-weight:700;color:#f04060;">10 players</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:8px;"><span style="color:var(--text3);">🏆 Winner Bonus</span><span style="font-family:var(--mono);font-weight:700;color:#f0b429;">+200⭐ +100💰</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;"><span style="color:var(--text3);">📋 Rules</span><span style="font-family:var(--mono);font-weight:700;color:#b0a0ff;">First to solve wins</span></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-danger" style="flex:1;padding:14px;background:linear-gradient(135deg,#f04060,#f0b429);" onclick="createRoyaleRoom()">👑 Create Room</button>
+        <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+      </div>
+    </div>
+
+    <!-- Join panel -->
+    <div id="royale-join-panel" class="hidden">
+      <p style="font-size:.8rem;color:var(--text3);margin-bottom:16px;text-align:center;">Enter the Room ID to join the battle.</p>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">🔑 Room ID</label>
+        <input class="form-control" id="ry-join-id" type="text" placeholder="AB12CD" maxlength="6" style="font-family:var(--mono);letter-spacing:.35em;text-transform:uppercase;text-align:center;font-size:1.9rem;padding:16px;" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" style="flex:1;padding:14px;" onclick="joinRoyaleRoom()">🚪 Join Battle</button>
+        <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+      </div>
+    </div>
+
+    <!-- Waiting room (shown after create/join) -->
+    <div id="royale-waiting" class="hidden" style="margin-top:0;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:2rem;margin-bottom:8px;animation:pulse 1.5s ease-in-out infinite;">⚔️</div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:800;letter-spacing:.04em;margin-bottom:4px;">Waiting for Players…</div>
+        <div style="font-size:.75rem;color:var(--text3);">Share this Room ID:</div>
+      </div>
+      <div id="ry-room-id-show" onclick="copyRoyaleId()" style="font-family:var(--mono);font-size:2rem;font-weight:700;letter-spacing:.35em;padding:16px 24px;background:rgba(240,64,96,.1);border:1px solid rgba(240,64,96,.3);border-radius:14px;cursor:pointer;margin-bottom:14px;text-align:center;transition:background .18s;">——</div>
+      <div class="sec-label" style="margin-bottom:8px;">👥 Players Joined (<span id="ry-player-count">0</span>/10)</div>
+      <div id="ry-player-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;max-height:220px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-danger hidden" id="ry-start-btn" style="flex:1;padding:13px;background:linear-gradient(135deg,#f04060,#f0b429);" onclick="startRoyaleGame()">⚔️ Start Battle!</button>
+        <button class="btn btn-ghost btn-sm" onclick="cancelRoyale()" style="padding:13px 18px;">✕ Cancel</button>
+      </div>
+      <p style="font-size:.65rem;color:var(--text3);text-align:center;margin-top:8px;" id="ry-waiting-hint">Waiting for more players to join… (min. 1)</p>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY SETUP -->
+<div id="screen-category" class="hidden setup-wrap">
+  <div class="setup-card page-enter" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:28px 24px;max-width:460px;width:calc(100%-32px);">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07);">
+      <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(61,232,255,.25),rgba(109,81,245,.2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">📚</div>
+      <div><h2 style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;margin:0 0 3px;letter-spacing:.03em;">Category Mode</h2><p style="font-size:.75rem;color:var(--text3);margin:0;">Choose a category and guess themed words.</p></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:20px;" id="cat-grid">
+      <div class="cat-choice active" data-cat="animals" onclick="selectCategory(this,'animals')">🐾 Animals</div>
+      <div class="cat-choice" data-cat="countries" onclick="selectCategory(this,'countries')">🌍 Countries</div>
+      <div class="cat-choice" data-cat="technology" onclick="selectCategory(this,'technology')">💻 Technology</div>
+      <div class="cat-choice" data-cat="movies" onclick="selectCategory(this,'movies')">🎬 Movies</div>
+      <div class="cat-choice" data-cat="science" onclick="selectCategory(this,'science')">🔬 Science</div>
+      <div class="cat-choice" data-cat="sports" onclick="selectCategory(this,'sports')">⚽ Sports</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1;padding:14px;" onclick="startCategoryGame()">📚 Start Category Game</button>
+      <a href="index.html" class="btn btn-ghost" style="padding:14px 20px;">Cancel</a>
+    </div>
+  </div>
+</div>
+
 <!-- GAME SCREEN -->
 <div id="screen-game" class="hidden">
+  <!-- Blind mode banner -->
+  <div id="blind-banner" class="hidden" style="background:linear-gradient(90deg,rgba(180,76,255,.15),rgba(109,81,245,.1));border-bottom:1px solid rgba(180,76,255,.25);padding:8px 20px;text-align:center;font-size:.76rem;font-weight:700;color:#d4a0ff;letter-spacing:.04em;">🙈 BLIND MODE — Colors hidden until all guesses used</div>
+  <!-- Streak badge -->
+  <div id="streak-banner" class="hidden" style="background:linear-gradient(90deg,rgba(240,64,96,.14),rgba(240,180,41,.08));border-bottom:1px solid rgba(240,64,96,.2);padding:7px 20px;text-align:center;font-size:.76rem;font-weight:700;color:#ff8c42;letter-spacing:.04em;"></div>
+
   <div class="game-layout">
     <div class="game-main">
       <div class="game-status">
@@ -177,13 +308,47 @@
         <button class="btn btn-primary" id="submit-btn" onclick="submitGuess()">GO</button>
       </div>
       <div class="keyboard" id="keyboard"></div>
+
+      <!-- POWER-UPS BAR -->
+      <div id="powerups-bar" class="hidden" style="display:flex;gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="pu-btn" id="pu-extraTry" onclick="usePowerUp('extraTry')" title="Extra Try (+1 guess)">
+          <span class="pu-icon">➕</span><span class="pu-label">Extra Try</span><span class="pu-count" id="pu-extraTry-count">0</span>
+        </button>
+        <button class="pu-btn" id="pu-freezeTimer" onclick="usePowerUp('freezeTimer')" title="Freeze Timer 10s">
+          <span class="pu-icon">❄️</span><span class="pu-label">Freeze</span><span class="pu-count" id="pu-freezeTimer-count">0</span>
+        </button>
+        <button class="pu-btn" id="pu-revealLetter" onclick="usePowerUp('revealLetter')" title="Reveal a correct letter">
+          <span class="pu-icon">💡</span><span class="pu-label">Reveal</span><span class="pu-count" id="pu-revealLetter-count">0</span>
+        </button>
+      </div>
+
+      <!-- HINTS BAR -->
+      <div id="hints-bar" class="hidden" style="margin-top:10px;">
+        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);text-align:center;margin-bottom:7px;">💡 HINTS — buy with money</div>
+        <div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap;">
+          <button class="hint-btn" onclick="buyHint('revealFirst')" id="hint-revealFirst">
+            <span>🔤 First Letter</span><span class="hint-cost">20💰</span>
+          </button>
+          <button class="hint-btn" onclick="buyHint('revealRandom')" id="hint-revealRandom">
+            <span>💡 Random Letter</span><span class="hint-cost">20💰</span>
+          </button>
+          <button class="hint-btn" onclick="buyHint('removeWrong')" id="hint-removeWrong">
+            <span>❌ Remove 2 Wrong</span><span class="hint-cost">15💰</span>
+          </button>
+        </div>
+      </div>
     </div>
+
     <div class="game-sidebar">
       <div class="sb-card">
         <div class="sb-title" id="sb-mode-lbl">Game Info</div>
         <div class="sb-row"><span class="lbl">Attempts Left</span><span class="val fw-700" id="sb-attempts">—</span></div>
         <div class="sb-row"><span class="lbl">Word Length</span><span class="val" id="sb-len">—</span></div>
         <div class="sb-row hidden" id="sb-bet-row"><span class="lbl">Bet</span><span class="val text-gold" id="sb-bet">—</span> 💰</div>
+        <div class="sb-row hidden" id="sb-diff-row"><span class="lbl">Difficulty</span><span class="val" id="sb-diff">—</span></div>
+        <div class="sb-row hidden" id="sb-category-row"><span class="lbl">Category</span><span class="val" id="sb-category">—</span></div>
+        <div class="sb-row hidden" id="sb-streak-row"><span class="lbl">🔥 Streak</span><span class="val text-red" id="sb-streak">0</span></div>
+        <div class="sb-row"><span class="lbl">💰 Money</span><span class="val text-gold" id="sb-money">—</span></div>
       </div>
       <div class="sb-card hidden" id="opp-card">
         <div class="sb-title">Opponent</div>
@@ -195,6 +360,21 @@
       <div class="sb-card hidden" id="log-card">
         <div class="sb-title">Match Log</div>
         <div id="online-log" style="font-size:.76rem;color:var(--text2);max-height:180px;overflow-y:auto;"></div>
+      </div>
+      <!-- Power-up shop in sidebar -->
+      <div class="sb-card" id="shop-card">
+        <div class="sb-title">⚡ Power-Up Shop</div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div class="shop-row" onclick="buyPowerUp('extraTry')">
+            <span>➕ Extra Try</span><span class="shop-price">50💰</span>
+          </div>
+          <div class="shop-row" onclick="buyPowerUp('freezeTimer')">
+            <span>❄️ Freeze Timer</span><span class="shop-price">40💰</span>
+          </div>
+          <div class="shop-row" onclick="buyPowerUp('revealLetter')">
+            <span>💡 Reveal Letter</span><span class="shop-price">60💰</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -296,7 +476,8 @@ function hideCover(){
 }
 
 function showScreen(id){
-  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game'].forEach(function(s){
+  ['screen-offline','screen-online','screen-daily','screen-waiting','screen-game',
+   'screen-speed','screen-blind','screen-category','screen-royale'].forEach(function(s){
     $(s).classList.toggle('hidden', s !== id);
   });
   hideCover();
@@ -343,13 +524,20 @@ function buildEmptyRow(rowEl,len){
   rowEl.innerHTML='';
   for(var i=0;i<len;i++){ var t=document.createElement('div'); t.className='tile empty'; rowEl.appendChild(t); }
 }
-function buildTileRow(rowEl,guess,result){
+function buildTileRow(rowEl,guess,result,forceReveal){
   rowEl.innerHTML='';
   guess=guess.toUpperCase();
+  var showColors = !isBlindMode || forceReveal;
   for(var i=0;i<guess.length;i++){
     (function(i){
       var t=document.createElement('div'); t.className='tile'; t.textContent=guess[i]; rowEl.appendChild(t);
-      setTimeout(function(){ t.classList.add('flipping'); setTimeout(function(){ t.classList.remove('flipping'); t.classList.add(result[i]); },200); },i*80);
+      if(showColors){
+        setTimeout(function(){ t.classList.add('flipping'); setTimeout(function(){ t.classList.remove('flipping'); t.classList.add(result[i]); },200); },i*80);
+      } else {
+        // Blind mode: show letter but no color (just filled state)
+        t.classList.add('filled');
+        t.dataset.result = result[i]; // Store for later reveal
+      }
     })(i);
   }
 }
@@ -455,24 +643,34 @@ async function checkAchievements(ud,uid){
    GAME STATE
 ══════════════════════════════════════════════ */
 var currentUser   = loadSession();
-/* Support ?mode=online|offline|daily from PWA shortcuts and direct links */
+/* Support ?mode=online|offline|daily|speed|blind|category from PWA shortcuts and direct links */
 var _urlMode = new URLSearchParams(window.location.search).get('mode');
 var mode = _urlMode || sessionStorage.getItem('ww_mode') || 'offline';
-if (_urlMode) sessionStorage.setItem('ww_mode', _urlMode); /* persist for current session */
+if (_urlMode) sessionStorage.setItem('ww_mode', _urlMode);
 var secretWord    = '';
 var maxAttempts   = 6;
 var wordLength    = 5;
 var guessCount    = 0;
-var gameOver      = false;           // local flag — stops further guesses
-var winnerWritten = false;           // prevents duplicate Firebase winner writes
+var gameOver      = false;
+var winnerWritten = false;
 var currentGuess  = '';
 var timerObj      = null;
 var roomId        = null;
 var isHost        = false;
 var betScore      = 0;
-var guessUnsub    = null;           // host: reference to guest-guesses listener
-var roomUnsub     = null;           // guest: reference to room-status listener
+var guessUnsub    = null;
+var roomUnsub     = null;
 var dailyData     = null;
+
+/* ── New feature state ── */
+var isBlindMode    = false;   // hide tile colors until end
+var isSpeedMode    = false;   // 20s timer
+var gameCategory   = '';      // category mode
+var gameDifficulty = 'medium';// easy/medium/hard/expert
+var speedDifficulty= 'medium';
+var blindGuessLog  = [];      // stores {guess, result} for blind reveal
+var hintUsed       = {};      // track used hints this game
+var freezeActive   = false;   // freeze timer power-up active
 
 /* ══════════════════════════════════════════════
    BOOTSTRAP
@@ -500,6 +698,10 @@ async function init(){
   if(mode==='offline')       initOfflineScreen();
   else if(mode==='online')   initOnlineScreen();
   else if(mode==='daily')    await initDailyScreen();
+  else if(mode==='speed')    initSpeedScreen();
+  else if(mode==='blind')    initBlindScreen();
+  else if(mode==='category') initCategoryScreen();
+  else if(mode==='royale')   initBattleRoyaleScreen();
   else                       { mode='offline'; initOfflineScreen(); }
 }
 
@@ -797,6 +999,60 @@ function startBoard(title,subtitle,showTimer,hostView){
   $('sb-len').textContent=wordLength; $('sb-attempts').textContent=maxAttempts;
   if(showTimer) $('timer-area').classList.remove('hidden');
   if(!hostView){ buildKeyboard($('keyboard'),handleKey); attachInput(); setTimeout(function(){$('guess-input').focus();},200); }
+
+  // Blind mode
+  if(isBlindMode){ $('blind-banner').classList.remove('hidden'); }
+  else { $('blind-banner').classList.add('hidden'); }
+
+  // Speed mode streamer
+  if(isSpeedMode){
+    var sb = $('streak-banner');
+    sb.style.cssText='background:linear-gradient(90deg,rgba(240,64,96,.14),rgba(240,180,41,.08));border-bottom:1px solid rgba(240,64,96,.2);padding:7px 20px;text-align:center;font-size:.76rem;font-weight:700;color:#ff8c42;letter-spacing:.04em;display:block;';
+    sb.textContent='⚡ SPEED MODE — Guess in 20 seconds!';
+  }
+
+  // Difficulty row
+  if(gameDifficulty && gameDifficulty!==''){
+    $('sb-diff-row').classList.remove('hidden');
+    var diffLabels={easy:'🟢 Easy',medium:'🟡 Medium',hard:'🟠 Hard',expert:'🔴 Expert'};
+    $('sb-diff').textContent = diffLabels[gameDifficulty]||gameDifficulty;
+  }
+
+  // Category row
+  if(gameCategory){
+    $('sb-category-row').classList.remove('hidden');
+    var catLabels={animals:'🐾 Animals',countries:'🌍 Countries',technology:'💻 Tech',movies:'🎬 Movies',science:'🔬 Science',sports:'⚽ Sports'};
+    $('sb-category').textContent = catLabels[gameCategory]||gameCategory;
+  }
+
+  // Money display
+  $('sb-money').textContent = fmtNum(currentUser.money||0);
+
+  // Streak
+  var streak = currentUser.winStreak||0;
+  if(streak>=1){
+    $('sb-streak-row').classList.remove('hidden');
+    $('sb-streak').textContent = '🔥 '+streak;
+    var sb2=$('streak-banner');
+    if(!isSpeedMode){
+      sb2.classList.remove('hidden');
+      sb2.textContent='🔥 You\'re on a '+streak+'-win streak! Keep it going!';
+    }
+  }
+
+  // Power-ups
+  loadPowerUpCounts();
+  $('powerups-bar').classList.remove('hidden');
+  $('powerups-bar').style.display='flex';
+
+  // Hints (only for non-online, non-host)
+  if(mode!=='online' || !isHost){
+    $('hints-bar').classList.remove('hidden');
+  }
+
+  // Reset hint tracking for this game
+  hintUsed={};
+  blindGuessLog=[];
 }
 function attachInput(){
   var inp=$('guess-input');
@@ -866,29 +1122,58 @@ window.submitGuess = async function(){
     catch(e){ toast('Connection error. Try again.','error'); inp.disabled=false; $('submit-btn').disabled=false; return; }
   }
 
-  // Render the row
-  buildTileRow(document.getElementById('row-'+guessCount),guess,result);
-  updateKeyboard($('keyboard'),guess,result);
+  // In blind mode: store result for later, render without colors
+  if(isBlindMode){
+    blindGuessLog.push({guess:guess, result:result, rowId:'row-'+guessCount});
+    buildTileRow(document.getElementById('row-'+guessCount),guess,result,false);
+    updateKeyboard($('keyboard'),guess,result); // keyboard DOES show colors in blind mode
+  } else {
+    buildTileRow(document.getElementById('row-'+guessCount),guess,result,true);
+    updateKeyboard($('keyboard'),guess,result);
+  }
   playSound(isWin?'correct':(result.indexOf('correct')>=0||result.indexOf('present')>=0)?'present':'absent');
 
   guessCount++;
   $('sb-attempts').textContent=maxAttempts-guessCount;
   inp.value=''; currentGuess='';
 
-  // Win
+  // Win — if blind mode, reveal all rows first
   if(isWin){
-    handleGameEnd(true,guess);
+    if(isBlindMode) revealBlindRows(function(){ handleGameEnd(true,guess); });
+    else handleGameEnd(true,guess);
     return;
   }
-  // Out of attempts
+  // Out of attempts — reveal in blind mode
   if(guessCount>=maxAttempts){
-    handleGameEnd(false,guess);
+    if(isBlindMode) revealBlindRows(function(){ handleGameEnd(false,guess); });
+    else handleGameEnd(false,guess);
     return;
   }
 
   // Game continues — re-enable input
   inp.disabled=false; $('submit-btn').disabled=false; inp.focus();
 };
+
+/* Reveal all blind rows with staggered animation */
+function revealBlindRows(callback){
+  blindGuessLog.forEach(function(entry, idx){
+    setTimeout(function(){
+      var rowEl = document.getElementById(entry.rowId);
+      if(!rowEl) return;
+      rowEl.querySelectorAll('.tile').forEach(function(t,i){
+        setTimeout(function(){
+          t.classList.remove('filled');
+          t.classList.add('flipping');
+          setTimeout(function(){ t.classList.remove('flipping'); t.classList.add(entry.result[i]||'absent'); },200);
+        }, i*80);
+      });
+      if(idx===blindGuessLog.length-1){
+        setTimeout(callback||function(){}, 600);
+      }
+    }, idx * 350);
+  });
+  if(blindGuessLog.length===0 && callback) callback();
+}
 
 /* ══════════════════════════════════════════════
    GAME END  (called for guest, offline, daily)
@@ -897,6 +1182,18 @@ window.submitGuess = async function(){
 async function handleGameEnd(won,finalGuess){
   if(gameOver)return; gameOver=true;
   if(timerObj)timerObj.stop();
+
+  // Battle Royale — claim winner then let listenForRoyaleWinner handle UI
+  if(mode==='royale'){
+    if(won && window._royaleSubmitOverride){
+      await window._royaleSubmitOverride(true, finalGuess);
+    }
+    // If lost (ran out) — still show results after a moment
+    if(!won){
+      setTimeout(function(){ showRoyaleResult(false, '?'); },700);
+    }
+    return;
+  }
 
   // Clean up listeners
   if(guessUnsub){ db.ref('rooms/'+roomId+'/guesses').off('value',guessUnsub); guessUnsub=null; }
@@ -973,9 +1270,59 @@ async function handleGameEnd(won,finalGuess){
     }
   }
 
+  /* ── Speed Mode bonus ── */
+  else if(mode==='speed'){
+    if(won){
+      upd.wins=(ud.wins||0)+1;
+      upd.score=Math.max(0,(ud.score||0)+15);
+      upd.money=Math.max(0,(ud.money||0)+10);
+      rewardMsg='⚡ Speed Bonus! +15⭐ +10💰';
+    } else {
+      upd.losses=(ud.losses||0)+1;
+    }
+  }
+
+  /* ── Blind Mode bonus ── */
+  else if(mode==='blind'){
+    if(won){
+      upd.wins=(ud.wins||0)+1;
+      upd.score=Math.max(0,(ud.score||0)+50);
+      upd.money=Math.max(0,(ud.money||0)+30);
+      rewardMsg='🙈 Blind Bonus! +50⭐ +30💰';
+    } else {
+      upd.losses=(ud.losses||0)+1;
+    }
+  }
+
+  /* ── Category Mode ── */
+  else if(mode==='category'){
+    if(won){
+      upd.wins=(ud.wins||0)+1;
+      var dr=getDiffReward();
+      upd.score=Math.max(0,(ud.score||0)+dr.score);
+      upd.money=Math.max(0,(ud.money||0)+dr.money);
+      rewardMsg='+'+dr.score+'⭐ +'+dr.money+'💰 ('+dr.label+')';
+    } else {
+      upd.losses=(ud.losses||0)+1;
+    }
+  }
+
+  /* ── Difficulty reward for offline ── */
+  else if(mode==='offline' && won){
+    var dr2=getDiffReward();
+    upd.score=Math.max(0,(ud.score||0)+dr2.score);
+    rewardMsg='+'+dr2.score+'⭐ ('+dr2.label+')';
+  }
+
   await uRef.update(upd);
   var fresh=(await uRef.get()).val();
   saveSession(Object.assign({},currentUser,fresh));
+
+  // ── Win streak ──
+  try{ await updateWinStreak(won, currentUser.uid); }catch(e){}
+
+  // ── Word collection (add solved word) ──
+  if(won) try{ await addToWordCollection(currentUser.uid, secretWord, mode); }catch(e){}
 
   // ── Grant XP based on outcome ──
   var xpGain = won ? 20 : 5;
@@ -1125,8 +1472,478 @@ async function grantTournamentXP(uid, won){
 }
 
 /* ══════════════════════════════════════════════
-   START
+   WIN STREAK SYSTEM
 ══════════════════════════════════════════════ */
+var STREAK_REWARDS = [
+  {streak:1,  score:5,  money:0,  msg:'+5⭐ First win!'},
+  {streak:3,  score:10, money:0,  msg:'+10⭐ 3-win streak!'},
+  {streak:5,  score:20, money:10, msg:'+20⭐ +10💰 5-win streak!'},
+  {streak:10, score:0,  money:0,  msg:'🏅 Unstoppable badge! 10 wins!', badge:'unstoppable'},
+];
+async function updateWinStreak(won, uid){
+  try{
+    var snap=await db.ref('users/'+uid).get();
+    if(!snap.exists()) return {streakBonus:0, moneyBonus:0};
+    var ud=snap.val();
+    var upd={};
+    if(won){
+      var newStreak=(ud.winStreak||0)+1;
+      var bestStreak=Math.max(newStreak,(ud.bestStreak||0));
+      upd.winStreak=newStreak;
+      upd.bestStreak=bestStreak;
+      // Check milestone rewards
+      var milestone=STREAK_REWARDS.filter(function(r){return newStreak===r.streak;})[0];
+      if(milestone){
+        if(milestone.score) upd.score=Math.max(0,(ud.score||0)+milestone.score);
+        if(milestone.money) upd.money=Math.max(0,(ud.money||0)+milestone.money);
+        if(milestone.badge) upd['achievements/'+milestone.badge]=Date.now();
+        setTimeout(function(){ toast('🔥 '+milestone.msg,'success'); },2500);
+      }
+      await db.ref('users/'+uid).update(upd);
+      return { newStreak:newStreak, scoreBonus:milestone?milestone.score:0, moneyBonus:milestone?milestone.money:0 };
+    } else {
+      await db.ref('users/'+uid).update({winStreak:0});
+      return { newStreak:0, scoreBonus:0, moneyBonus:0 };
+    }
+  }catch(e){ return {newStreak:0,scoreBonus:0,moneyBonus:0}; }
+}
+
+/* ══════════════════════════════════════════════
+   WORD COLLECTION SYSTEM
+══════════════════════════════════════════════ */
+async function addToWordCollection(uid, word, mode){
+  try{
+    var entry = { word:word.toUpperCase(), length:word.length, mode:mode, date:Date.now() };
+    var rareWords=['QUARTZ','OXYGEN','SPHINX','FJORD','JUMPY','WALTZ','BLITZ'];
+    entry.rare = rareWords.includes(word.toUpperCase()) || word.length>=8;
+    await db.ref('wordCollection/'+uid+'/'+word.toUpperCase()).set(entry);
+    // Update stats
+    var statsSnap = await db.ref('wordCollection/'+uid+'/_stats').get();
+    var stats = statsSnap.exists() ? statsSnap.val() : {total:0,rare:0,longest:0,longestWord:''};
+    stats.total = (stats.total||0)+1;
+    if(entry.rare) stats.rare=(stats.rare||0)+1;
+    if(word.length>(stats.longest||0)){ stats.longest=word.length; stats.longestWord=word.toUpperCase(); }
+    await db.ref('wordCollection/'+uid+'/_stats').set(stats);
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════════
+   DIFFICULTY REWARD SYSTEM
+══════════════════════════════════════════════ */
+var DIFF_REWARDS = {
+  easy:   { score:5,  money:5,  xp:10, label:'Easy'   },
+  medium: { score:10, money:8,  xp:20, label:'Medium'  },
+  hard:   { score:20, money:15, xp:35, label:'Hard'    },
+  expert: { score:40, money:25, xp:60, label:'Expert'  },
+};
+function getDiffReward(){ return DIFF_REWARDS[gameDifficulty]||DIFF_REWARDS.medium; }
+
+/* ══════════════════════════════════════════════
+   HINT SYSTEM
+══════════════════════════════════════════════ */
+var HINT_COSTS = { revealFirst:20, revealRandom:20, removeWrong:15 };
+window.buyHint = async function(type){
+  if(gameOver){ toast('Game over!','warn'); return; }
+  if(hintUsed[type]){ toast('Hint already used!','warn'); return; }
+  var cost=HINT_COSTS[type]||20;
+  var snap=await db.ref('users/'+currentUser.uid).get();
+  if(!snap.exists()) return;
+  var ud=snap.val();
+  if((ud.money||0)<cost){ toast('Not enough money! Need '+cost+'💰','error'); return; }
+
+  if(type==='revealFirst'){
+    // Show first letter on keyboard and board highlight
+    var firstLetter=secretWord[0];
+    toast('💡 First letter is: '+firstLetter,'success');
+    // Highlight on keyboard
+    var kbKey=$('keyboard').querySelector('[data-key="'+firstLetter+'"]');
+    if(kbKey){ kbKey.style.background='rgba(109,81,245,.5)'; kbKey.style.color='#fff'; }
+  }
+  else if(type==='revealRandom'){
+    // Reveal a random unguessed letter position
+    var revealIdx=Math.floor(Math.random()*secretWord.length);
+    var letter=secretWord[revealIdx];
+    toast('💡 Position '+(revealIdx+1)+' is: '+letter,'success');
+    var kbKey2=$('keyboard').querySelector('[data-key="'+letter+'"]');
+    if(kbKey2){ kbKey2.style.background='rgba(22,194,106,.5)'; kbKey2.style.color='#fff'; }
+  }
+  else if(type==='removeWrong'){
+    // Grey out 2 letters NOT in the word on keyboard
+    var allLetters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    var wrongOnes=allLetters.filter(function(l){ return secretWord.indexOf(l)<0; });
+    var removed=0;
+    wrongOnes.sort(function(){return Math.random()-.5;});
+    wrongOnes.forEach(function(l){
+      if(removed>=2)return;
+      var k=$('keyboard').querySelector('[data-key="'+l+'"]');
+      if(k && !k.classList.contains('absent')){
+        k.classList.add('absent'); k.style.opacity='.35'; removed++;
+      }
+    });
+    toast('❌ 2 wrong letters removed from keyboard','success');
+  }
+
+  hintUsed[type]=true;
+  var btn=document.getElementById('hint-'+type);
+  if(btn){ btn.disabled=true; btn.style.opacity='.4'; }
+  await db.ref('users/'+currentUser.uid).update({money:Math.max(0,(ud.money||0)-cost)});
+  currentUser.money=Math.max(0,(currentUser.money||0)-cost);
+  $('sb-money').textContent=fmtNum(currentUser.money);
+  saveSession(currentUser);
+};
+
+/* ══════════════════════════════════════════════
+   POWER-UP SYSTEM
+══════════════════════════════════════════════ */
+var PU_COSTS = { extraTry:50, freezeTimer:40, revealLetter:60 };
+function loadPowerUpCounts(){
+  var pus=currentUser.powerUps||{};
+  ['extraTry','freezeTimer','revealLetter'].forEach(function(k){
+    var el=document.getElementById('pu-'+k+'-count');
+    if(el) el.textContent=pus[k]||0;
+    var btn=document.getElementById('pu-'+k);
+    if(btn) btn.disabled=!(pus[k]>0);
+  });
+}
+window.buyPowerUp = async function(type){
+  var cost=PU_COSTS[type]||50;
+  var snap=await db.ref('users/'+currentUser.uid).get();
+  if(!snap.exists()) return;
+  var ud=snap.val();
+  if((ud.money||0)<cost){ toast('Need '+cost+'💰 to buy this power-up!','error'); return; }
+  var puKey='powerUps/'+type;
+  var newCount=((ud.powerUps||{})[type]||0)+1;
+  await db.ref('users/'+currentUser.uid).update({
+    money:Math.max(0,(ud.money||0)-cost),
+    [puKey]:newCount
+  });
+  currentUser.money=Math.max(0,(currentUser.money||0)-cost);
+  if(!currentUser.powerUps) currentUser.powerUps={};
+  currentUser.powerUps[type]=newCount;
+  saveSession(currentUser);
+  loadPowerUpCounts();
+  $('sb-money').textContent=fmtNum(currentUser.money);
+  toast('⚡ '+type+' purchased!','success');
+};
+window.usePowerUp = async function(type){
+  if(gameOver){ toast('Game already over!','warn'); return; }
+  var pus=currentUser.powerUps||{};
+  if(!(pus[type]>0)){ toast('No '+type+' left! Buy one in the shop.','warn'); return; }
+
+  if(type==='extraTry'){
+    maxAttempts++;
+    var board=$('game-board');
+    var row=document.createElement('div'); row.className='guess-row'; row.id='row-'+(maxAttempts-1);
+    buildEmptyRow(row,wordLength); board.appendChild(row);
+    $('sb-attempts').textContent=maxAttempts-guessCount;
+    toast('➕ Extra guess added!','success');
+  }
+  else if(type==='freezeTimer'){
+    if(!timerObj){ toast('No active timer to freeze!','warn'); return; }
+    if(freezeActive){ toast('Freeze already active!','warn'); return; }
+    freezeActive=true; timerObj.stop();
+    toast('❄️ Timer frozen for 10 seconds!','success');
+    setTimeout(function(){ freezeActive=false; timerObj.start(); toast('⏱ Timer resumed!','info'); },10000);
+  }
+  else if(type==='revealLetter'){
+    var idx=Math.floor(Math.random()*secretWord.length);
+    var letter=secretWord[idx];
+    toast('💡 Position '+(idx+1)+' contains: '+letter,'success');
+    var k=$('keyboard').querySelector('[data-key="'+letter+'"]');
+    if(k){ k.style.background='rgba(22,194,106,.5)'; k.style.color='#fff'; }
+  }
+
+  // Deduct from DB
+  var newCount=((currentUser.powerUps||{})[type]||1)-1;
+  await db.ref('users/'+currentUser.uid+'/powerUps/'+type).set(Math.max(0,newCount));
+  currentUser.powerUps[type]=Math.max(0,newCount);
+  saveSession(currentUser);
+  loadPowerUpCounts();
+};
+
+/* ══════════════════════════════════════════════
+   SPEED MODE
+══════════════════════════════════════════════ */
+var SPEED_WORDS_BY_DIFF={
+  easy:   ['BEAR','CRAB','FISH','FROG','BIRD','DUCK','WOLF','DEER','LION','GOAT'],
+  medium: ['TIGER','SHARK','EAGLE','HORSE','SNAKE','MOUSE','CRANE','CAMEL','BISON','RAVEN'],
+  hard:   ['JAGUAR','FALCON','SALMON','TURTLE','MONKEY','DONKEY','RABBIT','PARROT','HYENA','WALRUS'],
+};
+function initSpeedScreen(){
+  isSpeedMode=true;
+  showScreen('screen-speed');
+}
+window.selectSpeedDiff=function(el,diff){
+  speedDifficulty=diff;
+  document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.remove('active'); b.style.background='rgba(255,255,255,.04)'; b.style.borderColor='rgba(255,255,255,.1)'; b.style.color='var(--text2)'; });
+  el.classList.add('active');
+  el.style.background='rgba(109,81,245,.15)'; el.style.borderColor='rgba(109,81,245,.4)'; el.style.color='#b0a0ff';
+  var labels={easy:'Easy (4 letters)',medium:'Medium (5 letters)',hard:'Hard (6 letters)'};
+  $('sp-diff-label').textContent=labels[diff]||diff;
+};
+window.startSpeedGame=function(){
+  gameDifficulty=speedDifficulty;
+  var wordPool=SPEED_WORDS_BY_DIFF[speedDifficulty]||SPEED_WORDS_BY_DIFF.medium;
+  secretWord=wordPool[Math.floor(Math.random()*wordPool.length)].toUpperCase();
+  wordLength=secretWord.length; maxAttempts=6;
+  startBoard('⚡ SPEED MODE','Guess in 20 seconds!',true);
+  timerObj=new CountdownTimer({
+    totalSeconds:20,containerEl:$('timer-el'),
+    onEnd:function(){ if(!gameOver) handleGameEnd(false,secretWord); }
+  });
+  timerObj.start();
+};
+
+/* ══════════════════════════════════════════════
+   BLIND MODE
+══════════════════════════════════════════════ */
+var BLIND_WORDS=['CRANE','SLATE','AUDIO','OUNCE','ADIEU','RAISE','ARISE','STARE','SNARE','TEARS'];
+function initBlindScreen(){
+  isBlindMode=true;
+  showScreen('screen-blind');
+}
+window.startBlindGame=function(){
+  gameDifficulty='hard';
+  secretWord=BLIND_WORDS[Math.floor(Math.random()*BLIND_WORDS.length)].toUpperCase();
+  wordLength=secretWord.length; maxAttempts=6;
+  startBoard('🙈 BLIND MODE','Guess without color feedback!');
+};
+
+/* ══════════════════════════════════════════════
+   CATEGORY MODE
+══════════════════════════════════════════════ */
+var CATEGORY_WORDS={
+  animals:    ['TIGER','EAGLE','HORSE','SHARK','PANDA','RAVEN','SLOTH','BISON','HIPPO','MOOSE'],
+  countries:  ['SPAIN','JAPAN','INDIA','CHINA','EGYPT','GHANA','KENYA','CHILE','ITALY','NEPAL'],
+  technology: ['CLOUD','PIXEL','BYTES','LASER','ROBOT','MODEM','CACHE','CODEC','TOKEN','PARSE'],
+  movies:     ['ALIEN','ROCKY','FOCUS','SCREAM','JOKER','JAWS','GREASE','TENET','DUNNO','BLADE'],
+  science:    ['ATOMS','CELLS','WAVES','ORBIT','ALGAE','PRISM','IONIC','REACT','GENES','QUARK'],
+  sports:     ['RUGBY','CHESS','RELAY','MATCH','SCORE','VAULT','CATCH','SERVE','RALLY','SWING'],
+};
+var selectedCategory='animals';
+function initCategoryScreen(){
+  showScreen('screen-category');
+}
+window.selectCategory=function(el,cat){
+  selectedCategory=cat;
+  document.querySelectorAll('.cat-choice').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active');
+};
+window.startCategoryGame=function(){
+  gameCategory=selectedCategory;
+  var words=CATEGORY_WORDS[selectedCategory]||CATEGORY_WORDS.animals;
+  secretWord=words[Math.floor(Math.random()*words.length)].toUpperCase();
+  wordLength=secretWord.length; maxAttempts=6;
+  var catEmoji={animals:'🐾',countries:'🌍',technology:'💻',movies:'🎬',science:'🔬',sports:'⚽'};
+  startBoard((catEmoji[selectedCategory]||'📚')+' CATEGORY','Category: '+selectedCategory.charAt(0).toUpperCase()+selectedCategory.slice(1));
+};
+
+/* ══════════════════════════════════════════════
+   BATTLE ROYALE MODE
+══════════════════════════════════════════════ */
+var royaleRoomId   = null;
+var royaleIsHost   = false;
+var royaleUnsub    = null;
+var royaleWinnerListened = false;
+
+function initBattleRoyaleScreen(){
+  showScreen('screen-royale');
+}
+window.switchRoyaleTab = function(tab){
+  document.getElementById('rtab-host').classList.toggle('active', tab==='host');
+  document.getElementById('rtab-join').classList.toggle('active', tab==='join');
+  document.getElementById('royale-host-panel').classList.toggle('hidden', tab!=='host');
+  document.getElementById('royale-join-panel').classList.toggle('hidden', tab!=='join');
+};
+
+window.createRoyaleRoom = async function(){
+  var secret = document.getElementById('ry-secret').value.trim().toUpperCase();
+  if(secret.length < 2){ toast('Enter a secret word.','warn'); return; }
+  if(!/^[A-Z]+$/.test(secret)){ toast('Letters A–Z only.','warn'); return; }
+
+  royaleRoomId = genRoomId();
+  royaleIsHost = true;
+  secretWord   = secret;
+  wordLength   = secret.length;
+  maxAttempts  = 6;
+
+  var hash = await sha256(secret.toLowerCase());
+  await db.ref('royaleRooms/'+royaleRoomId).set({
+    host: currentUser.username, hostUid: currentUser.uid,
+    word: secret, wordHash: hash, wordLength: secret.length,
+    status: 'waiting', winner: null, winnerUid: null,
+    createdAt: Date.now(), maxPlayers: 10
+  });
+
+  // Host joins as first player
+  await db.ref('royaleRooms/'+royaleRoomId+'/players/'+currentUser.uid).set({
+    username: currentUser.username,
+    photoURL:  currentUser.photoURL || '',
+    solved:    false, guessCount: 0,
+    joinedAt:  Date.now()
+  });
+
+  showRoyaleWaiting(true);
+};
+
+window.joinRoyaleRoom = async function(){
+  var id = document.getElementById('ry-join-id').value.trim().toUpperCase();
+  if(id.length !== 6){ toast('Room ID must be 6 characters.','warn'); return; }
+
+  var snap = await db.ref('royaleRooms/'+id).get();
+  if(!snap.exists()){ toast('Room not found.','error'); return; }
+  var room = snap.val();
+  if(room.status !== 'waiting'){ toast('Battle already started!','error'); return; }
+
+  var playerCount = room.players ? Object.keys(room.players).length : 0;
+  if(playerCount >= 10){ toast('Room is full (10/10).','error'); return; }
+
+  royaleRoomId = id;
+  royaleIsHost = false;
+  secretWord   = room.word.toUpperCase();
+  wordLength   = room.wordLength;
+  maxAttempts  = 6;
+
+  await db.ref('royaleRooms/'+id+'/players/'+currentUser.uid).set({
+    username: currentUser.username,
+    photoURL:  currentUser.photoURL || '',
+    solved:    false, guessCount: 0,
+    joinedAt:  Date.now()
+  });
+
+  showRoyaleWaiting(false);
+};
+
+function showRoyaleWaiting(isHost){
+  // Hide the create/join panels, show waiting
+  document.getElementById('royale-host-panel').classList.add('hidden');
+  document.getElementById('royale-join-panel').classList.add('hidden');
+  document.getElementById('royale-waiting').classList.remove('hidden');
+  document.getElementById('ry-room-id-show').textContent = royaleRoomId;
+  if(isHost) document.getElementById('ry-start-btn').classList.remove('hidden');
+
+  // Live player list
+  royaleUnsub = db.ref('royaleRooms/'+royaleRoomId+'/players').on('value', function(snap){
+    var players = [];
+    if(snap.exists()) snap.forEach(function(ch){ players.push(Object.assign({uid:ch.key},ch.val())); });
+    document.getElementById('ry-player-count').textContent = players.length;
+    document.getElementById('ry-player-list').innerHTML = players.map(function(p){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;">'
+        + '<img src="'+avatarUrl(p.photoURL,p.username)+'" style="width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.12);" alt=""/>'
+        + '<span style="font-weight:700;font-size:.84rem;">'+escHtml(p.username)+(p.uid===currentUser.uid?' <span style="font-size:.58rem;background:var(--accent);color:#fff;padding:1px 5px;border-radius:4px;">YOU</span>':'')+'</span>'
+        + (p.solved ? '<span style="margin-left:auto;font-size:.7rem;color:var(--green);font-weight:700;">✓ Solved</span>' : '')
+        + '</div>';
+    }).join('');
+
+    // Enable start button when at least 1 player present (host can start alone for testing)
+    if(isHost && players.length >= 1){
+      document.getElementById('ry-start-btn').disabled = false;
+      document.getElementById('ry-waiting-hint').textContent = 'Ready! Click Start Battle when everyone is in.';
+    }
+  });
+
+  // Listen for game start (if guest)
+  if(!isHost){
+    db.ref('royaleRooms/'+royaleRoomId+'/status').on('value', function(snap){
+      if(snap.exists() && snap.val() === 'active'){
+        db.ref('royaleRooms/'+royaleRoomId+'/status').off();
+        beginRoyaleGame();
+      }
+    });
+  }
+}
+
+window.copyRoyaleId = function(){
+  if(navigator.clipboard) navigator.clipboard.writeText(royaleRoomId).then(function(){ toast('Copied! 📋','success'); });
+  else toast('Room ID: '+royaleRoomId,'info');
+};
+
+window.cancelRoyale = async function(){
+  if(royaleUnsub) db.ref('royaleRooms/'+royaleRoomId+'/players').off('value', royaleUnsub);
+  if(royaleRoomId) await db.ref('royaleRooms/'+royaleRoomId).update({status:'cancelled'});
+  location.href = 'index.html';
+};
+
+window.startRoyaleGame = async function(){
+  await db.ref('royaleRooms/'+royaleRoomId).update({status:'active', startedAt: Date.now()});
+  beginRoyaleGame();
+};
+
+function beginRoyaleGame(){
+  if(royaleUnsub){ db.ref('royaleRooms/'+royaleRoomId+'/players').off('value',royaleUnsub); royaleUnsub=null; }
+  // Override mode temporarily to 'royale' for handleGameEnd
+  mode = 'royale';
+  startBoard('👑 BATTLE ROYALE', 'First to solve wins! 🏆');
+  listenForRoyaleWinner();
+}
+
+function listenForRoyaleWinner(){
+  db.ref('royaleRooms/'+royaleRoomId+'/winner').on('value', function(snap){
+    if(!snap.exists() || snap.val()===null) return;
+    var winnerName = snap.val();
+    if(!gameOver){
+      gameOver = true;
+      if(timerObj) timerObj.stop();
+      if(winnerName === currentUser.username){
+        confettiBurst(); playSound('win');
+        setTimeout(function(){ showRoyaleResult(true, winnerName); }, 400);
+      } else {
+        playSound('lose');
+        setTimeout(function(){ showRoyaleResult(false, winnerName); }, 400);
+      }
+    }
+  });
+
+  // Also update player list live during game
+  db.ref('royaleRooms/'+royaleRoomId+'/players').on('value', function(snap){
+    // Could render a live sidebar list but keep it minimal for now
+  });
+}
+
+async function showRoyaleResult(iWon, winnerName){
+  var uRef = db.ref('users/'+currentUser.uid);
+  var us = await uRef.get(); var ud = us.val();
+  var upd = { totalGames: (ud.totalGames||0)+1 };
+  if(iWon){
+    upd.wins   = (ud.wins||0)+1;
+    upd.score  = Math.max(0,(ud.score||0)+200);
+    upd.money  = Math.max(0,(ud.money||0)+100);
+  } else {
+    upd.losses = (ud.losses||0)+1;
+  }
+  await uRef.update(upd);
+  var fresh = (await uRef.get()).val();
+  saveSession(Object.assign({},currentUser,fresh));
+
+  document.getElementById('res-emoji').textContent = iWon ? '👑' : '💀';
+  document.getElementById('res-title').textContent = iWon ? 'ROYALE WINNER!' : 'ELIMINATED!';
+  document.getElementById('res-word').textContent  = secretWord;
+  document.getElementById('res-msg').textContent   = iWon
+    ? 'You solved it first! +200⭐ +100💰'
+    : '👑 '+escHtml(winnerName)+' won the Royale!';
+  document.getElementById('result-overlay').classList.add('open');
+}
+
+// Override submit for royale: when win, set winner in Firebase
+var _origHandleGameEnd = null;
+window._royaleSubmitOverride = async function(won, guess){
+  if(mode !== 'royale') return false;
+  if(won){
+    // I solved it! Claim winner
+    var snap = await db.ref('royaleRooms/'+royaleRoomId+'/winner').get();
+    if(!snap.exists() || snap.val() === null){
+      await db.ref('royaleRooms/'+royaleRoomId).update({ winner: currentUser.username, winnerUid: currentUser.uid });
+      await db.ref('royaleRooms/'+royaleRoomId+'/players/'+currentUser.uid).update({ solved:true, guessCount:guessCount });
+    }
+    return true;
+  }
+  return false;
+};
+
+function escHtml(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ══════════════════════════════════════════════
+   START\n══════════════════════════════════════════════ */
 init()
   .then(function(){ })
   .catch(function(e){

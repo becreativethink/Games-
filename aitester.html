@@ -712,6 +712,32 @@
     /* ─── Scrollbar for chat ────────────────────────────────────────────────── */
     * { scrollbar-width: thin; scrollbar-color: var(--border-glow) transparent; }
 
+    /* ─── Ripple animation ─────────────────────────────────────────────────── */
+    @keyframes ripple-out {
+      0%   { transform: scale(1);  box-shadow: 0 0 0 0 rgba(0,255,204,0.7); opacity: 1; }
+      60%  { transform: scale(3);  box-shadow: 0 0 0 14px rgba(0,255,204,0); opacity: 0.7; }
+      100% { transform: scale(5);  box-shadow: 0 0 0 20px rgba(0,255,204,0); opacity: 0; }
+    }
+
+    /* ─── Cross-origin notice ───────────────────────────────────────────────── */
+    #xorigin-notice {
+      display: none;
+      position: absolute;
+      bottom: 10px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,18,32,0.92);
+      border: 1px solid rgba(0,229,255,0.25);
+      border-radius: 5px;
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-dim);
+      white-space: nowrap;
+      z-index: 40;
+      backdrop-filter: blur(4px);
+    }
+
+    #xorigin-notice.visible { display: block; }
+
     /* ─── Responsive tweaks ─────────────────────────────────────────────────── */
     @media (max-width: 900px) {
       #app {
@@ -760,6 +786,24 @@
       />
     </div>
 
+    <!-- API key input -->
+    <div id="apikey-wrapper" title="Paste your Anthropic API key for Claude-powered analysis">
+      <span class="url-prefix">API KEY</span>
+      <input
+        id="apikey-input"
+        type="password"
+        placeholder="sk-ant-... (optional)"
+        autocomplete="off"
+        oninput="CONFIG.ANTHROPIC_KEY=this.value.trim()"
+      />
+    </div>
+
+    <!-- Mock / Demo mode toggle -->
+    <button class="btn btn-mock" id="btn-mock" onclick="toggleMock()" title="Toggle demo mode (no API needed)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      DEMO
+    </button>
+
     <button class="btn btn-start" id="btn-start" onclick="startTesting()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="5,3 19,12 5,21"/>
@@ -771,3 +815,848 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <rect x="4" y="4" width="16" height="16" rx="2"/>
       </svg>
+      STOP
+    </button>
+
+    <div class="topbar-divider"></div>
+
+    <div id="status-dot" class="idle"></div>
+    <span id="status-text">IDLE</span>
+
+  </header>
+
+  <!-- ═══════════════════ PREVIEW PANEL ═══════════════════ -->
+  <section id="preview-panel">
+
+    <div class="panel-header">
+      <span class="panel-label">Website Preview</span>
+      <span class="panel-badge" id="current-url-badge">No URL loaded</span>
+      <button id="grid-toggle" onclick="toggleGrid()">GRID ON</button>
+    </div>
+
+    <div id="iframe-container">
+
+      <!-- Placeholder shown before testing starts -->
+      <div id="iframe-placeholder">
+        <div class="placeholder-grid" id="ph-grid"></div>
+        <span class="placeholder-text">AWAITING TARGET URL</span>
+        <span class="placeholder-sub">Enter a URL and click Start Testing</span>
+      </div>
+
+      <!-- The iframe that loads the target site -->
+      <iframe
+        id="site-iframe"
+        sandbox="allow-scripts allow-forms allow-popups allow-pointer-lock"
+        style="display:none;"
+      ></iframe>
+
+      <!-- 10×10 numbered grid overlay -->
+      <div id="grid-overlay"></div>
+
+      <!-- Flash effect on screenshot -->
+      <div id="screenshot-flash"></div>
+
+      <!-- Cross-origin notice -->
+      <div id="xorigin-notice">⚠ Cross-origin: visual simulation only</div>
+
+      <!-- AI cursor crosshair -->
+      <div id="ai-cursor"><div class="cursor-ring"></div></div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════ CHAT / LOG PANEL ═══════════════════ -->
+  <aside id="chat-panel">
+
+    <div class="panel-header">
+      <span class="panel-label">AI Activity</span>
+      <span class="panel-badge" id="cycle-badge">CYCLE 0</span>
+      <button id="grid-toggle" style="margin-left:auto;" onclick="clearLog()"
+        style="background:none;border:1px solid var(--border);border-radius:4px;
+               padding:3px 9px;font-family:var(--font-mono);font-size:10px;
+               color:var(--text-dim);cursor:pointer;">
+        CLEAR
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats-row">
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-cycles">0</div>
+        <div class="stat-label">Cycles</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-commands">0</div>
+        <div class="stat-label">Commands</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-errors">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+    </div>
+
+    <!-- Chat log -->
+    <div id="chat-log">
+      <div id="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/>
+          </svg>
+        </div>
+        <span class="empty-title">NO ACTIVITY YET</span>
+        <span class="empty-sub">Start testing to see AI reasoning,<br>commands, and execution logs here.</span>
+      </div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <span class="typing-label">AI is analyzing screenshot...</span>
+    </div>
+
+    <!-- Cycle countdown bar -->
+    <div id="cycle-bar-wrap">
+      <div class="cycle-bar-label">
+        <span>NEXT SCAN</span>
+        <span id="cycle-countdown">—</span>
+      </div>
+      <div id="cycle-bar-track">
+        <div id="cycle-bar-fill"></div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ──────────────────────────────────────────────────────────
+   CONFIGURATION
+   ────────────────────────────────────────────────────────── */
+const CONFIG = {
+  // ── Anthropic API (primary – no CORS issues via proxy) ──
+  ANTHROPIC_KEY:      '',   // filled from UI input
+  ANTHROPIC_ENDPOINT: 'https://corsproxy.io/?url=https://api.anthropic.com/v1/messages',
+  ANTHROPIC_MODEL:    'claude-haiku-4-5-20251001',
+
+  // ── HuggingFace (fallback via CORS proxy) ──
+  HF_KEY:      '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',
+  HF_ENDPOINT: 'https://corsproxy.io/?url=https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct',
+
+  CYCLE_MS:   3000,   // screenshot every 3 seconds
+  GRID_COLS:  10,
+  GRID_ROWS:  10,
+  USE_MOCK:   false,  // set true for offline demo
+};
+
+/* ──────────────────────────────────────────────────────────
+   STATE
+   ────────────────────────────────────────────────────────── */
+const state = {
+  running:        false,
+  cycleTimer:     null,
+  countdownTimer: null,
+  countdownVal:   0,
+  cycleCount:     0,
+  commandCount:   0,
+  errorCount:     0,
+  gridVisible:    true,
+  lastScreenshot: null,
+  iframeScrollY:  0,    // tracks CSS-transform scroll for cross-origin iframes
+};
+
+/* ──────────────────────────────────────────────────────────
+   DOM REFS
+   ────────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const dom = {
+  urlInput:    $('url-input'),
+  btnStart:    $('btn-start'),
+  btnStop:     $('btn-stop'),
+  statusDot:   $('status-dot'),
+  statusText:  $('status-text'),
+  iframe:      $('site-iframe'),
+  placeholder: $('iframe-placeholder'),
+  gridOverlay: $('grid-overlay'),
+  flash:       $('screenshot-flash'),
+  aiCursor:    $('ai-cursor'),
+  chatLog:     $('chat-log'),
+  emptyState:  $('empty-state'),
+  typing:      $('typing-indicator'),
+  cycleBadge:  $('cycle-badge'),
+  cycleBar:    $('cycle-bar-fill'),
+  cycleCount:  $('cycle-countdown'),
+  statCycles:  $('stat-cycles'),
+  statCmds:    $('stat-commands'),
+  statErrors:  $('stat-errors'),
+  urlBadge:    $('current-url-badge'),
+  gridToggle:  $('grid-toggle'),
+};
+
+/* ──────────────────────────────────────────────────────────
+   BUILD GRID OVERLAY (10×10 = 100 cells)
+   ────────────────────────────────────────────────────────── */
+(function buildGrid() {
+  const frag = document.createDocumentFragment();
+  for (let i = 1; i <= 100; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.id = `gc-${i}`;
+    const num = document.createElement('span');
+    num.className = 'grid-num';
+    num.textContent = i;
+    cell.appendChild(num);
+    frag.appendChild(cell);
+  }
+  dom.gridOverlay.appendChild(frag);
+
+  // Build placeholder mini-grid
+  const ph = $('ph-grid');
+  for (let i = 1; i <= 20; i++) {
+    const c = document.createElement('div');
+    c.className = 'placeholder-cell';
+    c.textContent = i;
+    ph.appendChild(c);
+  }
+})();
+
+/* ──────────────────────────────────────────────────────────
+   GRID HELPERS
+   ────────────────────────────────────────────────────────── */
+/** Convert grid number (1-100) to pixel {x, y} centre */
+function gridToPixel(num) {
+  const n = Math.max(1, Math.min(100, num));
+  const col = (n - 1) % CONFIG.GRID_COLS;           // 0-9
+  const row = Math.floor((n - 1) / CONFIG.GRID_COLS); // 0-9
+  const container = $('iframe-container');
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+  const cellW = W / CONFIG.GRID_COLS;
+  const cellH = H / CONFIG.GRID_ROWS;
+  return {
+    x: Math.round(col * cellW + cellW / 2),
+    y: Math.round(row * cellH + cellH / 2),
+  };
+}
+
+/** Flash a grid cell highlight */
+function flashCell(num) {
+  const cell = $(`gc-${num}`);
+  if (!cell) return;
+  cell.classList.remove('clicked');
+  void cell.offsetWidth; // reflow
+  cell.classList.add('clicked');
+  setTimeout(() => cell.classList.remove('clicked'), 600);
+}
+
+/* ──────────────────────────────────────────────────────────
+   TOGGLE GRID VISIBILITY
+   ────────────────────────────────────────────────────────── */
+function toggleGrid() {
+  state.gridVisible = !state.gridVisible;
+  dom.gridOverlay.style.opacity = state.gridVisible ? '1' : '0';
+  dom.gridToggle.textContent = state.gridVisible ? 'GRID ON' : 'GRID OFF';
+}
+
+/* ──────────────────────────────────────────────────────────
+   STATUS HELPERS
+   ────────────────────────────────────────────────────────── */
+function setStatus(mode, text) {
+  dom.statusDot.className = mode;
+  dom.statusText.textContent = text;
+}
+
+function updateStats() {
+  dom.statCycles.textContent = state.cycleCount;
+  dom.statCmds.textContent   = state.commandCount;
+  dom.statErrors.textContent = state.errorCount;
+  dom.cycleBadge.textContent = `CYCLE ${state.cycleCount}`;
+}
+
+/* ──────────────────────────────────────────────────────────
+   LOG / CHAT PANEL
+   ────────────────────────────────────────────────────────── */
+function addMsg(type, role, body) {
+  // Remove empty state on first message
+  if (dom.emptyState) {
+    dom.emptyState.remove();
+    dom._emptyRemoved = true;
+  }
+
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+
+  const el = document.createElement('div');
+  el.className = `msg ${type}`;
+  el.innerHTML = `
+    <div class="msg-header">
+      <span class="msg-role">${role}</span>
+      <span class="msg-time">${time}</span>
+    </div>
+    <div class="msg-body">${escapeHtml(body)}</div>
+  `;
+  dom.chatLog.appendChild(el);
+  dom.chatLog.scrollTop = dom.chatLog.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function clearLog() {
+  dom.chatLog.innerHTML = '';
+}
+
+function showTyping(visible) {
+  dom.typing.classList.toggle('visible', visible);
+  if (visible) dom.chatLog.scrollTop = dom.chatLog.scrollHeight;
+}
+
+/* ──────────────────────────────────────────────────────────
+   COUNTDOWN BAR
+   ────────────────────────────────────────────────────────── */
+function startCountdown() {
+  clearInterval(state.countdownTimer);
+  const totalMs = CONFIG.CYCLE_MS;
+  const start   = Date.now();
+  dom.cycleCount.textContent = `${(totalMs / 1000).toFixed(1)}s`;
+  dom.cycleBar.style.width = '0%';
+
+  state.countdownTimer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const pct     = Math.min(100, (elapsed / totalMs) * 100);
+    const remain  = Math.max(0, (totalMs - elapsed) / 1000);
+    dom.cycleBar.style.width = pct + '%';
+    dom.cycleCount.textContent = `${remain.toFixed(1)}s`;
+    if (pct >= 100) clearInterval(state.countdownTimer);
+  }, 50);
+}
+
+function resetCountdown() {
+  clearInterval(state.countdownTimer);
+  dom.cycleBar.style.width = '0%';
+  dom.cycleCount.textContent = '—';
+}
+
+/* ──────────────────────────────────────────────────────────
+   SCREENSHOT CAPTURE
+   Using html2canvas on the iframe-container (captures visible DOM)
+   ────────────────────────────────────────────────────────── */
+async function captureScreenshot() {
+  // Trigger flash effect
+  dom.flash.classList.remove('flash');
+  void dom.flash.offsetWidth;
+  dom.flash.classList.add('flash');
+
+  try {
+    const container = $('iframe-container');
+    const canvas = await html2canvas(container, {
+      useCORS:         true,
+      allowTaint:      true,
+      backgroundColor: '#040608',
+      scale:           0.6,    // reduce size for API transfer
+      logging:         false,
+    });
+    const base64 = canvas.toDataURL('image/jpeg', 0.7)
+                         .replace(/^data:image\/jpeg;base64,/, '');
+    state.lastScreenshot = base64;
+    return base64;
+  } catch (err) {
+    addMsg('err', 'SCREENSHOT', `Capture failed: ${err.message}`);
+    state.errorCount++;
+    updateStats();
+    return null;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   AI API CALL
+   ────────────────────────────────────────────────────────── */
+const SYSTEM_PROMPT = `You are an expert AI Website Tester.
+You receive screenshots of a website that include a 1-100 numbered grid overlay.
+Each number represents a screen position arranged in a 10x10 grid (1 top-left, 100 bottom-right, left-to-right, top-to-bottom).
+
+Your goal is to explore the website like a human tester.
+You should: click buttons, open menus, scroll pages, test forms, find bugs.
+
+Always respond in EXACTLY this format:
+
+Reason:
+<explain what you see and what you intend to do>
+
+Command:
+<one of: tap(number) | scroll(start,end) | wait(seconds) | type(number,"text")>
+
+Examples:
+Reason:
+I see a navigation menu icon near grid position 8.
+Command:
+tap(8)
+
+Reason:
+I want to explore the lower part of the page to find more content.
+Command:
+scroll(50,80)
+
+Reason:
+I see a search input near position 45.
+Command:
+type(45,"test query")
+
+Only output one command per response. Keep Reason concise (1-3 sentences).`;
+
+/* ── Mock responses for offline / API-unavailable testing ── */
+const MOCK_COMMANDS = [
+  { reason: 'I can see the top of the page. I will click the navigation area to explore the site structure.', command: 'tap(5)' },
+  { reason: 'Let me scroll down to discover more page content below the fold.', command: 'scroll(20,60)' },
+  { reason: 'I notice there may be a search box or input field in the header area.', command: 'type(15,"test")' },
+  { reason: 'I want to see the footer section to check for links and legal text.', command: 'scroll(50,95)' },
+  { reason: 'Let me click the centre of the page to interact with main content.', command: 'tap(55)' },
+  { reason: 'Scrolling back to the top to restart exploration from the beginning.', command: 'scroll(80,10)' },
+  { reason: 'Checking the top-right area which often contains login or CTA buttons.', command: 'tap(9)' },
+  { reason: 'Pausing briefly to observe any animations or dynamic content loading.', command: 'wait(2)' },
+];
+let mockIdx = 0;
+
+function getMockResponse() {
+  const m = MOCK_COMMANDS[mockIdx % MOCK_COMMANDS.length];
+  mockIdx++;
+  return `Reason:\n${m.reason}\n\nCommand:\n${m.command}`;
+}
+
+/* ── Anthropic API call (via corsproxy.io to bypass CORS) ── */
+async function callAnthropic(screenshotBase64) {
+  const userContent = screenshotBase64
+    ? [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: screenshotBase64 } },
+        { type: 'text',  text: `Cycle ${state.cycleCount}: analyse the screenshot with the 10x10 numbered grid overlay and decide what to test next on this website.` }
+      ]
+    : [{ type: 'text', text: `Cycle ${state.cycleCount} — no screenshot. Suggest an exploratory test action.` }];
+
+  const payload = {
+    model:      CONFIG.ANTHROPIC_MODEL,
+    max_tokens: 300,
+    system:     SYSTEM_PROMPT,
+    messages:   [{ role: 'user', content: userContent }],
+  };
+
+  const res = await fetch(CONFIG.ANTHROPIC_ENDPOINT, {
+    method:  'POST',
+    headers: {
+      'Content-Type':      'application/json',
+      'x-api-key':         CONFIG.ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`Anthropic ${res.status}: ${errText.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  if (data?.content?.[0]?.text) return data.content[0].text.trim();
+  if (data?.error?.message)     throw new Error(data.error.message);
+  throw new Error('Unexpected Anthropic response shape');
+}
+
+/* ── HuggingFace call (via corsproxy.io to bypass CORS) ── */
+async function callHuggingFace() {
+  const prompt = `<|im_start|>system\n${SYSTEM_PROMPT}<|im_end|>\n<|im_start|>user\nCycle ${state.cycleCount}. Choose the next test action for the loaded website.<|im_end|>\n<|im_start|>assistant\n`;
+
+  const res = await fetch(CONFIG.HF_ENDPOINT, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${CONFIG.HF_KEY}`,
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      parameters: { max_new_tokens: 220, temperature: 0.7, do_sample: true, return_full_text: false },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`HuggingFace ${res.status}: ${errText.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  if (Array.isArray(data) && data[0]?.generated_text) return data[0].generated_text.trim();
+  if (data?.generated_text)                           return data.generated_text.trim();
+  if (data?.error)                                    throw new Error(`HF: ${data.error}`);
+  throw new Error('Unexpected HuggingFace response shape');
+}
+
+/* ── Master callAI: Anthropic → HuggingFace → Mock ── */
+async function callAI(screenshotBase64) {
+  // Offline / forced mock mode
+  if (CONFIG.USE_MOCK) {
+    await sleep(500 + Math.random() * 300);
+    return getMockResponse();
+  }
+
+  // Try Anthropic first if an API key has been entered
+  if (CONFIG.ANTHROPIC_KEY) {
+    try {
+      addMsg('sys', 'API', 'Calling Anthropic Claude (via CORS proxy)...');
+      return await callAnthropic(screenshotBase64);
+    } catch (err) {
+      addMsg('err', 'API', `Anthropic failed: ${err.message} — trying HuggingFace...`);
+    }
+  }
+
+  // Try HuggingFace via CORS proxy
+  try {
+    addMsg('sys', 'API', 'Calling HuggingFace Qwen (via CORS proxy)...');
+    return await callHuggingFace();
+  } catch (err) {
+    addMsg('err', 'API', `HuggingFace also failed: ${err.message}`);
+    addMsg('sys', 'API', 'Switching to built-in mock mode for demonstration.');
+    CONFIG.USE_MOCK = true;
+    await sleep(400);
+    return getMockResponse();
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   COMMAND PARSER & EXECUTOR
+   ────────────────────────────────────────────────────────── */
+/** Parse AI response text, extract Reason + Command */
+function parseResponse(text) {
+  const reasonMatch  = text.match(/Reason:\s*([\s\S]*?)(?=Command:|$)/i);
+  const commandMatch = text.match(/Command:\s*([\s\S]*?)$/i);
+
+  return {
+    reason:  reasonMatch  ? reasonMatch[1].trim()  : text.trim(),
+    command: commandMatch ? commandMatch[1].trim()  : '',
+  };
+}
+
+/** Execute a single command string like tap(14) */
+async function executeCommand(rawCmd) {
+  const cmd = rawCmd.trim();
+  if (!cmd) {
+    addMsg('sys', 'EXEC', 'No command found in AI response.');
+    return;
+  }
+
+  addMsg('cmd', 'COMMAND', `▶ ${cmd}`);
+
+  // ── tap(number) ──
+  const tapMatch = cmd.match(/^tap\((\d+)\)/i);
+  if (tapMatch) {
+    const num = parseInt(tapMatch[1]);
+    if (num < 1 || num > 100) {
+      addMsg('err', 'EXEC', `Invalid grid number: ${num}. Must be 1-100.`);
+      state.errorCount++;
+      updateStats();
+      return;
+    }
+    const { x, y } = gridToPixel(num);
+    flashCell(num);
+    moveCursor(x, y);
+    clickInIframe(x, y);  // handles cross-origin gracefully internally
+    addMsg('ok', 'EXEC', `Tap executed at grid ${num} → (${x}px, ${y}px)`);
+    state.commandCount++;
+    updateStats();
+    return;
+  }
+
+  // ── scroll(start, end) ──
+  const scrollMatch = cmd.match(/^scroll\((\d+),\s*(\d+)\)/i);
+  if (scrollMatch) {
+    const start = parseInt(scrollMatch[1]);
+    const end   = parseInt(scrollMatch[2]);
+    scrollInIframe(start, end);  // handles cross-origin gracefully internally
+    addMsg('ok', 'EXEC', `Scroll executed: grid ${start} → ${end}`);
+    state.commandCount++;
+    updateStats();
+    return;
+  }
+
+  // ── wait(seconds) ──
+  const waitMatch = cmd.match(/^wait\((\d+(?:\.\d+)?)\)/i);
+  if (waitMatch) {
+    const secs = parseFloat(waitMatch[1]);
+    addMsg('sys', 'EXEC', `Waiting ${secs}s...`);
+    await sleep(secs * 1000);
+    addMsg('ok', 'EXEC', `Wait complete (${secs}s)`);
+    state.commandCount++;
+    updateStats();
+    return;
+  }
+
+  // ── type(number, "text") ──
+  const typeMatch = cmd.match(/^type\((\d+),\s*["'](.+?)["']\)/i);
+  if (typeMatch) {
+    const num  = parseInt(typeMatch[1]);
+    const text = typeMatch[2];
+    const { x, y } = gridToPixel(num);
+    flashCell(num);
+    moveCursor(x, y);
+    typeInIframe(x, y, text);  // handles cross-origin gracefully internally
+    addMsg('ok', 'EXEC', `Type executed: "${text}" at grid ${num}`);
+    state.commandCount++;
+    updateStats();
+    return;
+  }
+
+  // ── Unknown command ──
+  addMsg('err', 'EXEC', `Unrecognised command: "${cmd}"`);
+  state.errorCount++;
+  updateStats();
+}
+
+/* ──────────────────────────────────────────────────────────
+   IFRAME INTERACTION HELPERS
+   The browser's Same-Origin Policy makes it IMPOSSIBLE to
+   access any cross-origin iframe's DOM, contentWindow, or
+   contentDocument — even read-only access throws SecurityError.
+
+   ALL interaction is therefore simulated on the outer host
+   page only:
+     • Scroll  → CSS translateY on the <iframe> element
+     • Tap     → visual cursor + click ripple at coords
+     • Type    → visual feedback only (logged to chat)
+
+   postMessage is NOT used because even accessing
+   iframe.contentWindow throws on sandboxed cross-origin frames.
+   ────────────────────────────────────────────────────────── */
+
+/* ── Scroll: slide the iframe element with CSS transform ── */
+function scrollInIframe(startGrid, endGrid) {
+  const H       = dom.iframe.offsetHeight || $('iframe-container').clientHeight;
+  const cellH   = H / CONFIG.GRID_ROWS;
+  const startRow = Math.floor((startGrid - 1) / CONFIG.GRID_COLS);
+  const endRow   = Math.floor((endGrid   - 1) / CONFIG.GRID_COLS);
+  const delta    = (endRow - startRow) * cellH;
+
+  // Accumulate virtual scroll position
+  state.iframeScrollY = (state.iframeScrollY || 0) - delta;
+  // Clamp: never go above origin, never go more than 3× frame height down
+  state.iframeScrollY = Math.min(0, Math.max(-(H * 3), state.iframeScrollY));
+
+  dom.iframe.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1)';
+  dom.iframe.style.transform  = `translateY(${state.iframeScrollY}px)`;
+}
+
+/* ── Tap: show ripple at grid coords (cross-origin = visual only) ── */
+function clickInIframe(x, y) {
+  // Show ripple animation at the tap point
+  showRipple(x, y);
+  // Note: actual DOM click inside cross-origin iframe is impossible
+  // by design — the browser enforces this as a security boundary.
+}
+
+/* ── Type: visual feedback only for cross-origin ── */
+function typeInIframe(x, y, text) {
+  showRipple(x, y);
+  // Log the intended action; no DOM access possible cross-origin
+}
+
+/* ── Ripple animation at a point in the iframe container ── */
+function showRipple(x, y) {
+  const ripple = document.createElement('div');
+  ripple.style.cssText = `
+    position: absolute;
+    left: ${x}px; top: ${y}px;
+    width: 6px; height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: rgba(0,255,204,0.9);
+    box-shadow: 0 0 0 0 rgba(0,255,204,0.6);
+    pointer-events: none;
+    z-index: 50;
+    animation: ripple-out 0.7s ease-out forwards;
+  `;
+  $('iframe-container').appendChild(ripple);
+  setTimeout(() => ripple.remove(), 800);
+}
+
+/* ──────────────────────────────────────────────────────────
+   AI CURSOR ANIMATION
+   ────────────────────────────────────────────────────────── */
+function moveCursor(x, y) {
+  dom.aiCursor.style.left    = x + 'px';
+  dom.aiCursor.style.top     = y + 'px';
+  dom.aiCursor.style.opacity = '1';
+  setTimeout(() => { dom.aiCursor.style.opacity = '0'; }, 1200);
+}
+
+/* ──────────────────────────────────────────────────────────
+   UTILITY
+   ────────────────────────────────────────────────────────── */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/* ──────────────────────────────────────────────────────────
+   MAIN TESTING LOOP
+   ────────────────────────────────────────────────────────── */
+async function runCycle() {
+  if (!state.running) return;
+
+  state.cycleCount++;
+  updateStats();
+  addMsg('sys', 'SYSTEM', `── Cycle ${state.cycleCount} ──────────────────`);
+
+  // 1. Capture screenshot
+  addMsg('sys', 'SCREENSHOT', 'Capturing screenshot...');
+  const screenshot = await captureScreenshot();
+
+  // 2. Call AI
+  showTyping(true);
+  let aiResponse = '';
+  try {
+    aiResponse = await callAI(screenshot);
+  } catch (err) {
+    showTyping(false);
+    addMsg('err', 'AI API', `Request failed: ${err.message}`);
+    state.errorCount++;
+    updateStats();
+    scheduleNextCycle();
+    return;
+  }
+  showTyping(false);
+
+  // 3. Parse response
+  const { reason, command } = parseResponse(aiResponse);
+
+  if (reason) addMsg('ai', 'AI REASON', reason);
+
+  // 4. Execute command
+  if (command) {
+    await executeCommand(command);
+  } else {
+    addMsg('sys', 'EXEC', 'No executable command found in response.');
+  }
+
+  // 5. Schedule next cycle
+  scheduleNextCycle();
+}
+
+function scheduleNextCycle() {
+  if (!state.running) return;
+  startCountdown();
+  state.cycleTimer = setTimeout(runCycle, CONFIG.CYCLE_MS);
+}
+
+/* ──────────────────────────────────────────────────────────
+   START / STOP
+   ────────────────────────────────────────────────────────── */
+function startTesting() {
+  const url = dom.urlInput.value.trim();
+  if (!url) {
+    addMsg('err', 'SYSTEM', 'Please enter a URL first.');
+    return;
+  }
+
+  // Normalise URL
+  const normUrl = url.startsWith('http') ? url : 'https://' + url;
+
+  // Load iframe
+  dom.placeholder.style.display = 'none';
+  dom.iframe.style.display      = 'block';
+  dom.iframe.src                = normUrl;
+  dom.urlBadge.textContent      = normUrl;
+
+  dom.iframe.onerror = () => {
+    addMsg('err', 'IFRAME', 'Failed to load URL — site may block iframes (X-Frame-Options).');
+    state.errorCount++;
+    updateStats();
+  };
+
+  // Update UI state
+  state.running       = true;
+  state.cycleCount    = 0;
+  state.commandCount  = 0;
+  state.errorCount    = 0;
+  state.iframeScrollY = 0;
+  dom.iframe.style.transform  = '';
+  dom.iframe.style.transition = '';
+  updateStats();
+
+  dom.btnStart.disabled = true;
+  dom.btnStop.disabled  = false;
+  setStatus('running', 'RUNNING');
+
+  addMsg('sys', 'SYSTEM', `Testing started → ${normUrl}`);
+  const apiLabel = CONFIG.USE_MOCK ? 'DEMO MODE' : CONFIG.ANTHROPIC_KEY ? 'Anthropic Claude' : 'HuggingFace Qwen (CORS proxy)';
+  addMsg('sys', 'SYSTEM', `Grid: 10×10 | Interval: ${CONFIG.CYCLE_MS / 1000}s | Backend: ${apiLabel}`);
+
+  // Wait for iframe to load, then begin
+  dom.iframe.onload = () => {
+    // Detect cross-origin by trying to read contentDocument
+    let crossOrigin = false;
+    try { void dom.iframe.contentDocument; }
+    catch (e) { crossOrigin = true; }
+
+    if (crossOrigin) {
+      $('xorigin-notice').classList.add('visible');
+      addMsg('ok',  'IFRAME', 'Website loaded. Cross-origin detected — actions will be visually simulated (browser security policy prevents DOM access).');
+    } else {
+      $('xorigin-notice').classList.remove('visible');
+      addMsg('ok', 'IFRAME', 'Website loaded (same-origin — full interaction available).');
+    }
+    if (state.running) scheduleNextCycle();
+  };
+}
+
+function stopTesting() {
+  state.running = false;
+  clearTimeout(state.cycleTimer);
+  clearInterval(state.countdownTimer);
+
+  dom.btnStart.disabled = false;
+  dom.btnStop.disabled  = true;
+  setStatus('idle', 'STOPPED');
+  showTyping(false);
+  resetCountdown();
+
+  $('xorigin-notice').classList.remove('visible');
+  addMsg('sys', 'SYSTEM', `Testing stopped after ${state.cycleCount} cycles, ${state.commandCount} commands.`);
+}
+
+/* ──────────────────────────────────────────────────────────
+   TOGGLE DEMO / MOCK MODE
+   ────────────────────────────────────────────────────────── */
+function toggleMock() {
+  CONFIG.USE_MOCK = !CONFIG.USE_MOCK;
+  const btn = document.getElementById('btn-mock');
+  btn.classList.toggle('active', CONFIG.USE_MOCK);
+  btn.querySelector('svg').style.stroke = CONFIG.USE_MOCK ? '#39ff14' : 'currentColor';
+  addMsg(
+    CONFIG.USE_MOCK ? 'ok' : 'sys',
+    'SYSTEM',
+    CONFIG.USE_MOCK
+      ? 'DEMO MODE ON — using built-in mock AI responses (no API calls).'
+      : 'DEMO MODE OFF — will call live AI API.'
+  );
+}
+
+/* ──────────────────────────────────────────────────────────
+   INIT
+   ────────────────────────────────────────────────────────── */
+window.addEventListener('load', () => {
+  addMsg('sys', 'SYSTEM', 'AI Website Tester initialised.');
+  addMsg('sys', 'SYSTEM', `Model: Qwen/Qwen2.5-7B-Instruct | Grid: 10×10`);
+  addMsg('sys', 'SYSTEM', 'Enter a URL above and click START TESTING.');
+  setStatus('idle', 'IDLE');
+});
+</script>
+</body>
+</html>

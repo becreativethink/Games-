@@ -2056,3 +2056,54 @@ body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 }
 .search-input:focus { border-color: var(--accent); }
 .search-input::placeholder { color: var(--text3); }
+
+/* ══════════════════════════════════════════════
+   SHARE RESULT CARD
+   ══════════════════════════════════════════════ */
+#share-preview {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .73rem;
+  line-height: 1.75;
+  color: #c0b8ff;
+  background: rgba(109,81,245,.06);
+  border: 1px solid rgba(109,81,245,.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  margin: 12px 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* ══════════════════════════════════════════════
+   TOURNAMENT PAGE
+   ══════════════════════════════════════════════ */
+@keyframes lb-shimmer {
+  0%,100% { opacity: .4; }
+  50%      { opacity: .8; }
+}
+
+/* ══════════════════════════════════════════════
+   REVENGE MATCH BUTTON
+   ══════════════════════════════════════════════ */
+#revenge-btn {
+  background: rgba(240,64,96,.12);
+  color: var(--red);
+  border: 1px solid rgba(240,64,96,.28);
+}
+#revenge-btn:hover {
+  background: rgba(240,64,96,.22);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(240,64,96,.3);
+}
+
+/* ══════════════════════════════════════════════
+   REFERRAL CODE BOX ANIMATION
+   ══════════════════════════════════════════════ */
+@keyframes codePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(109,81,245,.3); }
+  50%      { box-shadow: 0 0 0 8px rgba(109,81,245,.0); }
+}
+.ref-code-box { animation: codePulse 2.5s ease-in-out infinite; }

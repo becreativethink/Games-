@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#3de8ff"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<title>WordWar — Clans</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.clans-page { max-width: 520px; margin: 0 auto; padding: 0 0 calc(88px + env(safe-area-inset-bottom)); }
+
+/* No-clan landing */
+.no-clan-hero {
+  padding: 40px 20px 28px;
+  text-align: center;
+}
+.no-clan-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 0 24px rgba(61,232,255,.5));
+  animation: floatIcon 3s ease-in-out infinite;
+}
+@keyframes floatIcon {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* Browse clans */
+.clan-list-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .18s;
+}
+.clan-list-card:hover { background: rgba(61,232,255,.05); border-color: rgba(61,232,255,.25); }
+.clan-list-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, rgba(61,232,255,.15), rgba(109,81,245,.12));
+  border: 1px solid rgba(61,232,255,.2);
+  flex-shrink: 0;
+}
+.clan-list-name  { font-weight: 800; font-size: .9rem; margin-bottom: 2px; }
+.clan-list-meta  { font-size: .68rem; color: var(--text3); }
+.clan-list-score { font-family: var(--mono); font-size: .82rem; font-weight: 700; color: var(--gold); margin-left: auto; flex-shrink: 0; }
+
+/* Tabs */
+.clan-section { padding: 0 16px; }
+.clan-section + .clan-section { margin-top: 16px; }
+
+/* Leaderboard row */
+.clan-lb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+.clan-lb-rank { font-family: var(--mono); font-size: .88rem; font-weight: 700; width: 26px; text-align: center; color: var(--text3); flex-shrink: 0; }
+.clan-lb-rank.r1 { color: #f0b429; }
+.clan-lb-rank.r2 { color: #bbb; }
+.clan-lb-rank.r3 { color: #cd7f32; }
+.clan-lb-name { font-weight: 700; font-size: .85rem; flex: 1; }
+.clan-lb-score { font-family: var(--mono); font-size: .78rem; color: var(--gold); font-weight: 700; }
+
+/* Create form */
+.create-clan-form {
+  background: rgba(61,232,255,.04);
+  border: 1px solid rgba(61,232,255,.2);
+  border-radius: 18px;
+  padding: 22px;
+}
+.clan-emoji-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.clan-emoji-opt {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer; transition: all .15s;
+}
+.clan-emoji-opt.selected {
+  background: rgba(61,232,255,.15);
+  border-color: rgba(61,232,255,.4);
+  box-shadow: 0 0 12px rgba(61,232,255,.3);
+}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← Home</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="clans-page">
+
+  <!-- ── Loading ── -->
+  <div id="clan-loading" style="text-align:center;padding:60px 20px;">
+    <div style="width:36px;height:36px;border-radius:50%;border:3px solid rgba(61,232,255,.2);border-top-color:#3de8ff;animation:sp .8s linear infinite;margin:0 auto 14px;"></div>
+    <p style="font-size:.82rem;color:var(--text3);">Loading clans…</p>
+  </div>
+
+  <!-- ── No Clan View ── -->
+  <div id="view-no-clan" class="hidden">
+    <div class="no-clan-hero">
+      <span class="no-clan-icon">🛡️</span>
+      <h1 style="font-family:var(--font-display);font-size:1.3rem;font-weight:900;letter-spacing:.04em;margin-bottom:6px;">Clan System</h1>
+      <p style="font-size:.82rem;color:var(--text2);max-width:300px;margin:0 auto;">Create a clan or join one. Battle together, climb the leaderboard, and dominate!</p>
+    </div>
+
+    <!-- Create/Browse tabs -->
+    <div class="clan-section">
+      <div class="clan-tab-row">
+        <button class="clan-tab active" id="ntab-create" onclick="switchNoClanTab('create')">✨ Create</button>
+        <button class="clan-tab" id="ntab-browse" onclick="switchNoClanTab('browse')">🔍 Browse</button>
+        <button class="clan-tab" id="ntab-join" onclick="switchNoClanTab('join')">🚪 Join by ID</button>
+      </div>
+
+      <!-- Create panel -->
+      <div id="panel-create">
+        <div class="create-clan-form">
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;">Choose Clan Emoji</div>
+          <div class="clan-emoji-grid" id="emoji-grid"></div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">Clan Name</label>
+            <input class="form-control" id="clan-name-inp" type="text" placeholder="e.g. Word Warriors" maxlength="24"/>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">Description (optional)</label>
+            <input class="form-control" id="clan-desc-inp" type="text" placeholder="What makes your clan special?" maxlength="80"/>
+          </div>
+          <button class="btn btn-full" style="padding:14px;background:linear-gradient(135deg,rgba(61,232,255,.2),rgba(109,81,245,.15));border:1px solid rgba(61,232,255,.35);color:#3de8ff;font-weight:800;" onclick="createClan()">🛡️ Create Clan</button>
+        </div>
+      </div>
+
+      <!-- Browse panel -->
+      <div id="panel-browse" class="hidden">
+        <div style="font-size:.7rem;color:var(--text3);margin-bottom:10px;text-align:center;">Top clans by score — tap to request to join</div>
+        <div id="clan-browse-list">
+          <div style="text-align:center;padding:24px;color:var(--text3);font-size:.8rem;">Loading clans…</div>
+        </div>
+      </div>
+
+      <!-- Join by ID panel -->
+      <div id="panel-join" class="hidden">
+        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;">
+          <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);display:block;margin-bottom:7px;">Clan ID</label>
+            <input class="form-control" id="clan-id-inp" type="text" placeholder="Enter Clan ID…" style="font-family:var(--mono);letter-spacing:.05em;"/>
+          </div>
+          <button class="btn btn-primary btn-full" style="padding:13px;" onclick="joinClanById()">🚪 Join Clan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── My Clan View ── -->
+  <div id="view-my-clan" class="hidden">
+
+    <!-- Clan hero -->
+    <div class="clan-hero">
+      <div class="clan-badge" id="my-clan-badge">🛡️ MY CLAN</div>
+      <div class="clan-name-display" id="my-clan-name">…</div>
+      <div style="font-size:.78rem;color:var(--text2);margin-bottom:10px;" id="my-clan-desc">…</div>
+      <div class="clan-stat-row">
+        <div class="clan-stat">
+          <span class="clan-stat-val text-gold" id="mc-score">0</span>
+          <span class="clan-stat-lbl">Score</span>
+        </div>
+        <div class="clan-stat">
+          <span class="clan-stat-val" id="mc-members">0</span>
+          <span class="clan-stat-lbl">Members</span>
+        </div>
+        <div class="clan-stat">
+          <span class="clan-stat-val text-accent" id="mc-rank">—</span>
+          <span class="clan-stat-lbl">Global Rank</span>
+        </div>
+      </div>
+      <div style="font-size:.62rem;color:var(--text3);margin-top:6px;">Clan ID: <span style="font-family:var(--mono);color:var(--text2);" id="mc-id">—</span>
+        <button onclick="copyClansId()" style="background:none;border:none;color:var(--accent);font-size:.62rem;cursor:pointer;padding:0 4px;">copy</button>
+      </div>
+    </div>
+
+    <!-- Tabs: Members / Chat / Leaderboard -->
+    <div class="clan-section" style="margin-top:16px;">
+      <div class="clan-tab-row">
+        <button class="clan-tab active" id="ctab-members" onclick="switchClanTab('members')">👥 Members</button>
+        <button class="clan-tab" id="ctab-chat" onclick="switchClanTab('chat')">💬 Chat</button>
+        <button class="clan-tab" id="ctab-lb" onclick="switchClanTab('lb')">🏆 Leaderboard</button>
+      </div>
+
+      <!-- Members panel -->
+      <div id="cpanel-members">
+        <div id="member-list"></div>
+        <button id="leave-clan-btn" class="btn btn-full" style="margin-top:12px;padding:12px;background:rgba(240,64,96,.08);border:1px solid rgba(240,64,96,.2);color:#f04060;font-size:.8rem;" onclick="leaveClan()">🚪 Leave Clan</button>
+        <div id="pending-requests-wrap" class="hidden" style="margin-top:14px;">
+          <div class="sec-label" style="margin-bottom:8px;">📋 Pending Join Requests</div>
+          <div id="pending-list"></div>
+        </div>
+      </div>
+
+      <!-- Chat panel -->
+      <div id="cpanel-chat" class="hidden">
+        <div class="clan-chat-wrap">
+          <div class="clan-chat-msgs" id="chat-msgs"></div>
+          <div class="clan-chat-input-row">
+            <input class="clan-chat-inp" id="chat-inp" type="text" placeholder="Type a message…" maxlength="200"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendClanMsg();}"/>
+            <button class="btn btn-primary btn-sm" onclick="sendClanMsg()" style="padding:10px 14px;">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global clan leaderboard -->
+      <div id="cpanel-lb" class="hidden">
+        <div style="font-size:.7rem;color:var(--text3);margin-bottom:12px;text-align:center;">Top clans worldwide by total score</div>
+        <div id="global-clan-lb"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn active" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+
+function avatarUrl(url,name){if(url&&(url.startsWith('http')||url.startsWith('data:')))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').substring(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+function fmtNum(n){if(!n)return'0';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n);}
+function escHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var ic={success:'✓',error:'✕',warn:'⚠',info:'ℹ'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-family:Outfit,sans-serif;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.innerHTML='<span style="color:'+(c[type]||c.info)+';\">'+(ic[type]||'ℹ')+'</span><span>'+msg+'</span>';
+  z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
+}
+
+if(user){
+  document.getElementById('nav-username').textContent = user.username||'…';
+  document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+}
+
+/* ── State ── */
+var _myClanId   = null;
+var _myClanData = null;
+var _chatUnsub  = null;
+var _selectedEmoji = '🛡️';
+
+/* ── Emoji picker ── */
+var CLAN_EMOJIS = ['🛡️','⚔️','🔥','💎','👑','🦅','🐉','🌟','🏹','🗡️','🎯','💪','🦁','🌊','⚡'];
+document.getElementById('emoji-grid').innerHTML = CLAN_EMOJIS.map(function(e){
+  return '<div class="clan-emoji-opt'+(e==='🛡️'?' selected':'')+'" onclick="pickEmoji(this,\''+e+'\')" title="'+e+'">'+e+'</div>';
+}).join('');
+
+window.pickEmoji = function(el, emoji){
+  _selectedEmoji = emoji;
+  document.querySelectorAll('.clan-emoji-opt').forEach(function(x){ x.classList.remove('selected'); });
+  el.classList.add('selected');
+};
+
+/* ── Tab switches ── */
+window.switchNoClanTab = function(tab){
+  ['create','browse','join'].forEach(function(t){
+    document.getElementById('ntab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('panel-'+t).classList.toggle('hidden', t!==tab);
+  });
+  if(tab==='browse') loadBrowseClans();
+};
+window.switchClanTab = function(tab){
+  ['members','chat','lb'].forEach(function(t){
+    document.getElementById('ctab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('cpanel-'+t).classList.toggle('hidden', t!==tab);
+  });
+  if(tab==='chat')    attachChatListener();
+  if(tab==='lb')      loadGlobalClanLb();
+};
+
+/* ══════════════════════════════════════════
+   INIT — check if user is in a clan
+══════════════════════════════════════════ */
+async function init(){
+  try{
+    var userSnap = await db.ref('users/'+user.uid).get();
+    var ud = userSnap.exists() ? userSnap.val() : {};
+    var clanId = ud.clanId || null;
+
+    document.getElementById('clan-loading').classList.add('hidden');
+
+    if(clanId){
+      var clanSnap = await db.ref('clans/'+clanId).get();
+      if(clanSnap.exists()){
+        _myClanId   = clanId;
+        _myClanData = clanSnap.val();
+        showMyClan(_myClanData);
+        return;
+      }
+      // Clan was deleted — clean up
+      await db.ref('users/'+user.uid+'/clanId').remove();
+    }
+    document.getElementById('view-no-clan').classList.remove('hidden');
+  }catch(e){
+    document.getElementById('clan-loading').classList.add('hidden');
+    document.getElementById('view-no-clan').classList.remove('hidden');
+  }
+}
+
+/* ══════════════════════════════════════════
+   CREATE CLAN
+══════════════════════════════════════════ */
+window.createClan = async function(){
+  var name = document.getElementById('clan-name-inp').value.trim();
+  var desc = document.getElementById('clan-desc-inp').value.trim();
+  if(name.length < 2){ toast('Clan name must be at least 2 characters.','warn'); return; }
+  if(name.length > 24){ toast('Clan name too long (max 24 chars).','warn'); return; }
+  if(!/^[a-zA-Z0-9 _\-!&]+$/.test(name)){ toast('Only letters, numbers, spaces and _ - ! & allowed.','warn'); return; }
+
+  var clanId = 'clan_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  var ud = (await db.ref('users/'+user.uid).get()).val()||{};
+
+  var clan = {
+    name:        name,
+    emoji:       _selectedEmoji,
+    description: desc||'',
+    createdBy:   user.username,
+    createdAt:   Date.now(),
+    score:       ud.score||0,
+    memberCount: 1,
+    members: {
+      [user.uid]: {
+        username:     user.username,
+        role:         'leader',
+        contribution: ud.score||0,
+        joinedAt:     Date.now(),
+        photoURL:     user.photoURL||''
+      }
+    }
+  };
+
+  await db.ref('clans/'+clanId).set(clan);
+  await db.ref('users/'+user.uid).update({ clanId: clanId });
+  saveSession(Object.assign({}, user, { clanId: clanId }));
+
+  _myClanId   = clanId;
+  _myClanData = clan;
+  document.getElementById('view-no-clan').classList.add('hidden');
+  showMyClan(clan);
+  toast('🛡️ Clan "'+name+'" created!','success');
+};
+
+/* ══════════════════════════════════════════
+   BROWSE CLANS
+══════════════════════════════════════════ */
+async function loadBrowseClans(){
+  try{
+    var snap = await db.ref('clans').orderByChild('score').limitToLast(20).get();
+    var list = document.getElementById('clan-browse-list');
+    if(!snap.exists()){ list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem;">No clans yet. Be the first to create one!</div>'; return; }
+    var clans = [];
+    snap.forEach(function(ch){ clans.push(Object.assign({id:ch.key}, ch.val())); });
+    clans.sort(function(a,b){return(b.score||0)-(a.score||0);});
+    list.innerHTML = clans.map(function(c){
+      var mCount = c.memberCount || (c.members ? Object.keys(c.members).length : 0);
+      var full   = mCount >= 20;
+      return '<div class="clan-list-card" onclick="'+(full?'toast(\'Clan is full!\',\'warn\')':'"requestJoinClan(\''+c.id+'\')"')+'>'
+        + '<div class="clan-list-icon">'+(c.emoji||'🛡️')+'</div>'
+        + '<div style="flex:1;min-width:0;">'
+        +   '<div class="clan-list-name">'+escHtml(c.name)+'</div>'
+        +   '<div class="clan-list-meta">'+mCount+'/20 members · '+(c.description?escHtml(c.description.slice(0,40)):'-')+'</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0;">'
+        +   '<div class="clan-list-score">'+fmtNum(c.score||0)+'⭐</div>'
+        +   (full?'<div style="font-size:.6rem;color:#f04060;">FULL</div>':'<div style="font-size:.6rem;color:#16c26a;">Open</div>')
+        + '</div></div>';
+    }).join('');
+  }catch(e){ document.getElementById('clan-browse-list').innerHTML='<div style="padding:16px;color:var(--text3);font-size:.8rem;text-align:center;">Error loading clans.</div>'; }
+}
+
+window.requestJoinClan = async function(clanId){
+  if(!confirm('Send a join request to this clan?')) return;
+  try{
+    var clanSnap = await db.ref('clans/'+clanId).get();
+    if(!clanSnap.exists()){ toast('Clan not found.','error'); return; }
+    var clan = clanSnap.val();
+    var mCount = clan.memberCount || (clan.members ? Object.keys(clan.members).length : 0);
+    if(mCount >= 20){ toast('This clan is full!','error'); return; }
+    // Add player directly (open clans)
+    var ud = (await db.ref('users/'+user.uid).get()).val()||{};
+    await db.ref('clans/'+clanId+'/members/'+user.uid)

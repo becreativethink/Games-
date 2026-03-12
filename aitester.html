@@ -167,6 +167,7 @@ body::after {
 }
 .bg:not(:disabled):hover { border-color:var(--teal-dim); color:var(--teal) }
 .bg.on { border-color:var(--teal); color:var(--teal); background:var(--teal-g2) }
+.bg.demo-on { border-color:var(--green); color:var(--green); background:rgba(52,211,153,.08); box-shadow:0 0 10px rgba(52,211,153,.3) }
 
 .bv { background:transparent; border-color:var(--violet-dim); color:var(--violet) }
 .bv:not(:disabled):hover { background:var(--violet-glo); box-shadow:var(--glow-violet) }
@@ -497,6 +498,7 @@ body::after {
   </button>
   <button class="btn bg" id="btn-grid" onclick="toggleLabels()" title="Toggle grid number visibility">LABELS: ON</button>
   <button class="btn bg" id="btn-mode" onclick="toggleMode()" title="Switch grid resolution">GRID: 100</button>
+  <button class="btn bg" id="btn-demo" onclick="toggleDemo()" title="Use built-in mock responses — no API needed">DEMO: OFF</button>
   <button class="btn bv" id="btn-assist" onclick="showAssist()" disabled>✦ ASSIST</button>
   <button class="btn ba" id="btn-resume" onclick="resumeTesting()" style="display:none">▶ RESUME</button>
 
@@ -628,14 +630,28 @@ body::after {
    CONFIG
 ─────────────────────────────────────────────────── */
 const CFG = {
-  anthropicKey:      '',
-  anthropicEndpoint: 'https://corsproxy.io/?url=https://api.anthropic.com/v1/messages',
-  anthropicModel:    'claude-haiku-4-5-20251001',
-  hfKey:             'YOUR_API_KEY_HERE',
-  hfEndpoint:        'https://corsproxy.io/?url=https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct',
-  cycleMs:           5000,   // 5 seconds between screenshots
-  reportMs:          60000,  // 60-second reports
-  stuckThresh:       3,      // repeated action count → stuck
+  anthropicKey:   '',
+  anthropicModel: 'claude-haiku-4-5-20251001',
+  hfKey:          'YOUR_API_KEY_HERE',
+
+  // Anthropic base URL — tried through each CORS proxy in order
+  anthropicBase:  'https://api.anthropic.com/v1/messages',
+
+  // HuggingFace base URL
+  hfBase:         'https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct',
+
+  // CORS proxy list — tried in order until one works
+  proxies: [
+    url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://cors-anywhere.herokuapp.com/${url}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  ],
+
+  demoMode:    false,   // force mock responses (set via DEMO button)
+  cycleMs:     5000,    // 5 seconds between screenshots
+  reportMs:    60000,   // 60-second reports
+  stuckThresh: 3,       // repeated action count → stuck
 };
 
 /* ───────────────────────────────────────────────────
@@ -1018,47 +1034,81 @@ const MOCK_EXEC = [
 let mockExecIdx = 0;
 
 /* ───────────────────────────────────────────────────
-   API CALLS
+   API CALLS  — multi-proxy CORS retry chain
+   Strategy:
+     1. If demoMode → mock immediately (no fetch)
+     2. If Anthropic key set → try Anthropic through each proxy
+     3. Try HuggingFace through each proxy
+     4. Auto-fallback to built-in mock (never crashes)
 ─────────────────────────────────────────────────── */
+
+/** Fetch through a list of CORS proxies, return first success */
+async function fetchWithProxies(targetUrl, opts) {
+  let lastErr = null;
+  for (const proxyFn of CFG.proxies) {
+    const proxyUrl = proxyFn(targetUrl);
+    try {
+      const res = await fetch(proxyUrl, { ...opts, signal: AbortSignal.timeout(12000) });
+      if (res.ok || res.status < 500) return res;   // let caller check non-5xx
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (e) {
+      lastErr = e;
+      // Try next proxy
+    }
+  }
+  throw lastErr || new Error('All proxies failed');
+}
+
 async function callAnthropic(b64, systemPrompt, userText) {
   const userContent = b64
     ? [{ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:b64 } },
        { type:'text', text:userText }]
     : [{ type:'text', text:userText }];
 
-  const res = await fetch(CFG.anthropicEndpoint, {
+  const body = JSON.stringify({
+    model: CFG.anthropicModel, max_tokens: 450,
+    system: systemPrompt,
+    messages: [{ role:'user', content:userContent }],
+  });
+
+  const res = await fetchWithProxies(CFG.anthropicBase, {
     method: 'POST',
     headers: {
       'Content-Type':      'application/json',
       'x-api-key':         CFG.anthropicKey,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({
-      model: CFG.anthropicModel, max_tokens: 450,
-      system: systemPrompt,
-      messages: [{ role:'user', content:userContent }],
-    }),
+    body,
   });
-  if (!res.ok) { const t = await res.text().catch(()=>res.statusText); throw new Error(`Anthropic ${res.status}: ${t.slice(0,200)}`); }
+
+  if (!res.ok) {
+    const t = await res.text().catch(() => res.statusText);
+    throw new Error(`Anthropic ${res.status}: ${t.slice(0, 200)}`);
+  }
   const d = await res.json();
   if (d?.content?.[0]?.text) return d.content[0].text.trim();
   if (d?.error?.message) throw new Error(d.error.message);
-  throw new Error('Unexpected Anthropic response');
+  throw new Error('Unexpected Anthropic response shape');
 }
 
 async function callHF(systemPrompt) {
   const prompt = `<|im_start|>system\n${systemPrompt}<|im_end|>\n<|im_start|>user\nCycle ${S.cycles}: choose next action.<|im_end|>\n<|im_start|>assistant\n`;
-  const res = await fetch(CFG.hfEndpoint, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${CFG.hfKey}`},
-    body:JSON.stringify({ inputs:prompt, parameters:{ max_new_tokens:280, temperature:0.7, do_sample:true, return_full_text:false } }),
+
+  const res = await fetchWithProxies(CFG.hfBase, {
+    method:  'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${CFG.hfKey}` },
+    body:    JSON.stringify({ inputs:prompt, parameters:{ max_new_tokens:280, temperature:0.7, do_sample:true, return_full_text:false } }),
   });
-  if (!res.ok) { const t = await res.text().catch(()=>res.statusText); throw new Error(`HF ${res.status}: ${t.slice(0,200)}`); }
+
+  if (!res.ok) {
+    const t = await res.text().catch(() => res.statusText);
+    throw new Error(`HF ${res.status}: ${t.slice(0, 200)}`);
+  }
   const d = await res.json();
   if (Array.isArray(d) && d[0]?.generated_text) return d[0].generated_text.trim();
   if (d?.generated_text) return d.generated_text.trim();
   if (d?.error) throw new Error(`HF: ${d.error}`);
-  throw new Error('Unexpected HF response');
+  throw new Error('Unexpected HF response shape');
 }
 
 async function callAI(b64) {
@@ -1066,28 +1116,39 @@ async function callAI(b64) {
   const sysP   = isPlan ? PLAN_PROMPT : execPrompt();
   const usrT   = isPlan
     ? 'Analyse this website screenshot and generate a comprehensive testing plan.'
-    : `Cycle ${S.cycles}: analyse the screenshot and execute step ${S.planStep + 1} of the test plan.`;
+    : `Cycle ${S.cycles}: analyse screenshot and execute step ${S.planStep + 1} of the test plan.`;
 
-  // Anthropic (vision-capable, best results)
+  // ── Demo / mock mode (instant, no network) ──
+  if (CFG.demoMode) {
+    await sleep(450 + Math.random() * 350);
+    if (isPlan) return MOCK_PLAN_RESP;
+    const m = MOCK_EXEC[mockExecIdx++ % MOCK_EXEC.length];
+    return `Reason:\n${m.r}\n\nPlan Step:\n${m.ps}\n\nCommand:\n${m.c}`;
+  }
+
+  // ── Anthropic Claude (vision, best quality) ──
   if (CFG.anthropicKey) {
     try {
-      log('sys', 'API', `Anthropic Claude → ${isPlan ? 'planning' : `step ${S.planStep + 1}`}`);
+      log('sys', 'API', `Calling Anthropic Claude (${isPlan ? 'planning' : `step ${S.planStep + 1}`})…`);
       return await callAnthropic(b64, sysP, usrT);
     } catch (e) {
-      log('err', 'API', `Anthropic: ${e.message} → trying HuggingFace`);
+      log('err', 'API', `Anthropic failed: ${e.message}`);
     }
   }
 
-  // HuggingFace (text only)
+  // ── HuggingFace Qwen (text only, free) ──
   try {
-    log('sys', 'API', 'HuggingFace Qwen…');
+    log('sys', 'API', 'Calling HuggingFace Qwen…');
     return await callHF(sysP);
   } catch (e) {
-    log('err', 'API', `HuggingFace: ${e.message} → mock mode`);
+    log('err', 'API', `HuggingFace failed: ${e.message}`);
+    log('warn', 'API', 'All APIs unreachable — switching to DEMO mode. Click DEMO OFF to retry live APIs.');
+    CFG.demoMode = true;
+    updateDemoBtn();
   }
 
-  // Mock fallback
-  await sleep(500 + Math.random() * 400);
+  // ── Built-in mock (always works) ──
+  await sleep(450 + Math.random() * 350);
   if (isPlan) return MOCK_PLAN_RESP;
   const m = MOCK_EXEC[mockExecIdx++ % MOCK_EXEC.length];
   return `Reason:\n${m.r}\n\nPlan Step:\n${m.ps}\n\nCommand:\n${m.c}`;
@@ -1559,6 +1620,34 @@ async function generateReport() {
 /* ───────────────────────────────────────────────────
    START / STOP
 ─────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────
+   DEMO MODE TOGGLE
+   Bypasses all API calls — uses built-in mock responses.
+   Auto-activates when all proxies fail; user can also
+   toggle it manually at any time.
+─────────────────────────────────────────────────── */
+function toggleDemo() {
+  CFG.demoMode = !CFG.demoMode;
+  updateDemoBtn();
+  log(CFG.demoMode ? 'ok' : 'sys', 'DEMO',
+    CFG.demoMode
+      ? 'DEMO MODE ON — using built-in mock AI responses. No API calls will be made.'
+      : 'DEMO MODE OFF — will attempt live API calls (Anthropic → HuggingFace).');
+}
+
+function updateDemoBtn() {
+  const btn = document.getElementById('btn-demo');
+  if (!btn) return;
+  if (CFG.demoMode) {
+    btn.textContent = 'DEMO: ON';
+    btn.classList.add('demo-on');
+    btn.classList.remove('on');
+  } else {
+    btn.textContent = 'DEMO: OFF';
+    btn.classList.remove('demo-on', 'on');
+  }
+}
+
 function startTesting() {
   const url = D.urlInp.value.trim();
   if (!url) { log('err', 'SYSTEM', 'Please enter a URL.'); return; }

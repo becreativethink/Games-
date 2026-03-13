@@ -119,7 +119,7 @@
 
   <!-- ── Loading ── -->
   <div id="clan-loading" style="text-align:center;padding:60px 20px;">
-    <div style="width:36px;height:36px;border-radius:50%;border:3px solid rgba(61,232,255,.2);border-top-color:#3de8ff;animation:sp .8s linear infinite;margin:0 auto 14px;"></div>
+    <div style="width:36px;height:36px;border-radius:50%;border:3px solid rgba(61,232,255,.2);border-top-color:#3de8ff;animation:spin .8s linear infinite;margin:0 auto 14px;"></div>
     <p style="font-size:.82rem;color:var(--text3);">Loading clans…</p>
   </div>
 
@@ -429,4 +429,228 @@ window.requestJoinClan = async function(clanId){
     if(mCount >= 20){ toast('This clan is full!','error'); return; }
     // Add player directly (open clans)
     var ud = (await db.ref('users/'+user.uid).get()).val()||{};
-    await db.ref('clans/'+clanId+'/members/'+user.uid)
+    await db.ref('clans/'+clanId+'/members/'+user.uid).set({
+      username:     user.username,
+      role:         'member',
+      contribution: ud.score||0,
+      joinedAt:     Date.now(),
+      photoURL:     user.photoURL||''
+    });
+    var newCount = mCount+1;
+    await db.ref('clans/'+clanId+'/memberCount').set(newCount);
+    await db.ref('users/'+user.uid).update({clanId: clanId});
+    saveSession(Object.assign({},user,{clanId:clanId}));
+    _myClanId = clanId; _myClanData = clanSnap.val();
+    document.getElementById('view-no-clan').classList.add('hidden');
+    showMyClan(Object.assign({id:clanId},clan));
+    toast('🛡️ Joined '+clan.name+'!','success');
+  }catch(e){ toast('Could not join clan.','error'); }
+};
+
+window.joinClanById = async function(){
+  var id = document.getElementById('clan-id-inp').value.trim();
+  if(!id){ toast('Enter a Clan ID.','warn'); return; }
+  await window.requestJoinClan(id);
+};
+
+/* ══════════════════════════════════════════
+   MY CLAN VIEW
+══════════════════════════════════════════ */
+function showMyClan(clan){
+  document.getElementById('view-my-clan').classList.remove('hidden');
+  document.getElementById('my-clan-badge').innerHTML = (clan.emoji||'🛡️')+' MY CLAN';
+  document.getElementById('my-clan-name').textContent  = clan.name||'Unknown';
+  document.getElementById('my-clan-desc').textContent  = clan.description||'';
+  document.getElementById('mc-score').textContent      = fmtNum(clan.score||0);
+  document.getElementById('mc-id').textContent         = _myClanId||'—';
+  var mCount = clan.memberCount || (clan.members ? Object.keys(clan.members).length : 0);
+  document.getElementById('mc-members').textContent = mCount;
+  renderMembers(clan);
+  loadClanRank();
+}
+
+window.copyClansId = function(){
+  if(!_myClanId) return;
+  if(navigator.clipboard) navigator.clipboard.writeText(_myClanId).then(function(){ toast('Clan ID copied!','success'); });
+  else toast('Clan ID: '+_myClanId,'info');
+};
+
+function renderMembers(clan){
+  var members = clan.members ? Object.entries(clan.members) : [];
+  members.sort(function(a,b){return (b[1].contribution||0)-(a[1].contribution||0);});
+
+  var myRole = (clan.members&&clan.members[user.uid]) ? clan.members[user.uid].role : 'member';
+
+  document.getElementById('member-list').innerHTML = members.map(function(entry, i){
+    var uid = entry[0]; var m = entry[1];
+    var rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return '<div class="clan-member-card">'
+      + '<div class="clan-member-rank '+rankClass+'">'+(i+1)+'</div>'
+      + '<img src="'+avatarUrl(m.photoURL,m.username)+'" style="width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.12);flex-shrink:0;" alt=""/>'
+      + '<div style="flex:1;min-width:0;">'
+      +   '<div class="clan-member-name">'+escHtml(m.username||'Unknown')+(uid===user.uid?' <span style="font-size:.58rem;background:var(--accent);color:#fff;padding:1px 5px;border-radius:4px;">YOU</span>':'')+'</div>'
+      +   '<div style="font-size:.65rem;color:var(--text3);">'+new Date(m.joinedAt||0).toLocaleDateString()+'</div>'
+      + '</div>'
+      + '<div style="text-align:right;">'
+      +   '<div class="clan-member-score">'+fmtNum(m.contribution||0)+'⭐</div>'
+      +   '<span class="clan-member-role">'+escHtml(m.role||'member')+'</span>'
+      + '</div>'
+      + (myRole==='leader'&&uid!==user.uid?'<button onclick="kickMember(\''+uid+'\',\''+escHtml(m.username||'')+'\')" style="margin-left:8px;background:rgba(240,64,96,.1);border:1px solid rgba(240,64,96,.2);border-radius:8px;color:#f04060;font-size:.65rem;padding:4px 8px;cursor:pointer;">Kick</button>':'')
+      + '</div>';
+  }).join('');
+
+  // Pending requests (leader only)
+  if(myRole==='leader' && clan.pendingMembers){
+    var pending = Object.entries(clan.pendingMembers);
+    if(pending.length > 0){
+      document.getElementById('pending-requests-wrap').classList.remove('hidden');
+      document.getElementById('pending-list').innerHTML = pending.map(function(entry){
+        var uid = entry[0]; var m = entry[1];
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:6px;">'
+          + '<span style="font-weight:700;font-size:.84rem;">'+escHtml(m.username||uid)+'</span>'
+          + '<div style="display:flex;gap:6px;">'
+          +   '<button class="btn btn-success btn-sm" onclick="approveMember(\''+uid+'\',\''+escHtml(m.username||uid)+'\')">✓</button>'
+          +   '<button class="btn btn-danger btn-sm" onclick="denyMember(\''+uid+'\')">✕</button>'
+          + '</div></div>';
+      }).join('');
+    }
+  }
+}
+
+window.kickMember = async function(uid, username){
+  if(!confirm('Kick '+username+' from clan?')) return;
+  try{
+    await db.ref('clans/'+_myClanId+'/members/'+uid).remove();
+    await db.ref('users/'+uid+'/clanId').remove();
+    var snap = await db.ref('clans/'+_myClanId).get();
+    var updated = snap.val();
+    var mCount = updated.members ? Object.keys(updated.members).length : 0;
+    await db.ref('clans/'+_myClanId+'/memberCount').set(mCount);
+    renderMembers(updated);
+    toast(username+' removed from clan.','info');
+  }catch(e){ toast('Could not kick member.','error'); }
+};
+
+window.approveMember = async function(uid, username){
+  try{
+    var pendSnap = await db.ref('clans/'+_myClanId+'/pendingMembers/'+uid).get();
+    var pData = pendSnap.exists() ? pendSnap.val() : {username:username};
+    await db.ref('clans/'+_myClanId+'/members/'+uid).set(Object.assign(pData,{role:'member',joinedAt:Date.now()}));
+    await db.ref('clans/'+_myClanId+'/pendingMembers/'+uid).remove();
+    await db.ref('users/'+uid).update({clanId:_myClanId});
+    toast(username+' approved!','success');
+    var snap = await db.ref('clans/'+_myClanId).get();
+    renderMembers(snap.val());
+  }catch(e){}
+};
+
+window.denyMember = async function(uid){
+  await db.ref('clans/'+_myClanId+'/pendingMembers/'+uid).remove();
+  var snap = await db.ref('clans/'+_myClanId).get();
+  renderMembers(snap.val());
+};
+
+window.leaveClan = async function(){
+  if(!confirm('Leave clan? You can rejoin or create a new one.')) return;
+  try{
+    await db.ref('clans/'+_myClanId+'/members/'+user.uid).remove();
+    await db.ref('users/'+user.uid+'/clanId').remove();
+    var snap = await db.ref('clans/'+_myClanId).get();
+    if(snap.exists()){
+      var clan = snap.val();
+      var mCount = clan.members ? Object.keys(clan.members).length : 0;
+      await db.ref('clans/'+_myClanId+'/memberCount').set(mCount);
+      // If no members left, delete clan
+      if(mCount === 0) await db.ref('clans/'+_myClanId).remove();
+    }
+    saveSession(Object.assign({},user,{clanId:null}));
+    _myClanId = null; _myClanData = null;
+    if(_chatUnsub){ db.ref('clans/null/chat/messages').off(); _chatUnsub=null; }
+    document.getElementById('view-my-clan').classList.add('hidden');
+    document.getElementById('view-no-clan').classList.remove('hidden');
+    toast('You left the clan.','info');
+  }catch(e){ toast('Could not leave clan.','error'); }
+};
+
+async function loadClanRank(){
+  try{
+    var snap = await db.ref('clans').orderByChild('score').get();
+    var clans = []; var myScore = _myClanData?(_myClanData.score||0):0;
+    snap.forEach(function(ch){ clans.push({id:ch.key,score:ch.val().score||0}); });
+    clans.sort(function(a,b){return b.score-a.score;});
+    var rank = clans.findIndex(function(c){return c.id===_myClanId;})+1;
+    document.getElementById('mc-rank').textContent = rank>0?'#'+rank:'—';
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════
+   CLAN CHAT
+══════════════════════════════════════════ */
+function attachChatListener(){
+  if(_chatUnsub || !_myClanId) return;
+  var chatRef = db.ref('clans/'+_myClanId+'/chat/messages');
+  _chatUnsub = chatRef.limitToLast(80).on('value', function(snap){
+    var msgs = [];
+    if(snap.exists()) snap.forEach(function(ch){ msgs.push(Object.assign({key:ch.key},ch.val())); });
+    var container = document.getElementById('chat-msgs');
+    container.innerHTML = msgs.map(function(m){
+      var mine = m.sender === user.username;
+      var time = new Date(m.ts||0).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      return '<div class="clan-chat-msg '+(mine?'mine':'other')+'">'
+        + '<div class="ccm-bubble">'
+        +   (mine?'':('<div class="ccm-name">'+escHtml(m.sender||'?')+'</div>'))
+        +   '<div class="ccm-text">'+escHtml(m.text||'')+'</div>'
+        +   '<div class="ccm-time">'+time+'</div>'
+        + '</div></div>';
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+window.sendClanMsg = async function(){
+  var inp = document.getElementById('chat-inp');
+  var text = inp.value.trim();
+  if(!text || !_myClanId) return;
+  inp.value = '';
+  try{
+    await db.ref('clans/'+_myClanId+'/chat/messages').push({
+      sender: user.username,
+      text:   text,
+      ts:     Date.now()
+    });
+  }catch(e){ toast('Could not send message.','error'); inp.value = text; }
+};
+
+/* ══════════════════════════════════════════
+   GLOBAL CLAN LEADERBOARD
+══════════════════════════════════════════ */
+async function loadGlobalClanLb(){
+  var container = document.getElementById('global-clan-lb');
+  container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:.8rem;">Loading…</div>';
+  try{
+    var snap = await db.ref('clans').orderByChild('score').limitToLast(20).get();
+    var clans = [];
+    if(snap.exists()) snap.forEach(function(ch){ clans.push(Object.assign({id:ch.key},ch.val())); });
+    clans.sort(function(a,b){return(b.score||0)-(a.score||0);});
+    if(clans.length===0){ container.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">No clans yet.</div>'; return; }
+    container.innerHTML = clans.map(function(c,i){
+      var rankCls = i===0?'r1':i===1?'r2':i===2?'r3':'';
+      var isMine  = c.id === _myClanId;
+      return '<div class="clan-lb-row" style="'+(isMine?'border-color:rgba(61,232,255,.3);background:rgba(61,232,255,.04);':'')+'">'
+        + '<div class="clan-lb-rank '+rankCls+'">'+(i+1)+'</div>'
+        + '<span style="font-size:1.1rem;flex-shrink:0;">'+(c.emoji||'🛡️')+'</span>'
+        + '<div class="clan-lb-name">'+escHtml(c.name||'Clan')+(isMine?' <span style="font-size:.58rem;background:rgba(61,232,255,.2);color:#3de8ff;padding:1px 5px;border-radius:4px;">MINE</span>':'')+'</div>'
+        + '<div style="text-align:right;flex-shrink:0;">'
+        +   '<div class="clan-lb-score">'+fmtNum(c.score||0)+'⭐</div>'
+        +   '<div style="font-size:.6rem;color:var(--text3);">'+(c.memberCount||0)+' members</div>'
+        + '</div></div>';
+    }).join('');
+  }catch(e){ container.innerHTML='<div style="padding:16px;color:var(--text3);text-align:center;font-size:.8rem;">Error loading leaderboard.</div>'; }
+}
+
+/* ── Boot ── */
+init();
+</script>
+<script src="/pwa.js"></script>
+</body>
+</html>

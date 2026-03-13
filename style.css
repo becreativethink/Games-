@@ -910,7 +910,11 @@ select.form-control { background-image:url("data:image/svg+xml,%3Csvg xmlns='htt
 
   .lb-stats { flex-direction:column; gap:2px; }
   .profile-header { flex-direction:column; align-items:center; text-align:center; }
-  .mode-grid { grid-template-columns:1fr; max-width:340px; }
+  .mode-grid { grid-template-columns: repeat(2,1fr); max-width: 500px; gap: 10px; }
+  .mode-card  { padding: 20px 14px; }
+  .mc-icon    { font-size: 1.9rem; margin-bottom: 8px; }
+  .mc-title   { font-size: .82rem; }
+  .mc-desc    { font-size: .7rem; }
   .analytics-grid { grid-template-columns:repeat(2,1fr); }
   .setup-wrap { padding:18px 14px 40px; }
 }
@@ -2012,6 +2016,8 @@ body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   margin: 0 auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Alias used by older inline spinners */
+@keyframes sp    { to { transform: rotate(360deg); } }
 
 /* ── Level badge inline ── */
 .level-badge {

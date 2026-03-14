@@ -20,9 +20,6 @@
 </head>
 <body>
 
-<!-- ══ NETWORK BANNER ══ -->
-<div id="networkBanner">📶 You are offline — showing cached data if available.</div>
-
 <!-- ══ AUTH SCREEN ══ -->
 <div id="authScreen">
   <!-- Firebase load failure warning -->
@@ -381,7 +378,7 @@
 </div>
 
 <!-- Plan upgrade modal -->
-<div id="planModal">
+<div id="planModal" style="display:none">
   <div class="modal-card" style="max-width:420px;max-height:90vh;overflow-y:auto;">
     <button class="modal-close" onclick="closePlanModal()">✕</button>
     <h3 id="modalTitle">Upgrade Plan</h3>
@@ -397,7 +394,7 @@
 </div>
 
 <!-- Report Preview Modal -->
-<div id="reportModal">
+<div id="reportModal" style="display:none">
   <div class="rmodal-header">
     <div class="rmodal-title" id="rmodalTitle">📊 Report</div>
     <div class="rmodal-actions">
@@ -408,8 +405,8 @@
   <div class="rmodal-body" id="rmodalBody"></div>
 </div>
 
-<!-- Offline Banner -->
-<div id="offlineBanner">📶 Offline Mode — Showing previously saved report</div>
+<!-- Offline Banner (controlled by JS setupOfflineMode) -->
+<div id="offlineBanner" style="display:none">📶 Offline Mode — Showing previously saved report</div>
 
 <!-- ══ EXTERNAL LIBRARIES ══ -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>

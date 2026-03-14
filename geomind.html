@@ -29,60 +29,144 @@
     ⚠️ Could not connect to authentication servers.<br>
     Please check your internet connection and reload the page.
   </div>
+  <!-- LOGIN CARD -->
   <div id="loginCard" class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-gem">🌍</div>
-      <div class="auth-logo-text">GeoMind</div>
+
+    <!-- Logo + Branding -->
+    <div class="auth-brand">
+      <div class="auth-globe">🌍</div>
+      <div class="auth-brand-name">GeoMind</div>
+      <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
-    <div class="auth-title">Welcome back</div>
-    <div class="auth-sub">Sign in to your geo-intelligence platform</div>
-    <div class="afield"><label>Email</label><input type="email" id="lemail" placeholder="you@email.com"/></div>
-    <div class="afield"><label>Password</label><input type="password" id="lpwd" placeholder="Your password"/></div>
+
+    <!-- Heading -->
+    <div class="auth-heading">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to continue your learning journey</div>
+    </div>
+
+    <!-- Fields -->
+    <div class="afield">
+      <label for="lemail">Email Address</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">✉</span>
+        <input type="email" id="lemail" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="lpwd">Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="lpwd" placeholder="Your password" autocomplete="current-password"/>
+      </div>
+    </div>
+
+    <!-- Messages -->
     <div class="aerr" id="lerr"></div>
     <div class="aok"  id="lok"></div>
-    <button class="abtn" id="lbtn" onclick="doLogin()">Sign In</button>
-    <div class="adiv">or</div>
-    <button class="alink" onclick="showCard('signup')">Don't have an account? <strong>Create one</strong></button>
+
+    <!-- Sign In Button -->
+    <button class="abtn" id="lbtn" onclick="doLogin()">
+      Sign In →
+    </button>
+
+    <!-- Divider -->
+    <div class="adiv"><span>or</span></div>
+
+    <!-- Switch to Signup -->
+    <button class="alink" onclick="showCard('signup')">
+      Don't have an account? <strong>Create one free</strong>
+    </button>
   </div>
 
+  <!-- SIGNUP CARD -->
   <div id="signupCard" class="auth-card" style="display:none">
-    <div class="auth-logo">
-      <div class="auth-logo-gem">🌍</div>
-      <div class="auth-logo-text">GeoMind</div>
+
+    <!-- Logo + Branding -->
+    <div class="auth-brand">
+      <div class="auth-globe">🌍</div>
+      <div class="auth-brand-name">GeoMind</div>
+      <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
-    <div class="auth-title">Create free account</div>
-    <div class="auth-sub">Start exploring the world with AI</div>
-    <div class="afield"><label>Full Name</label><input type="text" id="sname" placeholder="Your full name"/></div>
-    <div class="afield"><label>Email</label><input type="email" id="semail" placeholder="you@email.com"/></div>
+
+    <!-- Heading -->
+    <div class="auth-heading">
+      <div class="auth-title">Create your account</div>
+      <div class="auth-sub">Start exploring the world with AI — it's free</div>
+    </div>
+
+    <!-- Fields -->
     <div class="afield">
-      <label>Password</label>
-      <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)"/>
+      <label for="sname">Full Name</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">👤</span>
+        <input type="text" id="sname" placeholder="Your full name" autocomplete="name"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="semail">Email Address</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">✉</span>
+        <input type="email" id="semail" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="spwd">Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)" autocomplete="new-password"/>
+      </div>
       <div class="pwd-bar" id="pwdBar"></div>
+      <div class="pwd-hint">Use 8+ characters with letters and numbers</div>
     </div>
-    <div class="afield"><label>Confirm Password</label><input type="password" id="scpwd" placeholder="Repeat password"/></div>
-    <div class="afield"><label>Class / Level</label>
-      <select id="scls">
-        <option value="Competitive">Competitive (UPSC/SSC)</option>
-        <option value="Class 11-12">Class 11–12</option>
-        <option value="Class 9-10">Class 9–10</option>
-        <option value="Class 6-8">Class 6–8</option>
-      </select>
+    <div class="afield">
+      <label for="scpwd">Confirm Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="scpwd" placeholder="Repeat password" autocomplete="new-password"/>
+      </div>
     </div>
-    <div class="afield"><label>Target Exam</label>
-      <select id="sexam">
-        <option value="UPSC">UPSC</option>
-        <option value="SSC">SSC</option>
-        <option value="State PCS">State PCS</option>
-        <option value="NEET">NEET</option>
-        <option value="JEE">JEE</option>
-        <option value="General">General</option>
-      </select>
+
+    <!-- Two-column row -->
+    <div class="afield-row">
+      <div class="afield afield-half">
+        <label for="scls">Class / Level</label>
+        <select id="scls">
+          <option value="Competitive">Competitive</option>
+          <option value="Class 11-12">Class 11–12</option>
+          <option value="Class 9-10">Class 9–10</option>
+          <option value="Class 6-8">Class 6–8</option>
+        </select>
+      </div>
+      <div class="afield afield-half">
+        <label for="sexam">Target Exam</label>
+        <select id="sexam">
+          <option value="UPSC">UPSC</option>
+          <option value="SSC">SSC</option>
+          <option value="State PCS">State PCS</option>
+          <option value="NEET">NEET</option>
+          <option value="JEE">JEE</option>
+          <option value="General">General</option>
+        </select>
+      </div>
     </div>
+
+    <!-- Messages -->
     <div class="aerr" id="serr"></div>
     <div class="aok"  id="sok"></div>
-    <button class="abtn" id="sbtn" onclick="doSignup()">Create Free Account</button>
-    <div class="adiv">or</div>
-    <button class="alink alink-g" onclick="showCard('login')">Already have an account? <strong>Sign in</strong></button>
+
+    <!-- Create Account Button -->
+    <button class="abtn" id="sbtn" onclick="doSignup()">
+      Create Free Account →
+    </button>
+
+    <!-- Divider -->
+    <div class="adiv"><span>or</span></div>
+
+    <!-- Switch to Login -->
+    <button class="alink alink-g" onclick="showCard('login')">
+      Already have an account? <strong>Sign in</strong>
+    </button>
   </div>
 </div>
 

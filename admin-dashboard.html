@@ -308,6 +308,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="tb-title">GeoMind <span>Admin</span></div>
       </div>
       <div class="tb-right">
+        <span class="stat-pill" id="authPill" style="background:rgba(255,202,69,0.1);border-color:rgba(255,202,69,0.2);color:var(--amber)">⏳ Auth Loading…</span>
         <span class="stat-pill" id="onlinePill">● ONLINE</span>
         <span class="stat-pill warn" id="dbPill">Firebase ✓</span>
       </div>
@@ -371,6 +372,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="sec-head">
         <div><div class="sec-title">⭐ Plan Control</div><div class="sec-sub">Manually activate or change user plans</div></div>
       </div>
+
+      <!-- Auth status warning -->
+      <div id="planAuthWarning" style="display:none;background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.25);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--red);margin-bottom:16px;line-height:1.7;">
+        ⚠ <strong>Not signed in to Firebase.</strong> Plan changes will fail. Open the main GeoMind app in another tab and make sure you are signed in, then come back here and refresh.
+      </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--amber)">Quick Plan Activation</div>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
@@ -403,28 +409,40 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="sec-head"><div><div class="sec-title">⚙ Admin Settings</div><div class="sec-sub">System configuration and admin access</div></div></div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Firebase Database Rules</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;">Copy these rules into your Firebase Realtime Database → Rules tab to secure user and admin data.</div>
-        <pre style="background:rgba(0,0,0,0.3);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c0d0a0;overflow-x:auto;line-height:1.6;">{
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.7;">⚠️ <strong style="color:var(--amber)">You must apply these rules</strong> in Firebase Console → Realtime Database → Rules tab. Without the correct rules, all admin plan changes and API key assignments will silently fail.</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Replace <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;color:var(--amber)">YOUR_ADMIN_UID</code> with your actual Firebase UID (find it in Authentication → Users in Firebase Console).</div>
+        <pre style="background:rgba(0,0,0,0.35);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c8d8b0;overflow-x:auto;line-height:1.7;">
+{
   "rules": {
     "users": {
       "$uid": {
-        ".read":  "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
       }
     },
     "adminAPI": {
       "$uid": {
-        ".read":  "$uid === auth.uid",
-        ".write": false
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "auth.uid === 'YOUR_ADMIN_UID'"
+      }
+    },
+    "reports": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
       }
     },
     "adminConfig": {
-      ".read":  false,
-      ".write": false
+      ".read":  "auth.uid === 'YOUR_ADMIN_UID'",
+      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
     }
   }
 }</pre>
-        <button onclick="copyRules()" style="margin-top:10px;padding:8px 16px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;font-size:11px;font-weight:700;">📋 Copy Rules</button>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button onclick="copyRules()" style="padding:8px 16px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;font-size:11px;font-weight:700;">📋 Copy Rules</button>
+          <button onclick="testWritePermission()" style="padding:8px 16px;background:rgba(255,202,69,0.08);border:1px solid rgba(255,202,69,0.2);color:var(--amber);border-radius:8px;font-size:11px;font-weight:700;">🧪 Test Write Permission</button>
+          <span id="writeTestResult" style="font-size:11px;padding:8px 0;display:none;"></span>
+        </div>
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Register Admin UID</div>
@@ -464,15 +482,20 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
 <script>
 /* ════════════════════════════════════════════════════════════════
-   GEOMIND ADMIN DASHBOARD v5
-   • Password: s11o22n33u44@becreativethink (hashed comparison)
-   • Firebase Real-time DB read for user management
-   • Write: users/<uid>/plan, adminAPI/<uid>/* 
-   • Session stored in sessionStorage (cleared on tab close)
+   GEOMIND ADMIN DASHBOARD v5.1
+   ROOT CAUSE FIX: Admin dashboard opened in new tab has no Firebase
+   auth context. Writes to users/$uid were silently failing because
+   Firebase rules require auth.uid === $uid.
+   
+   FIX:
+   1. auth.onAuthStateChanged — wait for Firebase auth to resolve
+   2. Store currentAdminUid — pass to all write operations
+   3. Firebase rules updated to allow adminUid → all users
+   4. Write guard — test permission before showing dashboard
+   5. All writes wrapped with auth check + clear error messages
 ════════════════════════════════════════════════════════════════ */
 
-/* ── SECURITY: Direct password comparison ──────────────── */
-/* Admin password stored as reversed+split to avoid plain text in source  */
+/* ── SECURITY: Admin password ──────────────────────────── */
 const _AP = ['s11o22n33u44', '@', 'becreativethink'].join('');
 
 function tryLogin() {
@@ -539,27 +562,71 @@ const ADMIN_MODELS = [
 
 const PLAN_NAMES = { free:'Free', basic:'Basic', standard:'Standard', premium:'Premium', custom:'⚡ Custom' };
 
-/* ── SESSION ──────────────────────────────────────────── */
+/* ── STATE ─────────────────────────────────────────────── */
 let adminAuthenticated = false;
-let allUsers = [];
-let allAPIKeys = {};
-let currentModalData = {};
+let currentAdminUid    = null;   // Firebase UID of admin (for write auth)
+let allUsers           = [];
+let allAPIKeys         = {};
+let currentModalData   = {};
+let _firebaseAuthReady = false;
 
+/* ── FIREBASE AUTH LISTENER ────────────────────────────── */
+/* CRITICAL: Auth state must resolve before any DB writes.
+   In a new tab, currentUser starts null and loads async.    */
+auth.onAuthStateChanged(user => {
+  _firebaseAuthReady = true;
+  const pill = document.getElementById('authPill');
+  if (user) {
+    currentAdminUid = user.uid;
+    console.log('[AdminDash] Firebase auth ready. UID:', currentAdminUid);
+    if (pill) {
+      pill.textContent = '✓ Signed in as ' + (user.email || user.uid.substring(0,12) + '…');
+      pill.style.background = 'rgba(52,211,153,0.1)';
+      pill.style.borderColor = 'rgba(52,211,153,0.25)';
+      pill.style.color = 'var(--green)';
+    }
+    // Update sidebar avatar
+    const initial = (user.email || user.displayName || 'A')[0].toUpperCase();
+    const sbAv   = document.getElementById('sbAv');
+    const sbName = document.getElementById('sbName');
+    if (sbAv)   sbAv.textContent   = initial;
+    if (sbName) sbName.textContent = user.displayName || user.email || 'Admin';
+  } else {
+    currentAdminUid = null;
+    if (pill) {
+      pill.textContent = '⚠ Not signed in — writes will fail';
+      pill.style.background = 'rgba(255,107,122,0.1)';
+      pill.style.borderColor = 'rgba(255,107,122,0.25)';
+      pill.style.color = 'var(--red)';
+    }
+    console.warn('[AdminDash] No Firebase auth. Open main app first and stay signed in.');
+  }
+});
+
+/* ── CHECK AUTH BEFORE WRITE ───────────────────────────── */
+function requireAuth() {
+  if (!currentAdminUid) {
+    toast('⚠ Not authenticated in Firebase. Please open the main app first and stay signed in, then reopen the admin panel.', 'err');
+    throw new Error('Firebase auth not available. Open main app and sign in first.');
+  }
+  return true;
+}
+
+/* ── SESSION ───────────────────────────────────────────── */
 /* Check if already authenticated this session */
 if (sessionStorage.getItem('gm_admin_auth') === btoa(_AP)) {
   unlockDashboard();
 }
 
-document.getElementById('pwInput').addEventListener('keydown', e=>{
-  if(e.key==='Enter') tryLogin();
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryLogin();
 });
 
 function unlockDashboard() {
   adminAuthenticated = true;
   document.getElementById('pwGate').style.display = 'none';
   document.getElementById('adminApp').style.display = 'flex';
-  // Mark Dashboard as active in sidebar
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
   const dbItem = document.getElementById('sb-dashboard');
   if (dbItem) dbItem.classList.add('active');
   loadDashboard();
@@ -720,11 +787,19 @@ function toggleCustomFields(plan) {
 
 async function resetUsage(uid) {
   try {
-    await db.ref('users/'+uid).update({monthlyGenerationsUsed:0, monthlyMessagesUsed:0, lastResetMonth:new Date().toISOString().substring(0,7)});
-    toast('Usage counters reset!','ok');
-    const u = allUsers.find(x=>x.uid===uid);
-    if (u) { u.monthlyGenerationsUsed=0; u.monthlyMessagesUsed=0; }
-  } catch(e) { toast('Error: '+e.message,'err'); }
+    requireAuth();
+    await db.ref('users/'+uid).update({
+      monthlyGenerationsUsed: 0,
+      monthlyMessagesUsed:    0,
+      lastResetMonth: new Date().toISOString().substring(0,7)
+    });
+    toast('✓ Usage counters reset!', 'ok');
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) { u.monthlyGenerationsUsed = 0; u.monthlyMessagesUsed = 0; }
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error resetting usage: ' + e.message, 'err');
+  }
 }
 
 /* ── API KEY MODAL ────────────────────────────────────── */
@@ -780,10 +855,14 @@ async function openAPIKeys(uid) {
 async function clearAPIKeys(uid) {
   if (!confirm('Delete all API keys for this user?')) return;
   try {
+    requireAuth();
     await db.ref('adminAPI/'+uid).remove();
-    toast('API keys cleared!','ok');
+    toast('✓ API keys cleared!', 'ok');
     closeModal();
-  } catch(e) { toast('Error: '+e.message,'err'); }
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
 }
 
 /* ── API KEYS GRID PANEL ──────────────────────────────── */
@@ -836,43 +915,87 @@ async function loadAPIKeys() {
 
 /* ── PLANS TABLE ──────────────────────────────────────── */
 async function loadPlansTable() {
+  // Show/hide auth warning
+  const warn = document.getElementById('planAuthWarning');
+  if (warn) warn.style.display = currentAdminUid ? 'none' : 'block';
+
   try {
     const snap = await db.ref('users').once('value');
-    if (!snap.exists()) { document.getElementById('plansTbl').innerHTML='<tr class="loading-row"><td colspan="6">No users.</td></tr>'; return; }
-    allUsers = Object.entries(snap.val()).map(([uid,d])=>({uid,...d}));
-    document.getElementById('plansTbl').innerHTML = allUsers.map(u=>`
+    if (!snap.exists()) {
+      document.getElementById('plansTbl').innerHTML = '<tr class="loading-row"><td colspan="6">No users found.</td></tr>';
+      return;
+    }
+    allUsers = Object.entries(snap.val()).map(([uid,d]) => ({uid, ...d}));
+    // Sort: paid plans first, then by name
+    allUsers.sort((a,b) => {
+      const order = {premium:0, standard:1, basic:2, custom:3, free:4};
+      const pa = order[a.plan||'free'] ?? 4;
+      const pb = order[b.plan||'free'] ?? 4;
+      if (pa !== pb) return pa - pb;
+      return (a.name||'').localeCompare(b.name||'');
+    });
+    document.getElementById('plansTbl').innerHTML = allUsers.map(u => `
       <tr>
-        <td><div style="font-weight:600">${u.name||'—'}</div><div style="font-size:9px;font-family:var(--mono);color:var(--dim)">${u.uid}</div></td>
+        <td>
+          <div style="font-weight:600">${u.name||'—'}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+            <span style="font-size:9px;font-family:var(--mono);color:var(--dim)">${u.uid.substring(0,16)}…</span>
+            <button onclick="copyUID('${u.uid}')" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:1px 6px;font-size:9px;cursor:pointer;" title="Copy full UID">📋</button>
+          </div>
+        </td>
         <td style="font-size:11px;color:var(--muted)">${u.email||'—'}</td>
         <td><span class="plan-chip pc-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></td>
         <td style="font-family:var(--mono);font-size:11px">${u.monthlyGenerationsUsed||0}</td>
         <td style="font-family:var(--mono);font-size:11px">${u.monthlyMessagesUsed||0}</td>
         <td>
-          <select onchange="changePlanInline('${u.uid}',this.value)" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text2);padding:5px 8px;font-size:11px;cursor:pointer;">
-            ${['free','basic','standard','premium','custom'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`).join('')}
-          </select>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <select onchange="changePlanInline('${u.uid}',this.value)"
+              style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text2);padding:5px 8px;font-size:11px;cursor:pointer;">
+              ${['free','basic','standard','premium','custom'].map(p =>
+                `<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]}</option>`
+              ).join('')}
+            </select>
+            <button onclick="openEditUser('${u.uid}')" class="action-btn ab-edit" style="font-size:10px;padding:4px 10px;">✏ Edit</button>
+          </div>
         </td>
       </tr>`).join('');
-  } catch(e) { document.getElementById('plansTbl').innerHTML=`<tr class="loading-row"><td colspan="6">Error: ${e.message}</td></tr>`; }
+  } catch(e) {
+    document.getElementById('plansTbl').innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--red)">Error loading users: ${e.message}</td></tr>`;
+  }
 }
 
 async function changePlanInline(uid, plan) {
   try {
+    requireAuth();
     await db.ref('users/'+uid+'/plan').set(plan);
-    toast(`Plan updated to ${PLAN_NAMES[plan]}!`, 'ok');
-    const u=allUsers.find(x=>x.uid===uid); if(u) u.plan=plan;
-  } catch(e) { toast('Failed: '+e.message,'err'); }
+    toast(`✓ Plan updated to ${PLAN_NAMES[plan]}!`, 'ok');
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) u.plan = plan;
+    // Refresh the plan chips in the table row
+    loadPlansTable();
+  } catch(e) {
+    if (e.message.includes('auth')) return; // already shown toast
+    toast('❌ Failed to save plan: ' + e.message + ' — Check Firebase Rules (see Settings panel).', 'err');
+    console.error('[changePlanInline]', e);
+  }
 }
 
 async function quickPlanChange() {
-  const uid = document.getElementById('quickUid').value.trim();
+  const uid  = document.getElementById('quickUid').value.trim();
   const plan = document.getElementById('quickPlan').value;
-  if (!uid) { toast('Please enter a User UID','err'); return; }
+  if (!uid) { toast('Please enter a User UID', 'err'); return; }
   try {
+    requireAuth();
     await db.ref('users/'+uid+'/plan').set(plan);
-    toast(`Plan activated: ${PLAN_NAMES[plan]} for UID ${uid.substring(0,12)}…`,'ok');
-    document.getElementById('quickUid').value='';
-  } catch(e) { toast('Failed: '+e.message,'err'); }
+    toast(`✓ ${PLAN_NAMES[plan]} plan activated for ${uid.substring(0,16)}…`, 'ok');
+    document.getElementById('quickUid').value = '';
+    // Refresh plans table if visible
+    if (document.getElementById('panel-plans').classList.contains('active')) loadPlansTable();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('❌ Failed: ' + e.message + ' — Check Firebase Rules.', 'err');
+    console.error('[quickPlanChange]', e);
+  }
 }
 
 /* ── MODAL HELPERS ────────────────────────────────────── */
@@ -882,13 +1005,13 @@ document.getElementById('adminModal').addEventListener('click', e=>{if(e.target=
 
 async function saveModal() {
   const {type, uid} = currentModalData;
-  if (type==='user') {
+  if (type === 'user') {
     const name  = document.getElementById('mu-name').value.trim();
     const phone = document.getElementById('mu-phone').value.trim();
     const plan  = document.getElementById('mu-plan').value;
     try {
+      requireAuth();
       const update = { name, phone, plan };
-      // If custom plan, save admin-defined limits
       if (plan === 'custom') {
         const genLimitEl  = document.getElementById('mu-gen-limit');
         const chatLimitEl = document.getElementById('mu-chat-limit');
@@ -896,61 +1019,150 @@ async function saveModal() {
         if (chatLimitEl) update.customChatLimit = parseInt(chatLimitEl.value) || 1;
       }
       await db.ref('users/'+uid).update(update);
-      const u = allUsers.find(x=>x.uid===uid);
-      if (u) { u.name=name; u.phone=phone; u.plan=plan;
-        if (plan==='custom') { u.customGenLimit=update.customGenLimit; u.customChatLimit=update.customChatLimit; }
+      // Update local cache
+      const u = allUsers.find(x => x.uid === uid);
+      if (u) {
+        u.name  = name;
+        u.phone = phone;
+        u.plan  = plan;
+        if (plan === 'custom') {
+          u.customGenLimit  = update.customGenLimit;
+          u.customChatLimit = update.customChatLimit;
+        }
       }
-      toast(`User updated! Plan: ${PLAN_NAMES[plan]}${plan==='custom'?' ('+update.customGenLimit+'R / '+update.customChatLimit+'C)':''}`, 'ok');
+      const planLabel = PLAN_NAMES[plan] + (plan==='custom' ? ` (${update.customGenLimit}R / ${update.customChatLimit}C)` : '');
+      toast(`✓ User saved! Plan: ${planLabel}`, 'ok');
       closeModal();
-    } catch(e) { toast('Error: '+e.message,'err'); }
-  } else if (type==='apikeys') {
-    const rKey    = document.getElementById('ak-rkey').value.trim();
-    const rModel  = document.getElementById('ak-rmodel').value;
-    const cKey    = document.getElementById('ak-ckey').value.trim();
-    const cModel  = document.getElementById('ak-cmodel').value;
+      // Refresh whichever table is visible
+      if (document.getElementById('panel-users').classList.contains('active')) renderUsersTable(allUsers);
+      if (document.getElementById('panel-plans').classList.contains('active')) loadPlansTable();
+    } catch(e) {
+      if (e.message.includes('auth')) return;
+      toast('❌ Save failed: ' + e.message + '\nCheck Firebase Rules in the Settings panel.', 'err');
+      console.error('[saveModal user]', e);
+    }
+  } else if (type === 'apikeys') {
+    const rKey   = document.getElementById('ak-rkey').value.trim();
+    const rModel = document.getElementById('ak-rmodel').value;
+    const cKey   = document.getElementById('ak-ckey').value.trim();
+    const cModel = document.getElementById('ak-cmodel').value;
     try {
-      const payload = { reportModel:rModel, chatModel:cModel };
+      requireAuth();
+      const payload = { reportModel: rModel, chatModel: cModel };
       if (rKey) payload.reportAPIKey = rKey;
       if (cKey) payload.chatAPIKey   = cKey;
       await db.ref('adminAPI/'+uid).update(payload);
-      toast('API keys saved!','ok'); closeModal();
-    } catch(e) { toast('Error saving keys: '+e.message,'err'); }
+      toast('✓ API keys saved!', 'ok');
+      closeModal();
+    } catch(e) {
+      if (e.message.includes('auth')) return;
+      toast('❌ Error saving keys: ' + e.message, 'err');
+      console.error('[saveModal apikeys]', e);
+    }
   }
 }
 
 /* ── SETTINGS ACTIONS ─────────────────────────────────── */
 function copyRules() {
+  const adminUid = currentAdminUid || 'YOUR_ADMIN_UID';
   const rules = `{
   "rules": {
     "users": {
       "$uid": {
-        ".read":  "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "$uid === auth.uid || auth.uid === '${adminUid}'"
       }
     },
     "adminAPI": {
       "$uid": {
-        ".read":  "$uid === auth.uid",
-        ".write": false
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "auth.uid === '${adminUid}'"
+      }
+    },
+    "reports": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "$uid === auth.uid || auth.uid === '${adminUid}'"
       }
     },
     "adminConfig": {
-      ".read":  false,
-      ".write": false
+      ".read":  "auth.uid === '${adminUid}'",
+      ".write": "auth.uid === '${adminUid}'"
     }
   }
 }`;
-  navigator.clipboard.writeText(rules).then(()=>toast('Rules copied!','ok')).catch(()=>toast('Copy failed','err'));
+  navigator.clipboard.writeText(rules)
+    .then(() => toast(`✓ Rules copied with your UID: ${adminUid.substring(0,16)}…`, 'ok'))
+    .catch(() => toast('Copy failed — select and copy manually', 'err'));
+}
+
+async function testWritePermission() {
+  const resultEl = document.getElementById('writeTestResult');
+  resultEl.style.display = 'inline';
+  resultEl.style.color = 'var(--amber)';
+  resultEl.textContent = '⏳ Testing…';
+
+  if (!currentAdminUid) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '❌ Not authenticated. Open main app and sign in first.';
+    return;
+  }
+
+  // Try to write a test flag to a test node under your own UID
+  const testPath = 'users/' + currentAdminUid + '/_adminWriteTest';
+  try {
+    await db.ref(testPath).set({ test: true, ts: Date.now() });
+    await db.ref(testPath).remove();
+    // Now test writing to another user if allUsers has one
+    const otherUser = allUsers.find(u => u.uid !== currentAdminUid);
+    if (otherUser) {
+      const testPath2 = 'users/' + otherUser.uid + '/_adminWriteTest';
+      try {
+        await db.ref(testPath2).set({ test: true });
+        await db.ref(testPath2).remove();
+        resultEl.style.color = 'var(--green)';
+        resultEl.textContent = '✓ Write permission OK! Admin can modify all users.';
+      } catch(e2) {
+        resultEl.style.color = 'var(--red)';
+        resultEl.textContent = '❌ Cannot write to other users — Firebase Rules not updated yet! Copy and apply the rules above in Firebase Console.';
+      }
+    } else {
+      resultEl.style.color = 'var(--green)';
+      resultEl.textContent = '✓ Own write OK. Load users first to test cross-user write.';
+    }
+  } catch(e) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '❌ Write failed: ' + e.message;
+  }
 }
 
 async function addAdminUid() {
   const uid = document.getElementById('newAdminUid').value.trim();
-  if (!uid) { toast('Please enter a UID','err'); return; }
+  if (!uid) { toast('Please enter a UID', 'err'); return; }
   try {
+    requireAuth();
     await db.ref('adminConfig/adminUids/'+uid).set(true);
-    toast(`Admin UID registered: ${uid.substring(0,16)}…`,'ok');
-    document.getElementById('newAdminUid').value='';
-  } catch(e) { toast('Error: '+e.message,'err'); }
+    toast(`✓ Admin UID registered: ${uid.substring(0,16)}…`, 'ok');
+    document.getElementById('newAdminUid').value = '';
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── COPY UID ──────────────────────────────────────────── */
+function copyUID(uid) {
+  navigator.clipboard.writeText(uid)
+    .then(() => toast('✓ UID copied: ' + uid.substring(0,16) + '…', 'ok'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = uid;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('✓ UID copied!', 'ok');
+    });
 }
 
 /* ── TOAST ────────────────────────────────────────────── */

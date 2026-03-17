@@ -407,8 +407,64 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <!-- SETTINGS PANEL -->
     <div class="panel" id="panel-settings">
       <div class="sec-head"><div><div class="sec-title">⚙ Admin Settings</div><div class="sec-sub">System configuration and admin access</div></div></div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Firebase Database Rules</div>
+
+      <!-- ── GLOBAL MODEL SELECTION ── -->
+      <div style="background:var(--card);border:1px solid rgba(255,202,69,0.25);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--amber)">🤖 Global AI Model Selection</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+          Set the default AI model used for all paid users. Stored at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminSettings/selectedModel</code>. Users with their own API key always use their chosen model.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Default Model</label>
+            <select class="mf-select" id="adminModelSelect" style="width:100%">
+              <optgroup label="🔵 Google Gemini">
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Quality)</option>
+                <option value="gemini-pro">Gemini Pro (Classic)</option>
+              </optgroup>
+              <optgroup label="🟢 ChatGPT / OpenAI">
+                <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </optgroup>
+              <optgroup label="🤗 HuggingFace">
+                <option value="Qwen/Qwen2.5-7B-Instruct">Qwen 2.5 7B Instruct (Free HF)</option>
+                <option value="Qwen/Qwen2.5-72B-Instruct">Qwen 2.5 72B Instruct</option>
+                <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B</option>
+                <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B Instruct</option>
+                <option value="mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral 8x7B</option>
+                <option value="google/gemma-2-27b-it">Gemma 2 27B</option>
+              </optgroup>
+              <optgroup label="🟠 Anthropic">
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+              </optgroup>
+              <optgroup label="🟣 Mistral">
+                <option value="mistral-large-latest">Mistral Large</option>
+                <option value="mistral-small-latest">Mistral Small</option>
+              </optgroup>
+              <optgroup label="🟡 Z.ai (Yi)">
+                <option value="yi-lightning">Yi Lightning (Ultra Fast)</option>
+                <option value="yi-large">Yi Large</option>
+                <option value="glm-4.7">GLM 4.7</option>
+              </optgroup>
+            </select>
+          </div>
+          <button class="action-btn ab-key" style="padding:11px 18px;font-size:12px;" onclick="saveAdminModel()">💾 Save</button>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+          <div id="adminModelStatus" style="font-size:11px;color:var(--muted);">Current: loading…</div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.7;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+          <strong style="color:var(--text2)">HuggingFace models</strong> require a HuggingFace API token with "Make calls to Inference Providers" permission. Assign this token as the user's API key in the API Keys panel.<br>
+          <strong style="color:var(--text2)">Gemini</strong> uses a Google AI Studio key. <strong style="color:var(--text2)">OpenAI</strong> models use an OpenAI key.
+        </div>
+      </div>
+
+
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.7;">⚠️ <strong style="color:var(--amber)">You must apply these rules</strong> in Firebase Console → Realtime Database → Rules tab. Without the correct rules, all admin plan changes and API key assignments will silently fail.</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Replace <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;color:var(--amber)">YOUR_ADMIN_UID</code> with your actual Firebase UID (find it in Authentication → Users in Firebase Console).</div>
         <pre style="background:rgba(0,0,0,0.35);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c8d8b0;overflow-x:auto;line-height:1.7;">
@@ -452,14 +508,60 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <button class="action-btn ab-key" style="padding:10px 16px" onclick="addAdminUid()">+ Add</button>
         </div>
       </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Firebase Database Rules</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.7;">⚠️ <strong style="color:var(--amber)">You must apply these rules</strong> in Firebase Console → Realtime Database → Rules tab.</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Replace <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;color:var(--amber)">YOUR_ADMIN_UID</code> with your actual Firebase UID.</div>
+        <pre style="background:rgba(0,0,0,0.35);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c8d8b0;overflow-x:auto;line-height:1.7;">
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
+      }
+    },
+    "adminAPI": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "auth.uid === 'YOUR_ADMIN_UID'"
+      }
+    },
+    "adminSettings": {
+      ".read":  true,
+      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
+    },
+    "reports": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
+        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
+      }
+    },
+    "adminConfig": {
+      ".read":  "auth.uid === 'YOUR_ADMIN_UID'",
+      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
+    }
+  }
+}</pre>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button onclick="copyRules()" style="padding:8px 16px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;font-size:11px;font-weight:700;">📋 Copy Rules</button>
+          <button onclick="testWritePermission()" style="padding:8px 16px;background:rgba(255,202,69,0.08);border:1px solid rgba(255,202,69,0.2);color:var(--amber);border-radius:8px;font-size:11px;font-weight:700;">🧪 Test Write Permission</button>
+          <span id="writeTestResult" style="font-size:11px;padding:8px 0;display:none;"></span>
+        </div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Register Admin UID</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Add a Firebase user UID to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminConfig/adminUids/&lt;uid&gt;</code> = true.</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
+          <input type="text" class="mf-input" id="newAdminUid" placeholder="Firebase User UID (from Firebase Console → Authentication)"/>
+          <button class="action-btn ab-key" style="padding:10px 16px" onclick="addAdminUid()">+ Add</button>
+        </div>
+      </div>
       <div style="background:rgba(255,107,122,0.06);border:1px solid rgba(255,107,122,0.2);border-radius:14px;padding:20px;">
         <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠ Admin Password Notice</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.7;">The admin password is hashed and compared client-side as a security layer. For production deployments, consider moving admin authentication to a backend server with Firebase Admin SDK for maximum security. The admin dashboard URL should also be kept private.</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.7;">The admin password is compared client-side. For production, consider moving authentication to a backend server with Firebase Admin SDK.</div>
       </div>
     </div>
-
-  </div>
-</div>
 
 <!-- ADMIN MODAL -->
 <div id="adminModal">
@@ -645,9 +747,10 @@ function showPanel(name, el) {
   document.getElementById('panel-'+name).classList.add('active');
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (name==='users')   loadUsers();
-  if (name==='apikeys') loadAPIKeys();
-  if (name==='plans')   loadPlansTable();
+  if (name==='users')    loadUsers();
+  if (name==='apikeys')  loadAPIKeys();
+  if (name==='plans')    loadPlansTable();
+  if (name==='settings') loadAdminModel();
 }
 
 /* ── DASHBOARD LOAD ───────────────────────────────────── */
@@ -1085,6 +1188,47 @@ async function saveModal() {
       toast('❌ Error saving keys: ' + e.message, 'err');
       console.error('[saveModal apikeys]', e);
     }
+  }
+}
+
+/* ── ADMIN MODEL SELECTION ────────────────────────────── */
+async function loadAdminModel() {
+  try {
+    const snap = await db.ref('adminSettings/selectedModel').once('value');
+    const model = snap.exists() ? snap.val() : 'gemini-2.0-flash';
+    const sel = document.getElementById('adminModelSelect');
+    if (sel) {
+      sel.value = model;
+      // If exact option not found, try to set it anyway
+      if (sel.value !== model) {
+        const opt = document.createElement('option');
+        opt.value = model; opt.textContent = model;
+        sel.appendChild(opt);
+        sel.value = model;
+      }
+    }
+    const statusEl = document.getElementById('adminModelStatus');
+    if (statusEl) {
+      statusEl.innerHTML = `Current: <strong style="color:var(--cyan)">${model}</strong>`;
+    }
+  } catch(e) {
+    console.warn('[loadAdminModel]', e.message);
+  }
+}
+
+async function saveAdminModel() {
+  const sel   = document.getElementById('adminModelSelect');
+  const model = sel ? sel.value : 'gemini-2.0-flash';
+  if (!model) { toast('Please select a model', 'err'); return; }
+  try {
+    requireAuth();
+    await db.ref('adminSettings/selectedModel').set(model);
+    const statusEl = document.getElementById('adminModelStatus');
+    if (statusEl) statusEl.innerHTML = `Current: <strong style="color:var(--green)">✓ ${model}</strong>`;
+    toast('✓ Default model saved: ' + model, 'ok');
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('❌ Failed to save model: ' + e.message, 'err');
   }
 }
 

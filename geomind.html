@@ -317,11 +317,19 @@
   <!-- ══ PAGE: HISTORY ══ -->
   <div class="page" id="historyPage">
     <div class="page-header">
-      <h2>📋 Search History</h2>
-      <p>Revisit past reports — stored reports open instantly without AI calls</p>
+      <h2>📋 History</h2>
+      <p>Revisit past reports and comparisons — stored results open instantly without AI calls</p>
+    </div>
+    <!-- History Tabs -->
+    <div class="hist-tabs">
+      <button class="hist-tab active" id="htab-reports"  onclick="switchHistTab('reports')">📊 Reports</button>
+      <button class="hist-tab"        id="htab-compare"  onclick="switchHistTab('compare')">⚖ Comparisons</button>
     </div>
     <div class="hcontent" id="historyPageContent">
       <div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading your history…</p></div>
+    </div>
+    <div class="hcontent" id="historyCompareContent" style="display:none">
+      <div class="hempty"><div style="font-size:44px;opacity:0.2">⚖</div><p>Loading comparison history…</p></div>
     </div>
   </div>
 
@@ -493,6 +501,15 @@
     <div class="pay-step"><div class="pay-num">3</div><div class="pay-text">Admin reviews and activates your plan within <strong>7 days</strong>.</div></div>
     <button onclick="closePlanModal()" style="margin-top:16px;width:100%;padding:11px;background:var(--lift);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-weight:700;">Close</button>
   </div>
+</div>
+
+<!-- Comparison History Modal -->
+<div id="compareHistModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:10002;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div id="chmTitle" style="font-weight:800;font-size:15px;color:var(--text)">⚖ Comparison</div>
+    <button onclick="closeCompareHistModal()" style="background:rgba(255,255,255,0.07);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;">✕</button>
+  </div>
+  <div id="chmBody" style="flex:1;overflow-y:auto;padding:14px;"></div>
 </div>
 
 <!-- Report Preview Modal -->

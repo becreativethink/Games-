@@ -112,11 +112,11 @@ const PROVIDER_LABELS = {
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
 const PLANS = {
-  free:     { name:'Free',     price:'₹0',       genLimit:999, chatLimit:999, emoji:'○',  color:'--pfree'  },
-  basic:    { name:'Basic',    price:'₹199/mo',   genLimit:15,  chatLimit:20,  emoji:'★',  color:'--pbasic' },
-  standard: { name:'Standard', price:'₹249/mo',   genLimit:20,  chatLimit:30,  emoji:'✦',  color:'--pstd'   },
-  premium:  { name:'Premium',  price:'₹399/mo',   genLimit:30,  chatLimit:40,  emoji:'♛',  color:'--pprem'  },
-  custom:   { name:'Custom',   price:'₹6/use',    genLimit:1,   chatLimit:1,   emoji:'⚡', color:'--pcustom' }
+  free:     { name:'Free',     price:'₹0',       genLimit:999, chatLimit:999, comparisonLimit:0,  emoji:'○',  color:'--pfree'  },
+  basic:    { name:'Basic',    price:'₹199/mo',  genLimit:15,  chatLimit:20,  comparisonLimit:7,  emoji:'★',  color:'--pbasic' },
+  standard: { name:'Standard', price:'₹249/mo',  genLimit:20,  chatLimit:30,  comparisonLimit:12, emoji:'✦',  color:'--pstd'   },
+  premium:  { name:'Premium',  price:'₹399/mo',  genLimit:30,  chatLimit:40,  comparisonLimit:17, emoji:'♛',  color:'--pprem'  },
+  custom:   { name:'Custom',   price:'₹10/use',  genLimit:1,   chatLimit:2,   comparisonLimit:1,  emoji:'⚡', color:'--pcustom' }
 };
 const PLAN_FEATURES = {
   free:     ['Own API key required','Unlimited reports (your quota)','25+ AI model options','Map history','Download TXT/JSON/PDF/DOCX'],
@@ -131,11 +131,13 @@ let currentUser  = null;
 let userProfile  = {
   plan: 'free',
   // ── NEW accurate tracking fields ──
-  totalReports:    0,      // lifetime — never resets
-  totalChats:      0,      // lifetime — never resets
-  planUsed:        0,      // reports since planStartDate — resets on plan activation
-  planChatUsed:    0,      // chats since planStartDate — resets on plan activation
-  planStartDate:   null,   // ISO timestamp of last plan activation
+  totalReports:     0,      // lifetime — never resets
+  totalChats:       0,      // lifetime — never resets
+  totalComparisons: 0,      // lifetime comparisons — never resets
+  planUsed:         0,      // reports since planStartDate — resets on plan activation
+  planChatUsed:     0,      // chats since planStartDate — resets on plan activation
+  comparisonUsed:   0,      // comparisons since planStartDate — resets on plan activation
+  planStartDate:    null,   // ISO timestamp of last plan activation
   // ── Legacy fields kept for backward compat ──
   monthlyGenerationsUsed: 0,
   monthlyMessagesUsed:    0,
@@ -304,16 +306,18 @@ function monthStr() { return new Date().toISOString().substring(0,7); }
 
 /* ── SAVE FUNCTIONS ──────────────────────────────────── */
 
-// Save only the plan-usage fields (fast, called on every report/chat)
+// Save only the plan-usage fields (fast, called on every report/chat/comparison)
 async function savePlanUsageFields() {
   if (!currentUser) return;
   try {
     await db.ref('users/' + currentUser.uid).update({
-      totalReports:    userProfile.totalReports   || 0,
-      totalChats:      userProfile.totalChats     || 0,
-      planUsed:        userProfile.planUsed       || 0,
-      planChatUsed:    userProfile.planChatUsed   || 0,
-      planStartDate:   userProfile.planStartDate  || new Date().toISOString()
+      totalReports:     userProfile.totalReports     || 0,
+      totalChats:       userProfile.totalChats       || 0,
+      totalComparisons: userProfile.totalComparisons || 0,
+      planUsed:         userProfile.planUsed         || 0,
+      planChatUsed:     userProfile.planChatUsed     || 0,
+      comparisonUsed:   userProfile.comparisonUsed   || 0,
+      planStartDate:    userProfile.planStartDate     || new Date().toISOString()
     });
   } catch(e) { console.warn('savePlanUsageFields:', e); }
 }
@@ -340,13 +344,13 @@ async function saveUserProfile() {
 }
 
 /* ── PLAN ACTIVATION — called by admin when activating a plan ── */
-/* Also call this in the main app when plan changes are detected  */
 async function activatePlan(newPlan) {
   const now = new Date().toISOString();
-  userProfile.plan          = newPlan;
-  userProfile.planStartDate = now;
-  userProfile.planUsed      = 0;   // RESET — old reports must NOT count
-  userProfile.planChatUsed  = 0;   // RESET
+  userProfile.plan            = newPlan;
+  userProfile.planStartDate   = now;
+  userProfile.planUsed        = 0;   // RESET — old reports must NOT count
+  userProfile.planChatUsed    = 0;   // RESET
+  userProfile.comparisonUsed  = 0;   // RESET — old comparisons don't count
   console.log('[GeoMind] Plan activated:', newPlan, 'Start:', now);
   await saveUserProfile();
   updateNavUI();
@@ -407,6 +411,22 @@ function canChat() {
   return used < limit;
 }
 
+function canCompare() {
+  const plan = userProfile.plan || 'free';
+  // Free plan: can compare only if they have their own API key
+  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
+  const limit = getPlanComparisonLimit();
+  const used  = userProfile.comparisonUsed || 0;
+  console.log(`[canCompare] plan=${plan} comparisonUsed=${used} limit=${limit}`);
+  return used < limit;
+}
+
+function getPlanComparisonLimit() {
+  const plan = userProfile.plan || 'free';
+  if (plan === 'custom') return userProfile.customComparisonLimit ?? PLANS.custom.comparisonLimit;
+  return PLANS[plan]?.comparisonLimit ?? 0;
+}
+
 function getPlanGenLimit() {
   const plan = userProfile.plan || 'free';
   if (plan === 'custom') return userProfile.customGenLimit ?? PLANS.custom.genLimit;
@@ -439,6 +459,14 @@ async function incrementChat() {
   userProfile.totalChats   = (userProfile.totalChats   || 0) + 1;
   userProfile.planChatUsed = (userProfile.planChatUsed || 0) + 1;
   userProfile.monthlyMessagesUsed = (userProfile.monthlyMessagesUsed || 0) + 1;
+  await savePlanUsageFields();
+  updateNavUI();
+  updateUsageWidget();
+}
+
+async function incrementComparison() {
+  userProfile.totalComparisons = (userProfile.totalComparisons || 0) + 1;
+  userProfile.comparisonUsed   = (userProfile.comparisonUsed   || 0) + 1;
   await savePlanUsageFields();
   updateNavUI();
   updateUsageWidget();
@@ -1200,15 +1228,25 @@ async function saveQuery(lat,lon,geo,ai) {
   try { await db.ref('users/'+currentUser.uid+'/queries').push(rec); }
   catch(e){console.warn('saveQuery:',e);}
 }
-async function saveChatMsg(q,ans) {
-  if (!currentUser||!curData.lat) return;
+async function saveChatMsg(q, ans) {
+  if (!currentUser || !curData.lat) return;
+  const record = {
+    location:  curData.ai?.locationId?.nearestCity || '',
+    country:   curData.ai?.locationId?.country || '',
+    lat:       curData.lat,
+    lon:       curData.lon,
+    question:  q,
+    answer:    ans,
+    timestamp: new Date().toISOString()
+  };
   try {
-    await db.ref('users/'+currentUser.uid+'/chats').push({
-      location:curData.ai?.locationId?.nearestCity||'', lat:curData.lat, lon:curData.lon,
-      question:q, answer:ans, timestamp:new Date().toISOString()
-    });
-  } catch(e){}
+    // Save to legacy path (for progress stats query)
+    await db.ref('users/' + currentUser.uid + '/chats').push(record);
+    // Also save to new chatHistory path for Chat History page
+    await db.ref('chatHistory/' + currentUser.uid).push(record);
+  } catch(e) { console.warn('[saveChatMsg]', e.message); }
 }
+
 
 /* ── TABS (MAP PAGE) ─────────────────────────────────── */
 function goTab(name,btn) {
@@ -1229,6 +1267,8 @@ async function loadHistoryTab() {
 async function loadHistoryPage() {
   if (_histTab === 'compare') {
     loadComparisonHistory();
+  } else if (_histTab === 'chat') {
+    loadChatHistory();
   } else {
     const hc = document.getElementById('historyPageContent');
     if (hc) hc.innerHTML = '<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading history…</p></div>';
@@ -2359,13 +2399,16 @@ async function loadProgressStats() {
     setEl('statChats',     chatCount);
     setEl('statCountries', countries);
 
-    // Also update totalReports in userProfile if it drifted
+    // Total comparisons from userProfile
+    setEl('statComparisons', userProfile.totalComparisons || 0);
+
+    // Update totalReports in userProfile if it drifted
     if (userProfile.totalReports !== totalReports) {
       userProfile.totalReports = totalReports;
       await savePlanUsageFields();
     }
 
-    // Update progress grid with extra detail if elements exist
+    // Update profile page breakdown elements
     const monthEl = document.getElementById('statMonthly');
     if (monthEl) monthEl.textContent = monthlyReports;
     const planEl = document.getElementById('statPlanUsed');
@@ -2373,6 +2416,14 @@ async function loadProgressStats() {
       const limit = getPlanGenLimit();
       planEl.textContent = userProfile.plan === 'free' ? '∞' : `${planUsedFromHistory}/${limit}`;
     }
+    const cmpEl = document.getElementById('statCompareUsed');
+    if (cmpEl) {
+      const cmpLimit = getPlanComparisonLimit();
+      const cmpUsed  = userProfile.comparisonUsed || 0;
+      cmpEl.textContent = userProfile.plan === 'free' ? (userSettings.apiKey ? '∞' : '0') : `${cmpUsed}/${cmpLimit}`;
+    }
+    const totalEl = document.getElementById('statReportsTotal');
+    if (totalEl) totalEl.textContent = totalReports;
 
   } catch(e) { console.warn('[progress]', e.message); }
 }
@@ -2541,6 +2592,20 @@ function setComparePin(which) {
 
 async function runComparison() {
   if (!compareA || !compareB) { toast('Select both locations first.','err'); return; }
+
+  // ── Comparison limit check ──
+  if (!canCompare()) {
+    const plan  = userProfile.plan || 'free';
+    const limit = getPlanComparisonLimit();
+    const used  = userProfile.comparisonUsed || 0;
+    if (plan === 'free') {
+      toast('Add your API key in Settings to use comparisons.','err');
+    } else {
+      showErr(`⚖ Comparison limit reached (${used}/${limit}). Upgrade your plan to compare more locations.`);
+    }
+    return;
+  }
+
   document.getElementById('compareLoad').style.display  = 'flex';
   document.getElementById('compareResult').style.display = 'none';
   document.getElementById('compareRunBtn').disabled = true;
@@ -2551,12 +2616,13 @@ async function runComparison() {
   };
 
   try {
-    // Get AI data for both — use cache if available, else use existing curData or generate
     cStep('Loading data for Location A…', 20);
     const dataA = await _getCompareData(compareA);
     cStep('Loading data for Location B…', 50);
     const dataB = await _getCompareData(compareB);
     cStep('Generating comparison…', 80);
+    // Increment before rendering so limit is always accurate
+    await incrementComparison();
     renderComparison(dataA, dataB);
     cStep('Done!', 100);
   } catch(e) {
@@ -2754,22 +2820,125 @@ async function clearComparisonHistory() {
 let _histTab = 'reports'; // track active tab
 function switchHistTab(tab) {
   _histTab = tab;
-  const repContent = document.getElementById('historyPageContent');
-  const cmpContent = document.getElementById('historyCompareContent');
-  const repTab     = document.getElementById('htab-reports');
-  const cmpTab     = document.getElementById('htab-compare');
+  const repContent  = document.getElementById('historyPageContent');
+  const cmpContent  = document.getElementById('historyCompareContent');
+  const chatContent = document.getElementById('historyChatContent');
+  const repTab      = document.getElementById('htab-reports');
+  const cmpTab      = document.getElementById('htab-compare');
+  const chatTab     = document.getElementById('htab-chat');
+
+  // Hide all
+  [repContent, cmpContent, chatContent].forEach(el => { if (el) el.style.display = 'none'; });
+  [repTab, cmpTab, chatTab].forEach(el => { if (el) el.classList.remove('active'); });
+
   if (tab === 'reports') {
-    repContent.style.display = '';
-    cmpContent.style.display = 'none';
-    repTab.classList.add('active');
-    cmpTab.classList.remove('active');
-  } else {
-    repContent.style.display = 'none';
-    cmpContent.style.display = '';
-    repTab.classList.remove('active');
-    cmpTab.classList.add('active');
+    if (repContent)  repContent.style.display  = '';
+    if (repTab)      repTab.classList.add('active');
+    renderHistoryInto(repContent, false);
+  } else if (tab === 'compare') {
+    if (cmpContent)  cmpContent.style.display  = '';
+    if (cmpTab)      cmpTab.classList.add('active');
     loadComparisonHistory();
+  } else if (tab === 'chat') {
+    if (chatContent) chatContent.style.display = '';
+    if (chatTab)     chatTab.classList.add('active');
+    loadChatHistory();
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   CHAT HISTORY
+   Firebase path: chatHistory/{uid}/{pushId}
+   ══════════════════════════════════════════════════════ */
+
+async function loadChatHistory() {
+  const container = document.getElementById('historyChatContent');
+  if (!container) return;
+  container.innerHTML = '<div class="hempty"><div class="spin-lg" style="margin:0 auto 12px"></div><p>Loading chat history…</p></div>';
+  try {
+    const snap = await db.ref('chatHistory/' + currentUser.uid).once('value');
+    if (!snap.exists() || !snap.val()) {
+      container.innerHTML = '<div class="hempty"><div style="font-size:44px;opacity:0.2">💬</div><p>No chat history yet. Ask follow-up questions on a report to start a conversation.</p></div>';
+      return;
+    }
+
+    // Group chats by location
+    const entries = Object.entries(snap.val()).sort((a, b) =>
+      (b[1].timestamp || '').localeCompare(a[1].timestamp || '')
+    );
+
+    // Group by location name
+    const groups = {};
+    entries.forEach(([id, rec]) => {
+      const key = rec.location || rec.lat?.toFixed(2) + ',' + rec.lon?.toFixed(2) || 'Unknown';
+      if (!groups[key]) groups[key] = { location: rec.location, country: rec.country, lat: rec.lat, lon: rec.lon, msgs: [] };
+      groups[key].msgs.push({ id, ...rec });
+    });
+
+    let html = `<button class="cmp-clr-btn" onclick="clearChatHistory()">🗑 Clear Chat History</button>
+      <div class="cmp-hist-grid">`;
+
+    Object.entries(groups).forEach(([locKey, grp]) => {
+      const latest = grp.msgs[0];
+      const d  = new Date(latest.timestamp);
+      const ds = isNaN(d) ? latest.timestamp :
+        d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
+        d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const encKey = encodeURIComponent(locKey);
+      html += `<div class="cmp-hist-item" onclick="openChatHistGroup('${encKey}')">
+        <div class="cmp-hist-vs" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">💬 ${grp.location || locKey}</div>
+          ${grp.country ? `<div style="font-size:10px;color:var(--muted)">${grp.country}</div>` : ''}
+        </div>
+        <div class="cmp-hist-meta">${grp.msgs.length} message${grp.msgs.length > 1 ? 's' : ''}</div>
+        <div class="cmp-hist-meta" style="font-style:italic;color:var(--dim)">"${(latest.question || '').substring(0, 60)}${latest.question?.length > 60 ? '…' : ''}"</div>
+        <div class="cmp-hist-footer">
+          <div class="cmp-hist-ts">${ds}</div>
+          <button class="cmp-hist-btn" onclick="event.stopPropagation();openChatHistGroup('${encKey}')">💬 View</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Store groups for modal use
+    window._chatHistGroups = groups;
+  } catch(e) {
+    container.innerHTML = `<div class="ebox">Failed to load: ${e.message}</div>`;
+  }
+}
+
+function openChatHistGroup(encKey) {
+  const locKey = decodeURIComponent(encKey);
+  const grp    = window._chatHistGroups?.[locKey];
+  if (!grp) { toast('Chat history not loaded yet.', 'err'); return; }
+
+  const modal = document.getElementById('compareHistModal');
+  const body  = document.getElementById('chmBody');
+  const title = document.getElementById('chmTitle');
+
+  title.textContent = `💬 ${grp.location || locKey}`;
+
+  let html = `<div style="font-size:11px;color:var(--muted);margin-bottom:12px">${grp.msgs.length} messages · ${grp.country || ''}</div>`;
+  grp.msgs.slice().reverse().forEach(msg => {
+    const d  = new Date(msg.timestamp);
+    const ds = isNaN(d) ? '' : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    html += `<div style="margin-bottom:14px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;">
+      <div class="cmq" style="margin-bottom:6px">💬 ${msg.question}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">${msg.answer}</div>
+      <div style="font-size:10px;color:var(--dim);margin-top:6px">${ds}</div>
+    </div>`;
+  });
+
+  body.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+async function clearChatHistory() {
+  if (!confirm('Delete all your chat history?')) return;
+  await db.ref('chatHistory/' + currentUser.uid).remove();
+  toast('Chat history cleared', 'ok');
+  loadChatHistory();
 }
 
 

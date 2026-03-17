@@ -128,7 +128,19 @@ const PLAN_FEATURES = {
 
 /* ── STATE ───────────────────────────────────────────── */
 let currentUser  = null;
-let userProfile  = { plan:'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0, lastResetMonth:'' };
+let userProfile  = {
+  plan: 'free',
+  // ── NEW accurate tracking fields ──
+  totalReports:    0,      // lifetime — never resets
+  totalChats:      0,      // lifetime — never resets
+  planUsed:        0,      // reports since planStartDate — resets on plan activation
+  planChatUsed:    0,      // chats since planStartDate — resets on plan activation
+  planStartDate:   null,   // ISO timestamp of last plan activation
+  // ── Legacy fields kept for backward compat ──
+  monthlyGenerationsUsed: 0,
+  monthlyMessagesUsed:    0,
+  lastResetMonth: ''
+};
 let userSettings = { apiKey:'', model:'gemini-1.5-flash' };
 let adminAPIConfig = null;
 let curLang  = 'en';
@@ -148,12 +160,16 @@ auth.onAuthStateChanged(async user => {
   await loadUserSettings();
   await loadAdminAPIConfig();
   await checkAdminStatus();
+  // Check if admin changed the plan remotely since last session
+  await checkPlanChangedRemotely();
   buildModelSelector();
   initMap();
   updateNavUI();
   updateUsageWidget();
   setupOfflineMode();
   checkSharedReportLink();
+  // Poll for remote plan changes every 60 seconds (e.g., admin activates a plan)
+  setInterval(checkPlanChangedRemotely, 60000);
 });
 
 /* ── ADMIN CHECK ─────────────────────────────────────── */
@@ -210,17 +226,54 @@ async function loadUserProfile() {
     const snap = await db.ref('users/' + currentUser.uid).once('value');
     if (snap.exists()) {
       userProfile = { ...userProfile, ...snap.val() };
+      // ── Migration: existing users missing new fields ──
+      let needsMigration = false;
+      if (userProfile.totalReports === undefined) {
+        // Derive totalReports from query history length (one-time migration)
+        try {
+          const qSnap = await db.ref('users/'+currentUser.uid+'/queries').once('value');
+          userProfile.totalReports = qSnap.exists() ? Object.keys(qSnap.val()).length : 0;
+        } catch(e) { userProfile.totalReports = 0; }
+        needsMigration = true;
+      }
+      if (userProfile.totalChats === undefined) {
+        try {
+          const cSnap = await db.ref('users/'+currentUser.uid+'/chats').once('value');
+          userProfile.totalChats = cSnap.exists() ? Object.keys(cSnap.val()).length : 0;
+        } catch(e) { userProfile.totalChats = 0; }
+        needsMigration = true;
+      }
+      if (userProfile.planUsed === undefined)      { userProfile.planUsed = 0; needsMigration = true; }
+      if (userProfile.planChatUsed === undefined)  { userProfile.planChatUsed = 0; needsMigration = true; }
+      if (userProfile.planStartDate === undefined) {
+        // Set planStartDate to start of current month so old reports don't contaminate
+        userProfile.planStartDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        needsMigration = true;
+      }
+      if (needsMigration) {
+        await savePlanUsageFields();
+        console.log('[GeoMind] Migrated user profile to v5.1 tracking');
+      }
     } else {
+      // Brand new user
+      const now = new Date().toISOString();
       userProfile = {
         name: currentUser.displayName || currentUser.email.split('@')[0],
         email: currentUser.email,
         phone: '',
-        plan: 'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
-        lastResetMonth: monthStr(), signupDate: new Date().toISOString()
+        plan: 'free',
+        totalReports: 0,
+        totalChats: 0,
+        planUsed: 0,
+        planChatUsed: 0,
+        planStartDate: now,
+        monthlyGenerationsUsed: 0,
+        monthlyMessagesUsed: 0,
+        lastResetMonth: monthStr(),
+        signupDate: now
       };
       await db.ref('users/' + currentUser.uid).set(userProfile);
     }
-    await checkMonthlyReset();
     updateNavUI();
     updateUsageWidget();
   } catch(e) { console.error('loadUserProfile:', e); }
@@ -244,68 +297,177 @@ async function loadAdminAPIConfig() {
 
 function monthStr() { return new Date().toISOString().substring(0,7); }
 
-async function checkMonthlyReset() {
-  const m = monthStr();
-  if (!userProfile.lastResetMonth || userProfile.lastResetMonth !== m) {
-    // New month: reset usage counters
-    userProfile.monthlyGenerationsUsed = 0;
-    userProfile.monthlyMessagesUsed    = 0;
-    userProfile.lastResetMonth         = m;
-    // Auto-downgrade paid plans to free when month resets (plan expired)
-    // Admin must re-activate each month
-    const paidPlans = ['basic','standard','premium','custom'];
-    if (paidPlans.includes(userProfile.plan)) {
-      const expiredPlan = userProfile.plan;
-      userProfile.plan = 'free';
-      toast('Your ' + expiredPlan + ' plan has expired. It resets monthly — renew to continue.','warn');
-    }
-    await saveUserProfile();
-  }
+/* ── SAVE FUNCTIONS ──────────────────────────────────── */
+
+// Save only the plan-usage fields (fast, called on every report/chat)
+async function savePlanUsageFields() {
+  if (!currentUser) return;
+  try {
+    await db.ref('users/' + currentUser.uid).update({
+      totalReports:    userProfile.totalReports   || 0,
+      totalChats:      userProfile.totalChats     || 0,
+      planUsed:        userProfile.planUsed       || 0,
+      planChatUsed:    userProfile.planChatUsed   || 0,
+      planStartDate:   userProfile.planStartDate  || new Date().toISOString()
+    });
+  } catch(e) { console.warn('savePlanUsageFields:', e); }
 }
 
+// Save full profile (name, phone, plan, etc.)
 async function saveUserProfile() {
   if (!currentUser) return;
   try {
     await db.ref('users/' + currentUser.uid).update({
-      monthlyGenerationsUsed: userProfile.monthlyGenerationsUsed,
-      monthlyMessagesUsed:    userProfile.monthlyMessagesUsed,
-      lastResetMonth:         userProfile.lastResetMonth,
-      plan:                   userProfile.plan,
-      name:                   userProfile.name || '',
-      phone:                  userProfile.phone || ''
+      name:            userProfile.name  || '',
+      phone:           userProfile.phone || '',
+      plan:            userProfile.plan,
+      totalReports:    userProfile.totalReports   || 0,
+      totalChats:      userProfile.totalChats     || 0,
+      planUsed:        userProfile.planUsed       || 0,
+      planChatUsed:    userProfile.planChatUsed   || 0,
+      planStartDate:   userProfile.planStartDate  || new Date().toISOString(),
+      // Keep legacy fields so old code doesn't break
+      monthlyGenerationsUsed: userProfile.monthlyGenerationsUsed || 0,
+      monthlyMessagesUsed:    userProfile.monthlyMessagesUsed    || 0,
+      lastResetMonth:         userProfile.lastResetMonth         || monthStr()
     });
   } catch(e) { console.warn('saveUserProfile error:', e); }
 }
 
+/* ── PLAN ACTIVATION — called by admin when activating a plan ── */
+/* Also call this in the main app when plan changes are detected  */
+async function activatePlan(newPlan) {
+  const now = new Date().toISOString();
+  userProfile.plan          = newPlan;
+  userProfile.planStartDate = now;
+  userProfile.planUsed      = 0;   // RESET — old reports must NOT count
+  userProfile.planChatUsed  = 0;   // RESET
+  console.log('[GeoMind] Plan activated:', newPlan, 'Start:', now);
+  await saveUserProfile();
+  updateNavUI();
+  updateUsageWidget();
+}
+
+/* ── MONTHLY REPORT COUNT (computed dynamically, never stored) ── */
+function monthStr() { return new Date().toISOString().substring(0,7); }
+
+/* Compute this-month report count from query history — no stored counter */
+async function computeMonthlyReports() {
+  if (!currentUser) return 0;
+  try {
+    const snap = await db.ref('users/'+currentUser.uid+'/queries').once('value');
+    if (!snap.exists()) return 0;
+    const monthStart = monthStr(); // "2025-03"
+    return Object.values(snap.val()).filter(q => {
+      const ts = q.timestamp || q.createdAt || '';
+      return ts.startsWith(monthStart);
+    }).length;
+  } catch(e) { return 0; }
+}
+
+/* Compute plan-cycle report count from query history (most accurate source) */
+async function computePlanUsedFromHistory() {
+  if (!currentUser || !userProfile.planStartDate) return 0;
+  try {
+    const snap = await db.ref('users/'+currentUser.uid+'/queries').once('value');
+    if (!snap.exists()) return 0;
+    const planStart = userProfile.planStartDate;
+    return Object.values(snap.val()).filter(q => {
+      const ts = q.timestamp || q.createdAt || '';
+      return ts >= planStart;
+    }).length;
+  } catch(e) { return 0; }
+}
+
+
+
+/* ── PLAN LIMIT VALIDATION ───────────────────────────── */
+
 function canGenerate() {
   const plan = userProfile.plan || 'free';
+  // Free plan: unlimited IF user has their own API key
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  if (plan === 'custom') {
-    const limit = userProfile.customGenLimit ?? PLANS.custom.genLimit;
-    return userProfile.monthlyGenerationsUsed < limit;
-  }
-  return userProfile.monthlyGenerationsUsed < (PLANS[plan]?.genLimit ?? 30);
+  // Paid plans: check planUsed vs planLimit (plan-cycle count only)
+  const limit = getPlanGenLimit();
+  const used  = userProfile.planUsed || 0;
+  console.log(`[canGenerate] plan=${plan} planUsed=${used} limit=${limit} planStart=${userProfile.planStartDate}`);
+  return used < limit;
 }
+
 function canChat() {
   const plan = userProfile.plan || 'free';
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  if (plan === 'custom') {
-    const limit = userProfile.customChatLimit ?? PLANS.custom.chatLimit;
-    return userProfile.monthlyMessagesUsed < limit;
-  }
-  return userProfile.monthlyMessagesUsed < (PLANS[plan]?.chatLimit ?? 60);
+  const limit = getPlanChatLimit();
+  const used  = userProfile.planChatUsed || 0;
+  return used < limit;
 }
+
+function getPlanGenLimit() {
+  const plan = userProfile.plan || 'free';
+  if (plan === 'custom') return userProfile.customGenLimit ?? PLANS.custom.genLimit;
+  return PLANS[plan]?.genLimit ?? 30;
+}
+
+function getPlanChatLimit() {
+  const plan = userProfile.plan || 'free';
+  if (plan === 'custom') return userProfile.customChatLimit ?? PLANS.custom.chatLimit;
+  return PLANS[plan]?.chatLimit ?? 60;
+}
+
 function getNoKeyMessage() {
   return `Please add your API key in <strong>Settings</strong> or <a href="#" onclick="goPage('plans');return false;" style="color:var(--cyan)">purchase a plan</a>.`;
 }
+
 async function incrementGeneration() {
-  userProfile.monthlyGenerationsUsed = (userProfile.monthlyGenerationsUsed||0) + 1;
-  await saveUserProfile(); updateNavUI(); updateUsageWidget();
+  // totalReports = lifetime counter, never resets
+  userProfile.totalReports = (userProfile.totalReports || 0) + 1;
+  // planUsed = plan-cycle counter, resets only when plan activated
+  userProfile.planUsed     = (userProfile.planUsed     || 0) + 1;
+  // Keep legacy field in sync for any old code that reads it
+  userProfile.monthlyGenerationsUsed = (userProfile.monthlyGenerationsUsed || 0) + 1;
+  await savePlanUsageFields();
+  updateNavUI();
+  updateUsageWidget();
 }
+
 async function incrementChat() {
-  userProfile.monthlyMessagesUsed = (userProfile.monthlyMessagesUsed||0) + 1;
-  await saveUserProfile(); updateNavUI(); updateUsageWidget();
+  userProfile.totalChats   = (userProfile.totalChats   || 0) + 1;
+  userProfile.planChatUsed = (userProfile.planChatUsed || 0) + 1;
+  userProfile.monthlyMessagesUsed = (userProfile.monthlyMessagesUsed || 0) + 1;
+  await savePlanUsageFields();
+  updateNavUI();
+  updateUsageWidget();
 }
+
+/* Detect if plan changed since last login (admin activated remotely) */
+async function checkPlanChangedRemotely() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.ref('users/' + currentUser.uid).once('value');
+    if (!snap.exists()) return;
+    const remote = snap.val();
+    const localPlan  = userProfile.plan;
+    const remotePlan = remote.plan;
+    const remoteStart = remote.planStartDate;
+    // If admin changed the plan AND updated planStartDate, reset local planUsed
+    if (remotePlan !== localPlan || (remoteStart && remoteStart !== userProfile.planStartDate)) {
+      console.log(`[GeoMind] Plan changed remotely: ${localPlan} → ${remotePlan}`);
+      userProfile.plan          = remotePlan;
+      userProfile.planStartDate = remoteStart || new Date().toISOString();
+      userProfile.planUsed      = remote.planUsed      ?? 0;
+      userProfile.planChatUsed  = remote.planChatUsed  ?? 0;
+      userProfile.totalReports  = remote.totalReports  ?? userProfile.totalReports;
+      userProfile.totalChats    = remote.totalChats    ?? userProfile.totalChats;
+      if (remotePlan !== localPlan && remotePlan !== 'free') {
+        toast(`🎉 Your plan has been upgraded to ${PLANS[remotePlan]?.name || remotePlan}!`, 'ok');
+      }
+      updateNavUI();
+      updateUsageWidget();
+    }
+  } catch(e) { console.warn('[checkPlanChangedRemotely]', e); }
+}
+
+
 
 /* ── SETTINGS SAVE/LOAD ──────────────────────────────── */
 async function saveSettings() {
@@ -1982,19 +2144,67 @@ async function loadProgressStats() {
       db.ref('users/'+currentUser.uid+'/queries').once('value'),
       db.ref('users/'+currentUser.uid+'/chats').once('value')
     ]);
-    const queries = qSnap.val() || {};
-    const chats   = cSnap.val() || {};
-    const entries  = Object.values(queries);
-    const reports  = entries.length;
-    const locations = new Set(entries.map(e => `${parseFloat(e.latitude||0).toFixed(1)}_${parseFloat(e.longitude||0).toFixed(1)}`)).size;
-    const chatCount = Object.values(chats).length;
-    const countries = new Set(entries.map(e => e.country||'').filter(Boolean)).size;
+    const queries = qSnap.val()  || {};
+    const chats   = cSnap.val()  || {};
+    const entries = Object.values(queries);
 
-    const el = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
-    el('statReports',   reports);
-    el('statLocations', locations);
-    el('statChats',     chatCount);
-    el('statCountries', countries);
+    // 1. Total lifetime reports (never resets)
+    const totalReports = entries.length;
+
+    // 2. Monthly reports (computed dynamically — no stored counter needed)
+    const monthStart = monthStr(); // "2025-03"
+    const monthlyReports = entries.filter(e => {
+      const ts = e.timestamp || e.createdAt || '';
+      return ts.startsWith(monthStart);
+    }).length;
+
+    // 3. Plan-usage reports (since planStartDate — resets on plan activation)
+    const planStartDate = userProfile.planStartDate || '';
+    const planUsedFromHistory = planStartDate
+      ? entries.filter(e => {
+          const ts = e.timestamp || e.createdAt || '';
+          return ts >= planStartDate;
+        }).length
+      : (userProfile.planUsed || 0);
+
+    // Reconcile: if history-based count differs from stored planUsed, prefer history
+    if (planUsedFromHistory !== (userProfile.planUsed || 0) && userProfile.plan !== 'free') {
+      console.log(`[GeoMind] Reconciling planUsed: stored=${userProfile.planUsed} history=${planUsedFromHistory}`);
+      userProfile.planUsed = planUsedFromHistory;
+      await savePlanUsageFields();
+      updateNavUI();
+      updateUsageWidget();
+    }
+
+    // Unique locations and countries
+    const locations = new Set(entries.map(e =>
+      `${parseFloat(e.latitude||0).toFixed(1)}_${parseFloat(e.longitude||0).toFixed(1)}`
+    )).size;
+    const countries = new Set(entries.map(e => e.country||'').filter(Boolean)).size;
+    const chatCount = Object.values(chats).length;
+
+    // Update profile stats display
+    const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+    setEl('statReports',   totalReports);
+    setEl('statLocations', locations);
+    setEl('statChats',     chatCount);
+    setEl('statCountries', countries);
+
+    // Also update totalReports in userProfile if it drifted
+    if (userProfile.totalReports !== totalReports) {
+      userProfile.totalReports = totalReports;
+      await savePlanUsageFields();
+    }
+
+    // Update progress grid with extra detail if elements exist
+    const monthEl = document.getElementById('statMonthly');
+    if (monthEl) monthEl.textContent = monthlyReports;
+    const planEl = document.getElementById('statPlanUsed');
+    if (planEl) {
+      const limit = getPlanGenLimit();
+      planEl.textContent = userProfile.plan === 'free' ? '∞' : `${planUsedFromHistory}/${limit}`;
+    }
+
   } catch(e) { console.warn('[progress]', e.message); }
 }
 
@@ -2459,46 +2669,65 @@ async function saveProfile() {
 
 /* ── NAV + USAGE ─────────────────────────────────────── */
 function updateNavUI() {
-  const plan=userProfile.plan||'free';
-  const P=PLANS[plan];
-  const genUsed=userProfile.monthlyGenerationsUsed||0;
-  const chatUsed=userProfile.monthlyMessagesUsed||0;
-  const name=currentUser?.displayName||currentUser?.email?.split('@')[0]||'?';
-  document.getElementById('userNm').textContent=name;
-  document.getElementById('userAv').textContent=name.charAt(0).toUpperCase();
-  const badge=document.getElementById('planBadge');
-  badge.textContent=plan.toUpperCase();
-  badge.className=`plan-badge pb-${plan}`;
-  if (plan==='free') {
-    document.getElementById('usageMini').textContent='Free Plan · Own API Key';
+  const plan     = userProfile.plan || 'free';
+  const P        = PLANS[plan];
+  const planUsed = userProfile.planUsed || 0;
+  const chatUsed = userProfile.planChatUsed || 0;
+  const name     = currentUser?.displayName || currentUser?.email?.split('@')[0] || '?';
+  document.getElementById('userNm').textContent = name;
+  document.getElementById('userAv').textContent = name.charAt(0).toUpperCase();
+  const badge = document.getElementById('planBadge');
+  badge.textContent = plan.toUpperCase();
+  badge.className   = `plan-badge pb-${plan}`;
+  if (plan === 'free') {
+    document.getElementById('usageMini').textContent = 'Free Plan · Own API Key';
   } else {
-    document.getElementById('usageMini').textContent=`Gen: ${genUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
+    document.getElementById('usageMini').textContent =
+      `Reports: ${planUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
   }
 }
 function updateUsageWidget() {
-  const plan=userProfile.plan||'free';
-  const P=PLANS[plan];
-  const genUsed=userProfile.monthlyGenerationsUsed||0;
-  const chatUsed=userProfile.monthlyMessagesUsed||0;
-  const hasKey=!!(userSettings.apiKey&&userSettings.apiKey.trim());
-  const el=document.getElementById('uwContent');
+  const plan     = userProfile.plan || 'free';
+  const P        = PLANS[plan];
+  const planUsed = userProfile.planUsed     || 0;
+  const chatUsed = userProfile.planChatUsed || 0;
+  const total    = userProfile.totalReports || 0;
+  const hasKey   = !!(userSettings.apiKey && userSettings.apiKey.trim());
+  const el       = document.getElementById('uwContent');
   if (!el) return;
-  if (plan==='free') {
-    el.innerHTML=`
+
+  if (plan === 'free') {
+    el.innerHTML = `
       <div style="text-align:center;padding:10px 0">
         <div style="font-size:11px;color:${hasKey?'var(--green)':'var(--amber)'};margin-bottom:8px">${hasKey?'✓ API Key Connected':'⚠ No API Key'}</div>
         <div style="font-size:10px;color:var(--muted);line-height:1.6">${hasKey?'Unlimited reports using your API quota.':'Add your API key in Settings to start generating reports.'}</div>
+        <div style="margin-top:12px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;text-align:center;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Total Reports</div>
+          <div style="font-size:22px;font-weight:800;color:var(--cyan);font-family:var(--ff-mono)">${total}</div>
+        </div>
         ${!hasKey?`<button onclick="goPage('settings')" style="margin-top:10px;background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;">⚙ Settings</button>`:''}
       </div>`;
   } else {
-    const genPct=Math.min(100,(genUsed/P.genLimit)*100);
-    const chatPct=Math.min(100,(chatUsed/P.chatLimit)*100);
-    el.innerHTML=`
-      <div class="uw-row"><span class="uw-label">Reports this month</span><span class="uw-val">${genUsed} / ${P.genLimit}</span></div>
+    const genLimit  = getPlanGenLimit();
+    const chatLimit = getPlanChatLimit();
+    const genPct    = Math.min(100, (planUsed / genLimit)  * 100);
+    const chatPct   = Math.min(100, (chatUsed / chatLimit) * 100);
+    const planDate  = userProfile.planStartDate
+      ? new Date(userProfile.planStartDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+      : '—';
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Total Reports</div>
+        <div style="font-size:14px;font-weight:800;color:var(--cyan);font-family:var(--ff-mono)">${total}</div>
+      </div>
+      <div class="uw-row"><span class="uw-label">Plan Reports Used</span><span class="uw-val" style="${genPct>=90?'color:var(--red)':''}">${planUsed} / ${genLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
-      <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat messages</span><span class="uw-val">${chatUsed} / ${P.chatLimit}</span></div>
+      <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat Messages Used</span><span class="uw-val" style="${chatPct>=90?'color:var(--red)':''}">${chatUsed} / ${chatLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
-      <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center">Plan: <span style="color:var(--pprem)">${P.name}</span> · Resets monthly</div>`;
+      <div style="margin-top:10px;font-size:10px;color:var(--dim);text-align:center;line-height:1.6">
+        <span style="color:var(--pprem)">${P.name}</span> · Active since ${planDate}<br>
+        <span style="color:var(--muted)">Counts reports since plan activation only</span>
+      </div>`;
   }
 }
 function showLimitReached(type) {

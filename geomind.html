@@ -342,10 +342,28 @@
       <div class="profile-section">
         <h3>📊 Learning Progress</h3>
         <div class="progress-grid" id="progressGrid">
-          <div class="stat-card"><div class="stat-num" id="statReports">0</div><div class="stat-label">Reports Generated</div></div>
+          <div class="stat-card"><div class="stat-num" id="statReports">0</div><div class="stat-label">Total Reports</div></div>
           <div class="stat-card"><div class="stat-num" id="statLocations">0</div><div class="stat-label">Locations Explored</div></div>
           <div class="stat-card"><div class="stat-num" id="statChats">0</div><div class="stat-label">Chat Messages</div></div>
           <div class="stat-card"><div class="stat-num" id="statCountries">0</div><div class="stat-label">Countries</div></div>
+        </div>
+        <!-- Plan Usage Breakdown -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:11px;padding:14px;margin-top:10px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:10px;">Usage Breakdown</div>
+          <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">📊 Total Reports (Lifetime)</span>
+              <span id="statReportsTotal" style="font-family:var(--ff-mono);color:var(--cyan);font-weight:700">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">📅 This Month</span>
+              <span id="statMonthly" style="font-family:var(--ff-mono);color:var(--green);font-weight:700">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">⭐ Plan Usage (since activation)</span>
+              <span id="statPlanUsed" style="font-family:var(--ff-mono);color:var(--amber);font-weight:700">—</span>
+            </div>
+          </div>
         </div>
       </div>
       <!-- Current Plan -->

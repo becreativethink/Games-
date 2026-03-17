@@ -1227,9 +1227,13 @@ async function loadHistoryTab() {
   await renderHistoryInto(hc, true);
 }
 async function loadHistoryPage() {
-  const hc=document.getElementById('historyPageContent');
-  hc.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading history…</p></div>';
-  await renderHistoryInto(hc, false);
+  if (_histTab === 'compare') {
+    loadComparisonHistory();
+  } else {
+    const hc = document.getElementById('historyPageContent');
+    if (hc) hc.innerHTML = '<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading history…</p></div>';
+    await renderHistoryInto(hc, false);
+  }
 }
 async function renderHistoryInto(container, compact) {
   try {
@@ -2609,29 +2613,24 @@ function renderComparison(dA, dB) {
       <th>${flagB} ${nameB}</th>
     </tr></thead><tbody>`;
 
-  // Geography
   h += `<tr><td colspan="3" style="background:rgba(0,229,200,0.05);color:var(--cyan);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">🌏 Geography</td></tr>`;
   h += row('Terrain',    aiA.geography?.terrain,    aiB.geography?.terrain);
   h += row('Climate',    aiA.geography?.climate,    aiB.geography?.climate);
   h += row('Soil Type',  aiA.geography?.soilType,   aiB.geography?.soilType);
   h += row('Rivers',     aiA.geography?.rivers,     aiB.geography?.rivers);
 
-  // Agriculture
   h += `<tr><td colspan="3" style="background:rgba(52,211,153,0.05);color:var(--green);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">🌾 Agriculture</td></tr>`;
   h += row('Major Crops',aiA.agriculture?.majorCrops, aiB.agriculture?.majorCrops);
   h += row('Irrigation', aiA.agriculture?.irrigationSources, aiB.agriculture?.irrigationSources);
 
-  // Economy
   h += `<tr><td colspan="3" style="background:rgba(74,158,255,0.05);color:var(--blue);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">💰 Economy</td></tr>`;
   h += row('Industries',  aiA.economy?.majorIndustries, aiB.economy?.majorIndustries);
   h += row('GDP Role',    aiA.economy?.gdpContribution, aiB.economy?.gdpContribution);
 
-  // History
   h += `<tr><td colspan="3" style="background:rgba(157,122,255,0.05);color:var(--purple);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">📜 History</td></tr>`;
   h += row('Ancient',    aiA.history?.ancient, aiB.history?.ancient);
   h += row('Modern',     aiA.history?.modern,  aiB.history?.modern);
 
-  // Local
   h += `<tr><td colspan="3" style="background:rgba(255,202,69,0.05);color:var(--amber);font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.07em;">★ Local Info</td></tr>`;
   h += row('Languages',  aiA.localInfo?.localLanguages, aiB.localInfo?.localLanguages);
   h += row('Famous For', aiA.localInfo?.famousFor,      aiB.localInfo?.famousFor);
@@ -2644,7 +2643,136 @@ function renderComparison(dA, dB) {
   wrap.innerHTML = h;
   wrap.style.display = 'block';
   toast('✓ Comparison ready!','ok');
+
+  // Save to Firebase comparison history (fire-and-forget, never blocks UI)
+  saveComparisonHistory(nameA, nameB, aiA, aiB, h).catch(e =>
+    console.warn('[saveComparisonHistory]', e.message)
+  );
 }
+
+/* ══════════════════════════════════════════════════════
+   COMPARISON HISTORY
+   Firebase path: comparisonHistory/{uid}/{pushId}
+   ══════════════════════════════════════════════════════ */
+
+async function saveComparisonHistory(nameA, nameB, aiA, aiB, resultHtml) {
+  if (!currentUser) return;
+  const record = {
+    locationA:   { name: nameA, country: aiA.locationId?.country||'', state: aiA.locationId?.state||'', lat: compareA?.lat||0, lon: compareA?.lon||0 },
+    locationB:   { name: nameB, country: aiB.locationId?.country||'', state: aiB.locationId?.state||'', lat: compareB?.lat||0, lon: compareB?.lon||0 },
+    resultHtml:  resultHtml,   // full rendered table — no API call needed to reopen
+    aiA:         JSON.stringify(aiA),
+    aiB:         JSON.stringify(aiB),
+    timestamp:   new Date().toISOString()
+  };
+  await db.ref('comparisonHistory/' + currentUser.uid).push(record);
+  console.log('[saveComparisonHistory] saved:', nameA, 'vs', nameB);
+}
+
+async function loadComparisonHistory() {
+  const container = document.getElementById('historyCompareContent');
+  if (!container) return;
+  container.innerHTML = '<div class="hempty"><div class="spin-lg" style="margin:0 auto 12px"></div><p>Loading comparison history…</p></div>';
+  try {
+    const snap = await db.ref('comparisonHistory/' + currentUser.uid).once('value');
+    if (!snap.exists() || !snap.val()) {
+      container.innerHTML = '<div class="hempty"><div style="font-size:44px;opacity:0.2">⚖</div><p>No comparisons yet. Go to Compare tab, select two locations, and run a comparison.</p></div>';
+      return;
+    }
+    const entries = Object.entries(snap.val()).sort((a,b) =>
+      (b[1].timestamp||'').localeCompare(a[1].timestamp||'')
+    );
+    let html = `<button class="cmp-clr-btn" onclick="clearComparisonHistory()">🗑 Clear Comparison History</button>
+      <div class="cmp-hist-grid">`;
+    entries.forEach(([id, rec]) => {
+      const d  = new Date(rec.timestamp);
+      const ds = isNaN(d) ? rec.timestamp :
+        d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' +
+        d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const flagA = getFlagEmoji(rec.locationA?.country||'');
+      const flagB = getFlagEmoji(rec.locationB?.country||'');
+      const enc   = encodeURIComponent(id);
+      html += `<div class="cmp-hist-item" onclick="openCompareHistRecord('${enc}')">
+        <div class="cmp-hist-vs">
+          <div class="cmp-hist-loc">${flagA} ${rec.locationA?.name||'Location A'}</div>
+          <div class="cmp-hist-sep">VS</div>
+          <div class="cmp-hist-loc" style="text-align:right">${rec.locationB?.name||'Location B'} ${flagB}</div>
+        </div>
+        <div class="cmp-hist-meta">
+          ${[rec.locationA?.state, rec.locationA?.country].filter(Boolean).join(', ')}
+          &nbsp;↔&nbsp;
+          ${[rec.locationB?.state, rec.locationB?.country].filter(Boolean).join(', ')}
+        </div>
+        <div class="cmp-hist-footer">
+          <div class="cmp-hist-ts">${ds}</div>
+          <button class="cmp-hist-btn" onclick="event.stopPropagation();openCompareHistRecord('${enc}')">📊 View Result</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div class="ebox">Failed to load: ${e.message}</div>`;
+  }
+}
+
+async function openCompareHistRecord(encId) {
+  const id = decodeURIComponent(encId);
+  try {
+    const snap = await db.ref('comparisonHistory/' + currentUser.uid + '/' + id).once('value');
+    if (!snap.exists()) { toast('Record not found', 'err'); return; }
+    const rec = snap.val();
+    const nameA = rec.locationA?.name || 'Location A';
+    const nameB = rec.locationB?.name || 'Location B';
+
+    const modal = document.getElementById('compareHistModal');
+    const body  = document.getElementById('chmBody');
+    const title = document.getElementById('chmTitle');
+
+    title.textContent = `⚖ ${nameA} vs ${nameB}`;
+    // Use stored HTML — zero API calls
+    body.innerHTML = rec.resultHtml || '<div class="hempty">No result data stored.</div>';
+    modal.style.display = 'flex';
+  } catch(e) {
+    toast('Failed to open: ' + e.message, 'err');
+  }
+}
+
+function closeCompareHistModal() {
+  const modal = document.getElementById('compareHistModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function clearComparisonHistory() {
+  if (!confirm('Delete all your comparison history?')) return;
+  await db.ref('comparisonHistory/' + currentUser.uid).remove();
+  toast('Comparison history cleared', 'ok');
+  loadComparisonHistory();
+}
+
+/* ── History page tab switcher ────────────────────────── */
+let _histTab = 'reports'; // track active tab
+function switchHistTab(tab) {
+  _histTab = tab;
+  const repContent = document.getElementById('historyPageContent');
+  const cmpContent = document.getElementById('historyCompareContent');
+  const repTab     = document.getElementById('htab-reports');
+  const cmpTab     = document.getElementById('htab-compare');
+  if (tab === 'reports') {
+    repContent.style.display = '';
+    cmpContent.style.display = 'none';
+    repTab.classList.add('active');
+    cmpTab.classList.remove('active');
+  } else {
+    repContent.style.display = 'none';
+    cmpContent.style.display = '';
+    repTab.classList.remove('active');
+    cmpTab.classList.add('active');
+    loadComparisonHistory();
+  }
+}
+
+
 
 /* ── REPORT PREVIEW MODAL ─────────────────────────── */
 let _previewRec = null;

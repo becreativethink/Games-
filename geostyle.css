@@ -524,6 +524,19 @@ a{text-decoration:none;}
 .mcqo.no{background:rgba(255,107,122,0.1);border-color:rgba(255,107,122,0.25);color:var(--red);}
 .dl-row{display:flex;gap:8px;padding:14px 0 4px;flex-wrap:wrap;}
 .dl-btn{padding:8px 14px;border-radius:8px;font-size:11px;font-weight:700;transition:all 0.2s;border:1px solid;}
+/* ── See More Button ── */
+.see-more-btn{
+  width:100%;margin-top:10px;padding:10px;
+  background:rgba(0,229,200,0.06);
+  border:1px solid rgba(0,229,200,0.18);
+  color:var(--cyan);
+  border-radius:10px;
+  font-size:12px;font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  letter-spacing:0.03em;
+}
+.see-more-btn:hover{background:rgba(0,229,200,0.12);border-color:rgba(0,229,200,0.3);}
 .dl-txt{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.2);color:var(--green);}
 .dl-txt:hover{background:rgba(52,211,153,0.15);}
 .dl-json{background:rgba(74,158,255,0.08);border-color:rgba(74,158,255,0.2);color:var(--blue);}

@@ -142,7 +142,8 @@ let userProfile  = {
   lastResetMonth: ''
 };
 let userSettings = { apiKey:'', model:'gemini-1.5-flash' };
-let adminAPIConfig = null;
+let adminAPIConfig   = null;
+let adminGlobalModel = null;  // from adminSettings/selectedModel
 let curLang  = 'en';
 let curData  = {};
 
@@ -289,10 +290,14 @@ async function loadUserSettings() {
 
 async function loadAdminAPIConfig() {
   try {
-    const snap = await db.ref('adminAPI/' + currentUser.uid).once('value');
-    if (snap.exists()) adminAPIConfig = snap.val();
-    else adminAPIConfig = null;
-  } catch(e) { adminAPIConfig = null; }
+    const [apiSnap, modelSnap] = await Promise.all([
+      db.ref('adminAPI/' + currentUser.uid).once('value'),
+      db.ref('adminSettings/selectedModel').once('value')
+    ]);
+    adminAPIConfig   = apiSnap.exists()   ? apiSnap.val()   : null;
+    adminGlobalModel = modelSnap.exists() ? modelSnap.val() : null;
+    console.log('[GeoMind] adminGlobalModel:', adminGlobalModel);
+  } catch(e) { adminAPIConfig = null; adminGlobalModel = null; }
 }
 
 function monthStr() { return new Date().toISOString().substring(0,7); }
@@ -521,9 +526,13 @@ function getChatAPIKey() {
 function getSelectedModel(forChat=false) {
   const plan = userProfile.plan || 'free';
   if (plan !== 'free') {
-    if (forChat && adminAPIConfig?.chatModel) return adminAPIConfig.chatModel;
+    // 1. Per-user admin-assigned model (highest priority)
+    if (forChat  && adminAPIConfig?.chatModel)   return adminAPIConfig.chatModel;
     if (!forChat && adminAPIConfig?.reportModel) return adminAPIConfig.reportModel;
+    // 2. Admin global default model (e.g. Qwen set from admin panel)
+    if (adminGlobalModel) return adminGlobalModel;
   }
+  // 3. User's own chosen model from Settings
   return userSettings.model || 'gemini-1.5-flash';
 }
 
@@ -876,6 +885,8 @@ function goPage(name) {
 /* ── MAP ─────────────────────────────────────────────── */
 let map, mapMarker;
 let pendingLat=null, pendingLon=null;
+let pendingCountryCode=null;  // ISO2 code e.g. "IN", "US" — fetched on map click
+const _flagCache = {};         // cache countryCode → flag img URL
 
 function initMap() {
   if (map) return;
@@ -885,23 +896,28 @@ function initMap() {
   }).addTo(map);
   map.on('click', e=>{
     pendingLat = e.latlng.lat; pendingLon = e.latlng.lng;
+    pendingCountryCode = null; // reset — will be fetched below
     console.log('[map click] lat='+pendingLat.toFixed(4)+' lon='+pendingLon.toFixed(4));
     placePin(pendingLat, pendingLon, '#00d4aa');
     showPill(pendingLat, pendingLon);
-    // Animate send button to signal readiness
+    // Animate send button
     const btn=document.getElementById('sendBtn');
     btn.style.boxShadow='0 6px 28px rgba(0,212,170,0.55)';
     btn.style.transform='scale(1.06)';
     btn.style.transition='all 0.3s cubic-bezier(0.34,1.56,0.64,1)';
     setTimeout(()=>{btn.style.transform='scale(1)';},350);
     setTimeout(()=>{btn.style.boxShadow='0 4px 18px rgba(0,212,170,0.35)';},1200);
-    // Auto-fill country from reverse geo attempt (best-effort, non-blocking)
+    // Auto-fill country + fetch ISO2 code (both non-blocking)
     const inp=document.getElementById('countryInput');
-    if(inp&&!inp.value.trim()) {
-      fetchGeo(pendingLat,pendingLon)
-        .then(g=>{const c=g.address?.country||''; if(c&&inp&&!inp.value.trim())inp.value=c;})
-        .catch(()=>{});
-    }
+    fetchGeo(pendingLat, pendingLon)
+      .then(g=>{
+        const c=g.address?.country||'';
+        if(c && inp && !inp.value.trim()) inp.value=c;
+      }).catch(()=>{});
+    // Separately fetch ISO2 country code for flag image
+    fetchCountryCode(pendingLat, pendingLon)
+      .then(code=>{ pendingCountryCode = code; console.log('[flag] countryCode='+code); })
+      .catch(()=>{});
     toast('📍 Location selected — press ⚡ Send Report','ok');
   });
   // Error handler for tile failures
@@ -1250,16 +1266,24 @@ document.getElementById('cinput').addEventListener('keydown', e=>{if(e.key==='En
 
 /* ── REPORT RENDER ───────────────────────────────────── */
 function renderReport(lat,lon,geo,country,wiki,ai) {
-  const addr=geo.address||{};
-  const name=ai.locationId?.nearestCity||addr.city||addr.state||addr.country||`${parseFloat(lat).toFixed(2)}°, ${parseFloat(lon).toFixed(2)}°`;
-  const flag=ai.locationId?.country?getFlagEmoji(ai.locationId.country):'🌍';
-  const langs=ai.localInfo?.localLanguages||'';
-  const mode=gv('learningMode');
+  const addr    = geo.address || {};
+  const name    = ai.locationId?.nearestCity||addr.city||addr.state||addr.country||`${parseFloat(lat).toFixed(2)}°, ${parseFloat(lon).toFixed(2)}°`;
+  const langs   = ai.localInfo?.localLanguages || '';
+  const mode    = gv('learningMode');
 
-  let h=`<div class="loc-badge">
+  // ── Flag: use live countryCode if available, else emoji fallback ──
+  const countryCode = pendingCountryCode ||
+    curData.countryCode ||
+    (country?.cca2) || null;
+
+  const flagHtml = countryCode
+    ? getFlagImg(countryCode, ai.locationId?.country || addr.country, 22)
+    : getFlagEmoji(ai.locationId?.country || '') + ' ';
+
+  let h = `<div class="loc-badge">
     <div>
-      <div class="loc-name">${flag} ${name}</div>
-      <div class="loc-sub">${[ai.locationId?.state,ai.locationId?.country].filter(Boolean).join(' · ')}</div>
+      <div class="loc-name" style="display:flex;align-items:center;">${flagHtml}<span>${name}</span></div>
+      <div class="loc-sub">${[ai.locationId?.state, ai.locationId?.country].filter(Boolean).join(' · ')}</div>
       ${langs?`<div class="loc-lang">🗣 ${langs}</div>`:''}
     </div>
     <div class="cbadge">LAT ${parseFloat(lat).toFixed(4)}°<br>LON ${parseFloat(lon).toFixed(4)}°<br><span style="color:var(--pprem);font-size:9px">${(PLANS[userProfile.plan]?.name||'Free').toUpperCase()}</span></div>
@@ -1268,9 +1292,12 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
   if (wiki?.extract) h+=`<div class="wiki-box">📖 ${wiki.extract.substring(0,280)}…</div>`;
   if (ai.userAnswer) h+=`<div class="epill" style="color:var(--blue);border-color:rgba(74,158,255,0.25)">💬 ${ai.userAnswer}</div>`;
 
+  // ── Build full report content (hidden initially) ──
+  let fullContent = '';
+
   if (ai.localInfo) {
     const li=ai.localInfo;
-    h+=S('★','Local Info & Famous Places',`
+    fullContent+=S('★','Local Info & Famous Places',`
       ${R('Languages', li.localLanguages)}
       ${R('Famous For', (li.famousFor||[]).map(f=>`<span class="tag tp">${f}</span>`).join(''))}
       ${R('Famous Places', (li.famousPlaces||[]).map(f=>`<span class="tag tb">${f}</span>`).join(''))}
@@ -1281,36 +1308,36 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
     `,true);
   }
 
-  h+=S('01','Location',`
+  fullContent+=S('01','Location',`
     ${R('Country',ai.locationId?.country)}${R('State',ai.locationId?.state)}
     ${R('District',ai.locationId?.district)}${R('Nearest City',ai.locationId?.nearestCity)}
     ${R('Coordinates',ai.locationId?.coordinates)}
   `);
-  if (mode!=='Quiz Mode') h+=S('02','Geography',`
+  if (mode!=='Quiz Mode') fullContent+=S('02','Geography',`
     ${R('Terrain',ai.geography?.terrain)}${R('Climate',ai.geography?.climate)}
     ${R('Soil',ai.geography?.soilType)}${R('Rivers',ai.geography?.rivers)}
     ${R('Resources',ai.geography?.naturalResources)}
   `);
-  h+=S('03','Agriculture',`
+  fullContent+=S('03','Agriculture',`
     <div class="srow"><span class="slbl">Major Crops</span><span class="sval">${(ai.agriculture?.majorCrops||[]).map(c=>`<span class="tag ty">${c}</span>`).join('')}</span></div>
     ${R('Why Crops Grow',ai.agriculture?.whyCropsGrow)}${R('Irrigation',ai.agriculture?.irrigationSources)}${R('Season',ai.agriculture?.seasonalPattern)}
   `);
-  h+=S('04','History',`
+  fullContent+=S('04','History',`
     ${R('Ancient',ai.history?.ancient)}${R('Medieval',ai.history?.medieval)}
     ${R('Modern',ai.history?.modern)}${R('Freedom Movement',ai.history?.freedomMovement)}
   `);
-  h+=S('05','Economy',`
+  fullContent+=S('05','Economy',`
     <div class="srow"><span class="slbl">Industries</span><span class="sval">${(ai.economy?.majorIndustries||[]).map(i=>`<span class="tag tb">${i}</span>`).join('')}</span></div>
     ${R('GDP',ai.economy?.gdpContribution)}${R('Employment',ai.economy?.employmentPattern)}
   `);
-  h+=S('06','Current Relevance',`
+  fullContent+=S('06','Current Relevance',`
     ${R('Environment',ai.currentRelevance?.environmentalIssues)}
     ${R('Projects',ai.currentRelevance?.developmentProjects)}
     ${R('Strategic',ai.currentRelevance?.strategicImportance)}
   `);
   if (mode==='Timeline Mode'||mode==='Full Analysis') {
     const tl=(ai.timeline||[]).map(t=>`<div class="tli"><div class="tldot"></div><div class="tlyear">${t.year}</div><div class="tltext">${t.event}</div></div>`).join('');
-    h+=S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
+    fullContent+=S('07','Historical Timeline',`<div class="tl">${tl}</div>`);
   }
   if (mode==='Quiz Mode'||mode==='Full Analysis') {
     let qh='<div style="margin-bottom:8px;font-size:10px;color:var(--muted)">Click options to check answers.</div>';
@@ -1321,17 +1348,32 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
       qh+=`<div class="mcqi"><div class="mcqq">AR${i+1}. <b>A:</b> ${ar.assertion}<br><b>R:</b> ${ar.reason}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Ans: <span style="color:var(--cyan)">${ar.answer}</span></div></div>`;
     });
     if (ai.quiz?.mapQuestion) qh+=`<div class="mcqi"><div class="mcqq">🗺 ${ai.quiz.mapQuestion}</div></div>`;
-    h+=S('08','Quiz',qh);
+    fullContent+=S('08','Quiz',qh);
   }
   const ef=(ai.examFocus||[]).map(q=>`<div class="epill">⚡ ${q}</div>`).join('');
-  h+=S('09',`Exam Focus — ${gv('examType')||'UPSC'}`,ef);
+  fullContent+=S('09',`Exam Focus — ${gv('examType')||'UPSC'}`,ef);
 
-  // Single "Open Full Report" link + Share buttons
-  h+=`<div class="report-link-row">
-    <div class="share-label">📄 Access Report</div>
-    <button class="report-open-btn" onclick="openReportFile()">📂 Open Full Report File</button>
-  </div>
-  <div class="share-row">
+  // ── See More / See Less toggle ──
+  // Show first 2 sections by default, rest hidden under "See More"
+  const sections = fullContent.split('<div class="scard">').filter(Boolean);
+  const previewCount = 2;
+  const previewHTML  = sections.slice(0, previewCount).map(s=>'<div class="scard">'+s).join('');
+  const restHTML     = sections.slice(previewCount).map(s=>'<div class="scard">'+s).join('');
+  const expandId     = 'exp_'+Date.now();
+
+  h += previewHTML;
+  if (restHTML) {
+    h += `<div id="${expandId}" style="display:none">${restHTML}</div>
+    <button class="see-more-btn" id="smb_${expandId}"
+      onclick="toggleSeeMore('${expandId}','smb_${expandId}')">
+      ▾ See More
+    </button>`;
+  } else {
+    h += fullContent; // if < 2 sections, just show all
+  }
+
+  // ── Share only (no download buttons) ──
+  h += `<div class="share-row" style="margin-top:12px;">
     <div class="share-label">🔗 Share This Report</div>
     <button class="share-btn share-wa" onclick="shareReport('whatsapp')">📱 WhatsApp</button>
     <button class="share-btn share-tg" onclick="shareReport('telegram')">✈ Telegram</button>
@@ -1339,12 +1381,28 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
     <button class="share-btn share-cp" onclick="shareReport('copy')">📋 Copy Link</button>
   </div>`;
 
+  // Store countryCode on curData so reloadHist can use it
+  if (countryCode) curData.countryCode = countryCode;
+
   const wrap=document.getElementById('resultWrap');
   wrap.innerHTML=h; wrap.style.display='block';
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
   goTab('a',document.getElementById('t-a'));
 }
+
+function toggleSeeMore(contentId, btnId) {
+  const el  = document.getElementById(contentId);
+  const btn = document.getElementById(btnId);
+  if (!el || !btn) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display  = isHidden ? 'block' : 'none';
+  btn.textContent   = isHidden ? '▴ See Less' : '▾ See More';
+  btn.style.background = isHidden ? 'rgba(0,229,200,0.05)' : '';
+  if (isHidden) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+
 
 function S(num,title,content,open=false){
   const id='sc_'+Math.random().toString(36).substr(2,6);
@@ -1363,9 +1421,47 @@ function chkMCQ(el,sel,correct){
     else if(L===sel&&sel!==correct)o.classList.add('no');
   });
 }
+/* ── FLAG DISPLAY — dynamic flagcdn.com (never hardcoded) ── */
+/* Returns an <img> tag for the country flag, falls back to 🌍 emoji.
+   countryCode = ISO2 code e.g. "IN", "US", "FR"               */
+function getFlagImg(countryCode, countryName, size=20) {
+  if (!countryCode) return '🌍';
+  const code = countryCode.toLowerCase();
+  const url  = `https://flagcdn.com/w40/${code}.png`;
+  return `<img src="${url}" alt="${countryName||code}" title="${countryName||code}"
+    style="width:${size}px;height:auto;border-radius:3px;vertical-align:middle;margin-right:6px;box-shadow:0 1px 4px rgba(0,0,0,0.3);"
+    onerror="this.style.display='none';this.nextSibling&&this.nextSibling.nodeType===3||(this.insertAdjacentText('afterend','🌍'))"
+  />`;
+}
+
+/* Fetch country code from BigDataCloud reverse geocoding (free, no key needed) */
+async function fetchCountryCode(lat, lon) {
+  try {
+    const r = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.countryCode || null;   // "IN", "US", "FR" etc.
+  } catch(e) {
+    console.warn('[fetchCountryCode]', e.message);
+    return null;
+  }
+}
+
+/* Legacy emoji helper kept for backward compat in compare view */
 function getFlagEmoji(countryName) {
-  const map={'India':'🇮🇳','United States':'🇺🇸','United Kingdom':'🇬🇧','China':'🇨🇳','Brazil':'🇧🇷','Russia':'🇷🇺','France':'🇫🇷','Germany':'🇩🇪','Japan':'🇯🇵','Australia':'🇦🇺','Canada':'🇨🇦','Pakistan':'🇵🇰','Bangladesh':'🇧🇩','Nepal':'🇳🇵','Sri Lanka':'🇱🇰','Indonesia':'🇮🇩','Turkey':'🇹🇷','Egypt':'🇪🇬'};
-  return map[countryName]||'🌍';
+  const map={
+    'India':'🇮🇳','United States':'🇺🇸','United Kingdom':'🇬🇧','China':'🇨🇳',
+    'Brazil':'🇧🇷','Russia':'🇷🇺','France':'🇫🇷','Germany':'🇩🇪','Japan':'🇯🇵',
+    'Australia':'🇦🇺','Canada':'🇨🇦','Pakistan':'🇵🇰','Bangladesh':'🇧🇩',
+    'Nepal':'🇳🇵','Sri Lanka':'🇱🇰','Indonesia':'🇮🇩','Turkey':'🇹🇷','Egypt':'🇪🇬',
+    'Saudi Arabia':'🇸🇦','UAE':'🇦🇪','Italy':'🇮🇹','Spain':'🇪🇸','Mexico':'🇲🇽',
+    'South Korea':'🇰🇷','Thailand':'🇹🇭','Vietnam':'🇻🇳','Philippines':'🇵🇭',
+    'Nigeria':'🇳🇬','South Africa':'🇿🇦','Kenya':'🇰🇪','Ethiopia':'🇪🇹'
+  };
+  return map[countryName] || '🌍';
 }
 
 /* ── DOWNLOAD FEATURE ────────────────────────────────── */

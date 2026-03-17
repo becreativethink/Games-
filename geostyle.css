@@ -990,3 +990,23 @@ a{text-decoration:none;}
 .plan-btn{width:100%;padding:8px;border-radius:9px;font-size:11px;font-weight:800;border:1px solid;transition:all 0.2s;cursor:pointer;}
 .plan-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .plans-scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+
+/* ══ HISTORY TABS ══ */
+.hist-tabs{display:flex;gap:6px;padding:0 16px 8px;flex-shrink:0;}
+.hist-tab{padding:7px 18px;border-radius:9px;font-size:12px;font-weight:700;border:1px solid var(--border2);color:var(--muted);background:transparent;cursor:pointer;transition:all 0.18s;}
+.hist-tab.active{background:rgba(0,229,200,0.1);border-color:rgba(0,229,200,0.3);color:var(--cyan);}
+.hist-tab:hover:not(.active){background:rgba(255,255,255,0.04);color:var(--text2);}
+
+/* ══ COMPARISON HISTORY CARDS ══ */
+.cmp-hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;padding:12px;}
+.cmp-hist-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color 0.2s,box-shadow 0.2s;cursor:pointer;}
+.cmp-hist-item:hover{border-color:rgba(74,158,255,0.35);box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+.cmp-hist-vs{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cmp-hist-loc{flex:1;font-size:12px;font-weight:700;color:var(--text);}
+.cmp-hist-sep{font-size:10px;color:var(--blue);font-weight:800;padding:3px 6px;background:rgba(74,158,255,0.1);border-radius:5px;}
+.cmp-hist-meta{font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px;}
+.cmp-hist-footer{display:flex;justify-content:space-between;align-items:center;}
+.cmp-hist-ts{font-size:10px;color:var(--dim);}
+.cmp-hist-btn{padding:5px 12px;background:rgba(74,158,255,0.1);border:1px solid rgba(74,158,255,0.25);color:var(--blue);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.cmp-hist-btn:hover{background:rgba(74,158,255,0.2);}
+.cmp-clr-btn{background:rgba(255,107,122,0.07);border:1px solid rgba(255,107,122,0.2);color:var(--red);padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;margin:8px 12px 4px;display:block;width:calc(100% - 24px);cursor:pointer;}

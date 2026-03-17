@@ -567,9 +567,12 @@ async function callAI(prompt, apiKey, modelId) {
       return await callGemini(prompt, apiKey, modelId);
     }
   } catch(e) {
-    if (e instanceof TypeError && (e.message.includes('fetch') || e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
+    // Only rethrow as network error if it's genuinely a connectivity failure
+    if (e instanceof TypeError &&
+        (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('net::ERR_'))) {
       throw new Error('Network error: Could not reach the AI server. Check your internet connection or try a different provider in Settings.');
     }
+    // All other errors (API key, quota, model errors) pass through unchanged
     throw e;
   }
 }
@@ -1009,19 +1012,47 @@ async function generateReport(lat, lon) {
     renderReport(lat, lon, geo, country, wiki, ai);
   } catch(err) {
     console.error('[generateReport]', err);
-    let msg = err.message || 'Unknown error';
-    // Classify common errors for better user guidance
-    if (msg.includes('No API key') || msg.includes('API key')) {
-      msg += ' Go to Settings (⚙) to configure your API key.';
-    } else if (msg.includes('quota') || msg.includes('429') || msg.includes('rate limit')) {
-      msg = '⏱ API quota or rate limit reached. Wait a moment, then try again. Consider upgrading your API plan.';
-    } else if (msg.includes('401') || msg.includes('invalid') || msg.includes('Invalid')) {
-      msg += ' Please check your API key is correct in Settings (⚙).';
-    } else if (msg.includes('network') || msg.includes('Network') || msg.includes('fetch')) {
-      msg = '📶 Network error. Please check your internet connection and try again.';
-    } else if (msg.includes('JSON') || msg.includes('parse') || msg.includes('SyntaxError')) {
-      msg = '⚠ The AI returned an unexpected response. Try again or switch to a different model in Settings.';
+    let msg = err.message || 'Unknown error occurred.';
+
+    // ── Accurate error classification ──────────────────
+    if (!navigator.onLine) {
+      // Device is genuinely offline
+      msg = '📶 You are offline. Connect to the internet and try again.';
+
+    } else if (msg.includes('No API key') || msg.includes('API key required')) {
+      msg = '🔑 No API key configured. Go to <strong>Settings ⚙</strong> and add your API key, or purchase a plan.';
+
+    } else if (msg.includes('401') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key')) {
+      msg = '❌ Invalid API key. Check your key in <strong>Settings ⚙</strong> and make sure it has the correct permissions.';
+
+    } else if (msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate limit')) {
+      msg = '⏱ API quota exceeded. Wait a moment and try again, or switch to a different model in Settings.';
+
+    } else if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('access denied')) {
+      msg = '🚫 API access denied. Your key may not have permission for this model. Check Settings ⚙.';
+
+    } else if (msg.includes('503') || msg.toLowerCase().includes('loading') || msg.toLowerCase().includes('unavailable')) {
+      msg = '🔄 AI model is loading or busy. Wait 20 seconds and try again.';
+
+    } else if (msg.toLowerCase().includes('json') || msg.toLowerCase().includes('syntaxerror') || msg.toLowerCase().includes('parse')) {
+      msg = '⚠ The AI returned an unexpected response format. Try again or switch to a different model in Settings.';
+
+    } else if (
+      msg.toLowerCase().includes('failed to fetch') ||
+      msg.toLowerCase().includes('networkerror') ||
+      msg.toLowerCase().includes('network error') ||
+      msg.toLowerCase().includes('err_name_not_resolved') ||
+      msg.toLowerCase().includes('err_connection') ||
+      (err instanceof TypeError && msg.toLowerCase().includes('fetch'))
+    ) {
+      // Only show network error when it's actually a network issue (not just any fetch)
+      msg = '📶 Could not reach the AI server. Check your internet connection, or try a different AI model in Settings.';
+
+    } else if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('aborted')) {
+      msg = '⏰ Request timed out. Check your connection and try again, or switch to a faster model.';
+
     }
+    // else: show original error message as-is
     showErr(msg);
   }
 }
@@ -1038,36 +1069,69 @@ function updateMapTooltip(geo, ai) {
 }
 
 /* ── DATA FETCHERS ───────────────────────────────────── */
-async function fetchGeo(lat,lon) {
+
+/* fetchGeo: NON-FATAL — returns empty address object if it fails.
+   This means a bad geocoding response will NEVER block report generation. */
+async function fetchGeo(lat, lon) {
   console.log('[fetchGeo] lat='+lat.toFixed(4)+' lon='+lon.toFixed(4));
+  const emptyFallback = { address: {
+    country: document.getElementById('countryInput')?.value.trim() || '',
+    city: '', state: ''
+  }};
+
+  // AbortController (WebView-safe — AbortSignal.timeout() not available in old Android)
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
+
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-      {headers:{'Accept-Language':'en'}, signal: controller.signal}
+      { headers: { 'Accept-Language': 'en' }, signal: controller.signal }
     );
     clearTimeout(timer);
-    if (!r.ok) throw new Error('Location lookup failed ('+r.status+'). The geocoding service may be temporarily down.');
+    if (!r.ok) {
+      console.warn('[fetchGeo] HTTP', r.status, '— using fallback');
+      return emptyFallback;
+    }
     const data = await r.json();
     console.log('[fetchGeo] address:', data.address?.city || data.address?.state || data.address?.country || 'unknown');
     return data;
   } catch(e) {
     clearTimeout(timer);
-    if (e.name === 'AbortError') throw new Error('Location lookup timed out. Check your internet connection.');
-    throw e;
+    if (e.name === 'AbortError') {
+      console.warn('[fetchGeo] timed out — using fallback');
+    } else {
+      console.warn('[fetchGeo] error:', e.message, '— using fallback');
+    }
+    // Return fallback — do NOT throw. Report generation continues.
+    return emptyFallback;
   }
 }
+
 async function fetchCountry(name) {
   if (!name) return null;
-  try { const r=await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`); const d=await r.json(); return Array.isArray(d)?d[0]:null; }
-  catch{return null;}
+  try {
+    const r = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Array.isArray(d) ? d[0] : null;
+  } catch(e) {
+    console.warn('[fetchCountry]', e.message);
+    return null;
+  }
 }
+
 async function fetchWiki(place) {
   if (!place) return null;
-  try { const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`); return r.ok?r.json():null; }
-  catch{return null;}
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(place)}`);
+    return r.ok ? r.json() : null;
+  } catch(e) {
+    console.warn('[fetchWiki]', e.message);
+    return null;
+  }
 }
+
 
 /* ── AI REPORT GENERATOR ─────────────────────────────── */
 async function generateAIReport(lat, lon, geo, country, wiki) {
@@ -1436,15 +1500,20 @@ function getFlagImg(countryCode, countryName, size=20) {
 
 /* Fetch country code from BigDataCloud reverse geocoding (free, no key needed) */
 async function fetchCountryCode(lat, lon) {
+  // Use AbortController (WebView-safe) instead of AbortSignal.timeout()
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const r = await fetch(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
-      { signal: AbortSignal.timeout(5000) }
+      { signal: controller.signal }
     );
+    clearTimeout(timer);
     if (!r.ok) return null;
     const d = await r.json();
     return d.countryCode || null;   // "IN", "US", "FR" etc.
   } catch(e) {
+    clearTimeout(timer);
     console.warn('[fetchCountryCode]', e.message);
     return null;
   }

@@ -248,6 +248,8 @@ async function loadUserProfile() {
       }
       if (userProfile.planUsed === undefined)      { userProfile.planUsed = 0; needsMigration = true; }
       if (userProfile.planChatUsed === undefined)  { userProfile.planChatUsed = 0; needsMigration = true; }
+      if (userProfile.comparisonUsed === undefined)   { userProfile.comparisonUsed = 0;   needsMigration = true; }
+      if (userProfile.totalComparisons === undefined) { userProfile.totalComparisons = 0; needsMigration = true; }
       if (userProfile.planStartDate === undefined) {
         // Set planStartDate to start of current month so old reports don't contaminate
         userProfile.planStartDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
@@ -267,8 +269,10 @@ async function loadUserProfile() {
         plan: 'free',
         totalReports: 0,
         totalChats: 0,
+        totalComparisons: 0,
         planUsed: 0,
         planChatUsed: 0,
+        comparisonUsed: 0,
         planStartDate: now,
         monthlyGenerationsUsed: 0,
         monthlyMessagesUsed: 0,
@@ -479,18 +483,20 @@ async function checkPlanChangedRemotely() {
     const snap = await db.ref('users/' + currentUser.uid).once('value');
     if (!snap.exists()) return;
     const remote = snap.val();
-    const localPlan  = userProfile.plan;
-    const remotePlan = remote.plan;
+    const localPlan   = userProfile.plan;
+    const remotePlan  = remote.plan;
     const remoteStart = remote.planStartDate;
-    // If admin changed the plan AND updated planStartDate, reset local planUsed
+    // If admin changed the plan AND updated planStartDate, reset local counters
     if (remotePlan !== localPlan || (remoteStart && remoteStart !== userProfile.planStartDate)) {
       console.log(`[GeoMind] Plan changed remotely: ${localPlan} → ${remotePlan}`);
-      userProfile.plan          = remotePlan;
-      userProfile.planStartDate = remoteStart || new Date().toISOString();
-      userProfile.planUsed      = remote.planUsed      ?? 0;
-      userProfile.planChatUsed  = remote.planChatUsed  ?? 0;
-      userProfile.totalReports  = remote.totalReports  ?? userProfile.totalReports;
-      userProfile.totalChats    = remote.totalChats    ?? userProfile.totalChats;
+      userProfile.plan             = remotePlan;
+      userProfile.planStartDate    = remoteStart || new Date().toISOString();
+      userProfile.planUsed         = remote.planUsed         ?? 0;
+      userProfile.planChatUsed     = remote.planChatUsed     ?? 0;
+      userProfile.comparisonUsed   = remote.comparisonUsed   ?? 0;
+      userProfile.totalReports     = remote.totalReports     ?? userProfile.totalReports;
+      userProfile.totalChats       = remote.totalChats       ?? userProfile.totalChats;
+      userProfile.totalComparisons = remote.totalComparisons ?? userProfile.totalComparisons;
       if (remotePlan !== localPlan && remotePlan !== 'free') {
         toast(`🎉 Your plan has been upgraded to ${PLANS[remotePlan]?.name || remotePlan}!`, 'ok');
       }
@@ -3177,6 +3183,9 @@ function updateUsageWidget() {
     const planDate  = userProfile.planStartDate
       ? new Date(userProfile.planStartDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
       : '—';
+    const cmpUsed  = userProfile.comparisonUsed  || 0;
+    const cmpLimit = getPlanComparisonLimit();
+    const cmpPct   = cmpLimit > 0 ? Math.min(100, (cmpUsed / cmpLimit) * 100) : 0;
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;">
         <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Total Reports</div>
@@ -3186,9 +3195,11 @@ function updateUsageWidget() {
       <div class="uw-bar"><div class="uw-bar-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat Messages Used</span><span class="uw-val" style="${chatPct>=90?'color:var(--red)':''}">${chatUsed} / ${chatLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
+      <div class="uw-row" style="margin-top:8px"><span class="uw-label">⚖ Comparisons Used</span><span class="uw-val" style="${cmpPct>=90?'color:var(--red)':''}">${cmpUsed} / ${cmpLimit}</span></div>
+      <div class="uw-bar"><div class="uw-bar-fill ${cmpPct>=100?'danger':''}" style="width:${cmpPct}%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div></div>
       <div style="margin-top:10px;font-size:10px;color:var(--dim);text-align:center;line-height:1.6">
         <span style="color:var(--pprem)">${P.name}</span> · Active since ${planDate}<br>
-        <span style="color:var(--muted)">Counts reports since plan activation only</span>
+        <span style="color:var(--muted)">Counts since plan activation only</span>
       </div>`;
   }
 }

@@ -465,95 +465,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
 
 
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.7;">⚠️ <strong style="color:var(--amber)">You must apply these rules</strong> in Firebase Console → Realtime Database → Rules tab. Without the correct rules, all admin plan changes and API key assignments will silently fail.</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Replace <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;color:var(--amber)">YOUR_ADMIN_UID</code> with your actual Firebase UID (find it in Authentication → Users in Firebase Console).</div>
-        <pre style="background:rgba(0,0,0,0.35);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c8d8b0;overflow-x:auto;line-height:1.7;">
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "adminAPI": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "reports": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "adminConfig": {
-      ".read":  "auth.uid === 'YOUR_ADMIN_UID'",
-      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
-    }
-  }
-}</pre>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button onclick="copyRules()" style="padding:8px 16px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;font-size:11px;font-weight:700;">📋 Copy Rules</button>
-          <button onclick="testWritePermission()" style="padding:8px 16px;background:rgba(255,202,69,0.08);border:1px solid rgba(255,202,69,0.2);color:var(--amber);border-radius:8px;font-size:11px;font-weight:700;">🧪 Test Write Permission</button>
-          <span id="writeTestResult" style="font-size:11px;padding:8px 0;display:none;"></span>
-        </div>
-      </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
         <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Register Admin UID</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Add a Firebase user UID to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminConfig/adminUids/&lt;uid&gt;</code> = true. Registered admins will see the Admin nav button in the main app.</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Add your Firebase UID to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminConfig/adminUids/&lt;uid&gt;</code> = true so you see the Admin button in the main app.</div>
         <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
-          <input type="text" class="mf-input" id="newAdminUid" placeholder="Firebase User UID (from Firebase Console → Authentication)"/>
-          <button class="action-btn ab-key" style="padding:10px 16px" onclick="addAdminUid()">+ Add</button>
-        </div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Firebase Database Rules</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.7;">⚠️ <strong style="color:var(--amber)">You must apply these rules</strong> in Firebase Console → Realtime Database → Rules tab.</div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Replace <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;color:var(--amber)">YOUR_ADMIN_UID</code> with your actual Firebase UID.</div>
-        <pre style="background:rgba(0,0,0,0.35);border:1px solid var(--border2);border-radius:9px;padding:14px;font-family:var(--mono);font-size:10px;color:#c8d8b0;overflow-x:auto;line-height:1.7;">
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "adminAPI": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "adminSettings": {
-      ".read":  true,
-      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
-    },
-    "reports": {
-      "$uid": {
-        ".read":  "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'",
-        ".write": "$uid === auth.uid || auth.uid === 'YOUR_ADMIN_UID'"
-      }
-    },
-    "adminConfig": {
-      ".read":  "auth.uid === 'YOUR_ADMIN_UID'",
-      ".write": "auth.uid === 'YOUR_ADMIN_UID'"
-    }
-  }
-}</pre>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button onclick="copyRules()" style="padding:8px 16px;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;font-size:11px;font-weight:700;">📋 Copy Rules</button>
-          <button onclick="testWritePermission()" style="padding:8px 16px;background:rgba(255,202,69,0.08);border:1px solid rgba(255,202,69,0.2);color:var(--amber);border-radius:8px;font-size:11px;font-weight:700;">🧪 Test Write Permission</button>
-          <span id="writeTestResult" style="font-size:11px;padding:8px 0;display:none;"></span>
-        </div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
-        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Register Admin UID</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Add a Firebase user UID to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminConfig/adminUids/&lt;uid&gt;</code> = true.</div>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
-          <input type="text" class="mf-input" id="newAdminUid" placeholder="Firebase User UID (from Firebase Console → Authentication)"/>
+          <input type="text" class="mf-input" id="newAdminUid" placeholder="Your Firebase UID (Firebase Console → Authentication → Users)"/>
           <button class="action-btn ab-key" style="padding:10px 16px" onclick="addAdminUid()">+ Add</button>
         </div>
       </div>

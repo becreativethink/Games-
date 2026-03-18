@@ -385,6 +385,7 @@ a{text-decoration:none;}
 .usage-mini{font-size:10px;color:var(--muted);font-family:var(--ff-mono);}
 .plan-badge{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:0.06em;}
 .pb-free{background:rgba(148,163,184,0.12);color:var(--pfree);}
+.pb-free_trial{background:linear-gradient(135deg,rgba(0,229,200,0.18),rgba(74,158,255,0.14));color:var(--cyan);border:1px solid rgba(0,229,200,0.3);}
 .pb-basic{background:rgba(96,165,250,0.12);color:var(--pbasic);}
 .pb-standard{background:rgba(192,132,252,0.12);color:var(--pstd);}
 .pb-premium{background:rgba(251,191,36,0.12);color:var(--pprem);}

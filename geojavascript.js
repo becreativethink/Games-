@@ -112,18 +112,20 @@ const PROVIDER_LABELS = {
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
 const PLANS = {
-  free:     { name:'Free',     price:'₹0',       genLimit:999, chatLimit:999, comparisonLimit:0,  emoji:'○',  color:'--pfree'  },
-  basic:    { name:'Basic',    price:'₹199/mo',  genLimit:15,  chatLimit:20,  comparisonLimit:7,  emoji:'★',  color:'--pbasic' },
-  standard: { name:'Standard', price:'₹249/mo',  genLimit:20,  chatLimit:30,  comparisonLimit:12, emoji:'✦',  color:'--pstd'   },
-  premium:  { name:'Premium',  price:'₹399/mo',  genLimit:30,  chatLimit:40,  comparisonLimit:17, emoji:'♛',  color:'--pprem'  },
-  custom:   { name:'Custom',   price:'₹10/use',  genLimit:1,   chatLimit:2,   comparisonLimit:1,  emoji:'⚡', color:'--pcustom' }
+  free:       { name:'Free',        price:'₹0',        genLimit:999, chatLimit:999, comparisonLimit:999, duration:'Lifetime',  activationDays:0, emoji:'○',  color:'--pfree'   },
+  free_trial: { name:'Free Trial',  price:'Free',      genLimit:3,   chatLimit:4,   comparisonLimit:1,   duration:'7 Days',    activationDays:0, emoji:'🚀', color:'--pcustom' },
+  basic:      { name:'Basic',       price:'₹199/mo',   genLimit:15,  chatLimit:20,  comparisonLimit:5,   duration:'Monthly',   activationDays:3, emoji:'★',  color:'--pbasic'  },
+  standard:   { name:'Standard',    price:'₹249/mo',   genLimit:20,  chatLimit:30,  comparisonLimit:10,  duration:'Monthly',   activationDays:4, emoji:'✦',  color:'--pstd'    },
+  premium:    { name:'Premium',     price:'₹399/mo',   genLimit:30,  chatLimit:40,  comparisonLimit:15,  duration:'Monthly',   activationDays:7, emoji:'♛',  color:'--pprem'   },
+  custom:     { name:'Custom',      price:'₹15/use',   genLimit:1,   chatLimit:2,   comparisonLimit:1,   duration:'Per Use',   activationDays:5, emoji:'⚡', color:'--pcustom' }
 };
 const PLAN_FEATURES = {
-  free:     ['Own API key required','Unlimited reports (your quota)','25+ AI model options','Map history','Download TXT/JSON/PDF/DOCX'],
-  basic:    ['15 AI reports / month','20 chat messages / month','No API key needed','All learning modes','History & download'],
-  standard: ['20 AI reports / month','30 chat messages / month','No API key needed','Priority AI responses','Full history & download'],
-  premium:  ['30 AI reports / month','40 chat messages / month','No API key needed','Dual API — max reliability','Priority support','All features'],
-  custom:   ['₹6 per use','1 report + 1 chat per purchase','No monthly commitment','Pay as you go','All learning modes']
+  free:       ['Own API key required','Unlimited reports (your quota)','Unlimited chat & comparisons','25+ AI model options','Map history & sharing'],
+  free_trial: ['No API key needed','3 AI reports','4 chat messages','1 comparison','System-assigned API','Valid for 7 days'],
+  basic:      ['15 AI reports / month','20 chat messages / month','5 comparisons / month','No API key needed','All learning modes','History & sharing'],
+  standard:   ['20 AI reports / month','30 chat messages / month','10 comparisons / month','No API key needed','Priority AI responses','Full history'],
+  premium:    ['30 AI reports / month','40 chat messages / month','15 comparisons / month','No API key needed','Dual API — max reliability','Priority support'],
+  custom:     ['₹15 per use','1 report + 2 chats + 1 comparison','No monthly commitment','Pay as you go','Admin-assigned API']
 };
 
 /* ── STATE ───────────────────────────────────────────── */
@@ -165,12 +167,20 @@ auth.onAuthStateChanged(async user => {
   await checkAdminStatus();
   // Check if admin changed the plan remotely since last session
   await checkPlanChangedRemotely();
+  // Check trial expiry
+  if (isTrialExpired() && userProfile.plan === 'free_trial') {
+    userProfile.plan = 'free';
+    await db.ref('users/' + currentUser.uid + '/plan').set('free');
+    toast('⏱ Your 7-day free trial has ended. Add an API key or purchase a plan.', 'warn');
+  }
   buildModelSelector();
   initMap();
   updateNavUI();
   updateUsageWidget();
   setupOfflineMode();
   checkSharedReportLink();
+  // Show free trial popup for new free users
+  checkAndShowTrialPopup();
   // Poll for remote plan changes every 60 seconds (e.g., admin activates a plan)
   setInterval(checkPlanChangedRemotely, 60000);
 });
@@ -352,14 +362,251 @@ async function activatePlan(newPlan) {
   const now = new Date().toISOString();
   userProfile.plan            = newPlan;
   userProfile.planStartDate   = now;
-  userProfile.planUsed        = 0;   // RESET — old reports must NOT count
-  userProfile.planChatUsed    = 0;   // RESET
-  userProfile.comparisonUsed  = 0;   // RESET — old comparisons don't count
+  userProfile.planUsed        = 0;
+  userProfile.planChatUsed    = 0;
+  userProfile.comparisonUsed  = 0;
   console.log('[GeoMind] Plan activated:', newPlan, 'Start:', now);
   await saveUserProfile();
   updateNavUI();
   updateUsageWidget();
 }
+
+/* ══════════════════════════════════════════════════════
+   FREE TRIAL SYSTEM
+   Firebase: freeTrialAPI/{apiId} → {apiKey, usageCount, maxUsage:5, status}
+   ══════════════════════════════════════════════════════ */
+
+/* Step 1: Show trial popup on first login (if not already used/active) */
+function checkAndShowTrialPopup() {
+  if (!currentUser) return;
+  const plan = userProfile.plan || 'free';
+  // Show only if on free plan and never used trial
+  if (plan !== 'free') return;
+  if (userProfile.trialUsed || userProfile.trialStartDate) return;
+  // Show after short delay so app loads first
+  setTimeout(() => showTrialPopup(), 1500);
+}
+
+function showTrialPopup() {
+  let modal = document.getElementById('trialPopupModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'trialPopupModal';
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);
+      z-index:99990;display:flex;align-items:center;justify-content:center;padding:20px;`;
+    modal.innerHTML = `
+      <div style="background:linear-gradient(160deg,#111929 0%,#0a0f1c 100%);
+        border:1px solid rgba(0,229,200,0.25);border-radius:20px;padding:32px 28px;
+        max-width:380px;width:100%;box-shadow:0 0 60px rgba(0,229,200,0.15),0 32px 80px rgba(0,0,0,0.7);
+        animation:authIn 0.4s cubic-bezier(0.22,1,0.36,1);">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:48px;margin-bottom:10px;">🚀</div>
+          <div style="font-size:20px;font-weight:800;color:#e8edf8;margin-bottom:6px;">Try Free Trial for 7 Days!</div>
+          <div style="display:inline-block;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.1));
+            border:1px solid rgba(0,229,200,0.3);border-radius:20px;padding:4px 14px;
+            font-size:11px;font-weight:800;color:#00e5c8;margin-bottom:12px;">⭐ BEST TO START</div>
+          <div style="font-size:13px;color:#b8c4d8;line-height:1.6;">
+            Get instant AI access — no API key needed!<br>
+            <strong style="color:#e8edf8">3 reports · 4 chats · 1 comparison</strong>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
+          border-radius:12px;padding:14px;margin-bottom:20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+            <div>
+              <div style="font-size:20px;font-weight:800;color:#00e5c8;font-family:monospace">3</div>
+              <div style="font-size:10px;color:#5a6a88">Reports</div>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:#4a9eff;font-family:monospace">4</div>
+              <div style="font-size:10px;color:#5a6a88">Chats</div>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:800;color:#9d7aff;font-family:monospace">1</div>
+              <div style="font-size:10px;color:#5a6a88">Comparison</div>
+            </div>
+          </div>
+        </div>
+        <button onclick="activateFreeTrial()" id="trialActivateBtn"
+          style="width:100%;padding:14px;background:linear-gradient(135deg,#00e5c8,#4a9eff);
+          border:none;border-radius:12px;font-weight:800;font-size:15px;color:#04060e;
+          cursor:pointer;transition:all 0.2s;margin-bottom:10px;letter-spacing:0.02em;">
+          🚀 Activate Free Trial
+        </button>
+        <button onclick="closeTrialPopup()"
+          style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);
+          border-radius:10px;font-size:12px;color:#5a6a88;cursor:pointer;">
+          No thanks, I'll add my own API key
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+}
+
+function closeTrialPopup() {
+  const m = document.getElementById('trialPopupModal');
+  if (m) m.style.display = 'none';
+}
+
+/* Step 2: Assign a free trial API key and activate the trial plan */
+async function activateFreeTrial() {
+  const btn = document.getElementById('trialActivateBtn');
+  if (btn) { btn.textContent = '⏳ Activating…'; btn.disabled = true; }
+
+  try {
+    // Find an available free trial API key
+    const apiKey = await assignFreeTrialAPI();
+    if (!apiKey) {
+      toast('⚠ No trial slots available right now. Please add your own API key or purchase a plan.', 'err');
+      if (btn) { btn.textContent = '🚀 Activate Free Trial'; btn.disabled = false; }
+      return;
+    }
+
+    const now     = new Date();
+    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    userProfile.plan            = 'free_trial';
+    userProfile.planStartDate   = now.toISOString();
+    userProfile.planUsed        = 0;
+    userProfile.planChatUsed    = 0;
+    userProfile.comparisonUsed  = 0;
+    userProfile.trialStartDate  = now.toISOString();
+    userProfile.trialEndDate    = endDate.toISOString();
+    userProfile.trialUsed       = true;
+    userProfile.assignedTrialAPI = apiKey;
+
+    await db.ref('users/' + currentUser.uid).update({
+      plan:             'free_trial',
+      planStartDate:    now.toISOString(),
+      planUsed:         0,
+      planChatUsed:     0,
+      comparisonUsed:   0,
+      trialStartDate:   now.toISOString(),
+      trialEndDate:     endDate.toISOString(),
+      trialUsed:        true,
+      assignedTrialAPI: apiKey
+    });
+
+    closeTrialPopup();
+    updateNavUI();
+    updateUsageWidget();
+    toast('🚀 Free Trial activated! 7 days of AI access — enjoy GeoMind!', 'ok');
+    console.log('[FreeTrial] Activated. API assigned. Ends:', endDate.toISOString());
+
+  } catch(e) {
+    console.error('[activateFreeTrial]', e);
+    toast('Failed to activate trial: ' + e.message, 'err');
+    if (btn) { btn.textContent = '🚀 Activate Free Trial'; btn.disabled = false; }
+  }
+}
+
+/* Step 3: Find and reserve a free trial API key from freeTrialAPI collection */
+async function assignFreeTrialAPI() {
+  try {
+    const snap = await db.ref('freeTrialAPI').orderByChild('status').equalTo('active').once('value');
+    if (!snap.exists()) return null;
+
+    const entries = Object.entries(snap.val());
+    // Find one where usageCount < maxUsage
+    for (const [id, entry] of entries) {
+      const used = entry.usageCount || 0;
+      const max  = entry.maxUsage  || 5;
+      if (entry.status === 'active' && used < max) {
+        // Increment usage count
+        await db.ref('freeTrialAPI/' + id + '/usageCount').transaction(count => (count || 0) + 1);
+        console.log('[FreeTrial] Assigned API from slot:', id, 'usage:', used + 1, '/', max);
+        return entry.apiKey;
+      }
+    }
+    return null; // all slots full
+  } catch(e) {
+    console.warn('[assignFreeTrialAPI]', e.message);
+    return null;
+  }
+}
+
+/* Step 4: Check if free trial has expired */
+function isTrialExpired() {
+  if (userProfile.plan !== 'free_trial') return false;
+  if (!userProfile.trialEndDate) return true;
+  return new Date() > new Date(userProfile.trialEndDate);
+}
+
+/* Show blocking expiry popup */
+function showTrialExpiredPopup() {
+  let modal = document.getElementById('trialExpiredModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'trialExpiredModal';
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);
+      z-index:99991;display:flex;align-items:center;justify-content:center;padding:20px;`;
+    modal.innerHTML = `
+      <div style="background:linear-gradient(160deg,#111929 0%,#0a0f1c 100%);
+        border:1px solid rgba(255,107,122,0.3);border-radius:20px;padding:32px 28px;
+        max-width:360px;width:100%;box-shadow:0 0 60px rgba(255,107,122,0.15),0 32px 80px rgba(0,0,0,0.7);
+        animation:authIn 0.4s cubic-bezier(0.22,1,0.36,1);text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⏱</div>
+        <div style="font-size:20px;font-weight:800;color:#e8edf8;margin-bottom:8px;">Free Trial Expired</div>
+        <div style="font-size:13px;color:#b8c4d8;line-height:1.6;margin-bottom:20px;">
+          Your 7-day free trial has ended.<br>
+          Upgrade to continue using GeoMind AI.
+        </div>
+        <button onclick="goPage('plans');document.getElementById('trialExpiredModal').style.display='none';"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#4a9eff,#9d7aff);
+          border:none;border-radius:12px;font-weight:800;font-size:14px;color:#fff;
+          cursor:pointer;margin-bottom:10px;">
+          ⭐ View Plans & Upgrade
+        </button>
+        <button onclick="goPage('settings');document.getElementById('trialExpiredModal').style.display='none';"
+          style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);
+          border-radius:10px;font-size:12px;color:#5a6a88;cursor:pointer;">
+          Add my own API key (Free Plan)
+        </button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+}
+
+/* Step 5: Get trial API key for paid/trial users */
+function getTrialAPIKey() {
+  return userProfile.assignedTrialAPI || null;
+}
+
+/* Step 6: Report API failure — mark key inactive and create admin alert */
+async function reportAPIFailure(apiKey, errorMsg) {
+  if (!apiKey) return;
+  try {
+    // Find the freeTrialAPI entry with this key and mark inactive
+    const snap = await db.ref('freeTrialAPI').orderByChild('apiKey').equalTo(apiKey).once('value');
+    if (snap.exists()) {
+      const id = Object.keys(snap.val())[0];
+      await db.ref('freeTrialAPI/' + id + '/status').set('inactive');
+      console.warn('[FreeTrial] API key marked inactive:', id);
+    }
+    // Create admin alert
+    await db.ref('adminAlerts').push({
+      message:   'Free Trial API failed — Replace API Key',
+      apiKey:    apiKey.substring(0, 12) + '…',
+      errorMsg:  errorMsg || 'Unknown error',
+      timestamp: new Date().toISOString(),
+      read:      false
+    });
+    console.warn('[FreeTrial] Admin alert created for failed API');
+  } catch(e) {
+    console.warn('[reportAPIFailure]', e.message);
+  }
+}
+
+/* Step 7: Get remaining trial days for display */
+function getTrialDaysRemaining() {
+  if (userProfile.plan !== 'free_trial' || !userProfile.trialEndDate) return 0;
+  const ms = new Date(userProfile.trialEndDate) - new Date();
+  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+
 
 /* ── MONTHLY REPORT COUNT (computed dynamically, never stored) ── */
 function monthStr() { return new Date().toISOString().substring(0,7); }
@@ -398,17 +645,20 @@ async function computePlanUsedFromHistory() {
 
 function canGenerate() {
   const plan = userProfile.plan || 'free';
+  // Block expired trials immediately with popup
+  if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
   // Free plan: unlimited IF user has their own API key
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  // Paid plans: check planUsed vs planLimit (plan-cycle count only)
+  // All other plans: check planUsed vs limit
   const limit = getPlanGenLimit();
   const used  = userProfile.planUsed || 0;
-  console.log(`[canGenerate] plan=${plan} planUsed=${used} limit=${limit} planStart=${userProfile.planStartDate}`);
+  console.log(`[canGenerate] plan=${plan} planUsed=${used} limit=${limit}`);
   return used < limit;
 }
 
 function canChat() {
   const plan = userProfile.plan || 'free';
+  if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
   const limit = getPlanChatLimit();
   const used  = userProfile.planChatUsed || 0;
@@ -417,7 +667,7 @@ function canChat() {
 
 function canCompare() {
   const plan = userProfile.plan || 'free';
-  // Free plan: can compare only if they have their own API key
+  if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
   if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
   const limit = getPlanComparisonLimit();
   const used  = userProfile.comparisonUsed || 0;
@@ -547,26 +797,41 @@ function updateSettingsUI() {
 /* ── API KEY RESOLUTION ──────────────────────────────── */
 function getReportAPIKey() {
   const plan = userProfile.plan || 'free';
-  if (plan !== 'free' && adminAPIConfig?.reportAPIKey) return adminAPIConfig.reportAPIKey;
+  // Free trial: use system-assigned trial API key
+  if (plan === 'free_trial') {
+    const trialKey = getTrialAPIKey();
+    if (trialKey) return trialKey;
+  }
+  // Paid plans: admin-assigned key takes priority
+  if (plan !== 'free' && plan !== 'free_trial' && adminAPIConfig?.reportAPIKey) return adminAPIConfig.reportAPIKey;
+  // Fallback: user's own API key
   if (userSettings.apiKey) return userSettings.apiKey;
   return null;
 }
 function getChatAPIKey() {
   const plan = userProfile.plan || 'free';
-  if (plan !== 'free' && adminAPIConfig?.chatAPIKey) return adminAPIConfig.chatAPIKey;
+  if (plan === 'free_trial') {
+    const trialKey = getTrialAPIKey();
+    if (trialKey) return trialKey;
+  }
+  if (plan !== 'free' && plan !== 'free_trial' && adminAPIConfig?.chatAPIKey) return adminAPIConfig.chatAPIKey;
   if (userSettings.apiKey) return userSettings.apiKey;
   return null;
 }
 function getSelectedModel(forChat=false) {
   const plan = userProfile.plan || 'free';
+  if (plan === 'free_trial') {
+    // Trial users use Gemini Flash (fast, reliable, works with most keys)
+    return adminGlobalModel || 'gemini-1.5-flash';
+  }
   if (plan !== 'free') {
-    // 1. Per-user admin-assigned model (highest priority)
+    // 1. Per-user admin-assigned model
     if (forChat  && adminAPIConfig?.chatModel)   return adminAPIConfig.chatModel;
     if (!forChat && adminAPIConfig?.reportModel) return adminAPIConfig.reportModel;
-    // 2. Admin global default model (e.g. Qwen set from admin panel)
+    // 2. Admin global default model
     if (adminGlobalModel) return adminGlobalModel;
   }
-  // 3. User's own chosen model from Settings
+  // 3. User's own chosen model
   return userSettings.model || 'gemini-1.5-flash';
 }
 
@@ -606,7 +871,13 @@ async function callAI(prompt, apiKey, modelId) {
         (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('net::ERR_'))) {
       throw new Error('Network error: Could not reach the AI server. Check your internet connection or try a different provider in Settings.');
     }
-    // All other errors (API key, quota, model errors) pass through unchanged
+    // If trial API key failed → report it and alert admin
+    if (userProfile.plan === 'free_trial' && userProfile.assignedTrialAPI) {
+      const errStr = e.message || '';
+      if (errStr.includes('401') || errStr.includes('403') || errStr.includes('invalid')) {
+        reportAPIFailure(userProfile.assignedTrialAPI, errStr).catch(() => {});
+      }
+    }
     throw e;
   }
 }
@@ -3138,20 +3409,28 @@ async function saveProfile() {
 /* ── NAV + USAGE ─────────────────────────────────────── */
 function updateNavUI() {
   const plan     = userProfile.plan || 'free';
-  const P        = PLANS[plan];
+  const P        = PLANS[plan] || PLANS.free;
   const planUsed = userProfile.planUsed || 0;
   const chatUsed = userProfile.planChatUsed || 0;
   const name     = currentUser?.displayName || currentUser?.email?.split('@')[0] || '?';
   document.getElementById('userNm').textContent = name;
   document.getElementById('userAv').textContent = name.charAt(0).toUpperCase();
   const badge = document.getElementById('planBadge');
-  badge.textContent = plan.toUpperCase();
+  // Use friendly badge label
+  const badgeLabel = plan === 'free_trial' ? 'TRIAL' : plan.toUpperCase();
+  badge.textContent = badgeLabel;
   badge.className   = `plan-badge pb-${plan}`;
+  const usageMini = document.getElementById('usageMini');
   if (plan === 'free') {
-    document.getElementById('usageMini').textContent = 'Free Plan · Own API Key';
+    usageMini.textContent = 'Free Plan · Own API Key';
+  } else if (plan === 'free_trial') {
+    const days = getTrialDaysRemaining();
+    usageMini.textContent = `Trial: ${planUsed}/${P.genLimit} rpts · ${chatUsed}/${P.chatLimit} chats · ${days}d left`;
+    // Turn red when ≤1 day left
+    usageMini.style.color = days <= 1 ? 'var(--red)' : '';
   } else {
-    document.getElementById('usageMini').textContent =
-      `Reports: ${planUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
+    usageMini.textContent = `Reports: ${planUsed}/${P.genLimit}  Chat: ${chatUsed}/${P.chatLimit}`;
+    usageMini.style.color = '';
   }
 }
 function updateUsageWidget() {
@@ -3174,7 +3453,40 @@ function updateUsageWidget() {
           <div style="font-size:22px;font-weight:800;color:var(--cyan);font-family:var(--ff-mono)">${total}</div>
         </div>
         ${!hasKey?`<button onclick="goPage('settings')" style="margin-top:10px;background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;">⚙ Settings</button>`:''}
+        <button onclick="showTrialPopup()" style="margin-top:8px;width:100%;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.1));border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;">🚀 Try Free Trial</button>
       </div>`;
+  } else if (plan === 'free_trial') {
+    // ── Free Trial specific widget with countdown ──
+    const days    = getTrialDaysRemaining();
+    const rUsed   = userProfile.planUsed        || 0;
+    const cUsed   = userProfile.planChatUsed    || 0;
+    const cpUsed  = userProfile.comparisonUsed  || 0;
+    const rLimit  = PLANS.free_trial.genLimit;
+    const cLimit  = PLANS.free_trial.chatLimit;
+    const cpLimit = PLANS.free_trial.comparisonLimit;
+    const rPct    = Math.min(100, (rUsed  / rLimit)  * 100);
+    const cPct    = Math.min(100, (cUsed  / cLimit)  * 100);
+    const cpPct   = Math.min(100, (cpUsed / cpLimit) * 100);
+    const urgency = days <= 1 ? 'var(--red)' : days <= 3 ? 'var(--amber)' : 'var(--green)';
+    el.innerHTML = `
+      <!-- Countdown banner -->
+      <div style="background:linear-gradient(135deg,rgba(0,229,200,0.1),rgba(74,158,255,0.08));border:1px solid rgba(0,229,200,0.25);border-radius:10px;padding:10px 12px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">🚀 Free Trial</div>
+        <div style="font-size:22px;font-weight:800;color:${urgency};font-family:var(--ff-mono)">${days}</div>
+        <div style="font-size:10px;color:var(--muted)">day${days !== 1 ? 's' : ''} remaining</div>
+        ${days <= 2 ? `<div style="font-size:10px;color:var(--red);margin-top:4px;font-weight:700;">⚠ Trial ending soon!</div>` : ''}
+      </div>
+      <!-- Reports bar -->
+      <div class="uw-row"><span class="uw-label">📊 Reports</span><span class="uw-val" style="${rPct>=90?'color:var(--red)':''}">${rUsed} / ${rLimit}</span></div>
+      <div class="uw-bar"><div class="uw-bar-fill ${rPct>=100?'danger':''}" style="width:${rPct}%"></div></div>
+      <!-- Chat bar -->
+      <div class="uw-row" style="margin-top:8px"><span class="uw-label">💬 Chats</span><span class="uw-val" style="${cPct>=90?'color:var(--red)':''}">${cUsed} / ${cLimit}</span></div>
+      <div class="uw-bar"><div class="uw-bar-fill ${cPct>=100?'danger':''}" style="width:${cPct}%"></div></div>
+      <!-- Comparison bar -->
+      <div class="uw-row" style="margin-top:8px"><span class="uw-label">⚖ Comparisons</span><span class="uw-val" style="${cpPct>=90?'color:var(--red)':''}">${cpUsed} / ${cpLimit}</span></div>
+      <div class="uw-bar"><div class="uw-bar-fill ${cpPct>=100?'danger':''}" style="width:${cpPct}%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div></div>
+      <!-- Upgrade prompt -->
+      <button onclick="goPage('plans')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,rgba(74,158,255,0.15),rgba(157,122,255,0.1));border:1px solid rgba(74,158,255,0.3);color:var(--blue);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Upgrade to Paid Plan</button>`;
   } else {
     const genLimit  = getPlanGenLimit();
     const chatLimit = getPlanChatLimit();

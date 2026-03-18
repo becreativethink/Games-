@@ -602,8 +602,10 @@ a{text-decoration:none;}
 .pf.highlight .pf-check{color:var(--amber);}
 .pf.highlight{color:var(--text);}
 .plan-btn{width:100%;padding:10px;border-radius:9px;font-size:12px;font-weight:700;transition:all 0.2s;border:1px solid;}
+.plan-card.trial-plan{border-color:rgba(0,229,200,0.4);box-shadow:0 0 28px rgba(0,229,200,0.1);}
+.pb-free_trial-btn{background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.12));border-color:rgba(0,229,200,0.4);color:var(--cyan);}
+.pb-free_trial-btn:hover{background:linear-gradient(135deg,rgba(0,229,200,0.25),rgba(74,158,255,0.2));}
 .pb-free-btn{background:rgba(148,163,184,0.08);border-color:rgba(148,163,184,0.2);color:var(--pfree);}
-.pb-free-btn:hover{background:rgba(148,163,184,0.15);}
 .pb-basic-btn{background:rgba(96,165,250,0.1);border-color:rgba(96,165,250,0.25);color:var(--pbasic);}
 .pb-basic-btn:hover{background:rgba(96,165,250,0.18);}
 .pb-std-btn{background:rgba(192,132,252,0.1);border-color:rgba(192,132,252,0.25);color:var(--pstd);}

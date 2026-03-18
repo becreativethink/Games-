@@ -281,6 +281,9 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="sb-item" id="sb-apikeys" onclick="showPanel('apikeys',this)">
         <span class="si">🔑</span><span>API Keys</span>
       </div>
+      <div class="sb-item" id="sb-freetrial" onclick="showPanel('freetrial',this)">
+        <span class="si">🚀</span><span>Free Trial</span>
+      </div>
       <div class="sb-item" id="sb-plans" onclick="showPanel('plans',this)">
         <span class="si">⭐</span><span>Plans</span>
       </div>
@@ -367,7 +370,79 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <!-- PLANS PANEL -->
+    <!-- ══ FREE TRIAL PANEL ══ -->
+    <div class="panel" id="panel-freetrial">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">🚀 Free Trial API Keys</div>
+          <div class="sec-sub">Add API keys that are auto-assigned to trial users (max 5 users per key)</div>
+        </div>
+        <button class="action-btn ab-edit" onclick="loadFreeTrialKeys()">↺ Refresh</button>
+      </div>
+
+      <!-- Alerts banner -->
+      <div id="trialAlertsBox" style="display:none;background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:10px;">⚠ API Key Failure Alerts</div>
+        <div id="trialAlertsList"></div>
+        <button onclick="clearTrialAlerts()" style="margin-top:10px;padding:5px 14px;background:rgba(255,107,122,0.1);border:1px solid rgba(255,107,122,0.2);color:var(--red);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">✓ Clear Alerts</button>
+      </div>
+
+      <!-- Add new key form -->
+      <div style="background:var(--card);border:1px solid rgba(0,229,200,0.2);border-radius:14px;padding:18px;margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:14px;">➕ Add New API Key</div>
+        <div style="display:grid;grid-template-columns:1fr 120px 100px auto;gap:10px;align-items:end;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">API Key</label>
+            <input type="password" class="mf-input" id="newTrialKey" placeholder="Paste API key (Gemini / OpenAI / HuggingFace…)" style="width:100%"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">Provider</label>
+            <select class="mf-select" id="newTrialProvider" style="width:100%">
+              <option value="gemini">Gemini</option>
+              <option value="openai">OpenAI</option>
+              <option value="huggingface">HuggingFace</option>
+              <option value="mistral">Mistral</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">Max Users</label>
+            <input type="number" class="mf-input" id="newTrialMaxUsage" value="5" min="1" max="50" style="width:100%"/>
+          </div>
+          <button class="action-btn ab-key" style="padding:10px 18px;font-size:12px;" onclick="addFreeTrialKey()">+ Add</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">Keys are stored at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">freeTrialAPI/{id}</code>. Users never see these keys — system assigns them automatically.</div>
+      </div>
+
+      <!-- Keys table -->
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Key Preview</th>
+              <th>Provider</th>
+              <th>Usage</th>
+              <th>Max</th>
+              <th>Status</th>
+              <th>Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="trialKeysTbl">
+            <tr class="loading-row"><td colspan="7">Loading free trial keys…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" style="margin-top:16px">
+        <div class="stat-card"><div class="sc-label">Total Trial Keys</div><div class="sc-value sc-v-cyan" id="trialStatTotal">—</div></div>
+        <div class="stat-card"><div class="sc-label">Active Keys</div><div class="sc-value sc-v-green" id="trialStatActive">—</div></div>
+        <div class="stat-card"><div class="sc-label">Inactive / Failed</div><div class="sc-value sc-v-amber" id="trialStatInactive">—</div></div>
+        <div class="stat-card"><div class="sc-label">Total Trial Users</div><div class="sc-value sc-v-purple" id="trialStatUsers">—</div></div>
+      </div>
+    </div>
+
+
     <div class="panel" id="panel-plans">
       <div class="sec-head">
         <div><div class="sec-title">⭐ Plan Control</div><div class="sec-sub">Manually activate or change user plans</div></div>
@@ -663,10 +738,11 @@ function showPanel(name, el) {
   document.getElementById('panel-'+name).classList.add('active');
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (name==='users')    loadUsers();
-  if (name==='apikeys')  loadAPIKeys();
-  if (name==='plans')    loadPlansTable();
-  if (name==='settings') loadAdminModel();
+  if (name==='users')     loadUsers();
+  if (name==='apikeys')   loadAPIKeys();
+  if (name==='plans')     loadPlansTable();
+  if (name==='freetrial') loadFreeTrialKeys();
+  if (name==='settings')  loadAdminModel();
 }
 
 /* ── DASHBOARD LOAD ───────────────────────────────────── */
@@ -1145,6 +1221,185 @@ async function saveAdminModel() {
   } catch(e) {
     if (e.message.includes('auth')) return;
     toast('❌ Failed to save model: ' + e.message, 'err');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   FREE TRIAL API KEY MANAGEMENT
+   Firebase: freeTrialAPI/{id} → {apiKey, provider, usageCount, maxUsage, status, addedAt}
+   Firebase: adminAlerts/{id}  → {message, apiKey, errorMsg, timestamp, read}
+   ══════════════════════════════════════════════════════ */
+
+async function loadFreeTrialKeys() {
+  document.getElementById('trialKeysTbl').innerHTML =
+    '<tr class="loading-row"><td colspan="7">Loading…</td></tr>';
+
+  // Check for unread alerts first
+  await loadTrialAlerts();
+
+  try {
+    const snap = await db.ref('freeTrialAPI').once('value');
+    if (!snap.exists() || !snap.val()) {
+      document.getElementById('trialKeysTbl').innerHTML =
+        '<tr class="loading-row"><td colspan="7">No free trial API keys yet. Add one above.</td></tr>';
+      setTrialStats(0, 0, 0, 0);
+      return;
+    }
+
+    const entries = Object.entries(snap.val());
+    let total = entries.length, active = 0, inactive = 0, totalUsers = 0;
+
+    document.getElementById('trialKeysTbl').innerHTML = entries.map(([id, k]) => {
+      const isActive = k.status === 'active';
+      const used     = k.usageCount || 0;
+      const max      = k.maxUsage   || 5;
+      const pct      = Math.round((used / max) * 100);
+      const keyPrev  = (k.apiKey || '').substring(0, 8) + '…' + (k.apiKey || '').slice(-4);
+      const added    = k.addedAt ? new Date(k.addedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      if (isActive) active++; else inactive++;
+      totalUsers += used;
+      return `<tr>
+        <td>
+          <div style="font-family:var(--mono);font-size:11px;color:${isActive?'var(--green)':'var(--red)'}">${keyPrev}</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px">ID: ${id.substring(0,10)}…</div>
+        </td>
+        <td><span style="font-size:11px;color:var(--text2)">${k.provider || 'gemini'}</span></td>
+        <td>
+          <div style="font-size:12px;font-weight:700;color:${pct>=80?'var(--red)':pct>=60?'var(--amber)':'var(--green)'}">${used} / ${max}</div>
+          <div style="height:3px;background:var(--lift);border-radius:2px;margin-top:3px;width:60px;">
+            <div style="height:100%;border-radius:2px;background:${pct>=80?'var(--red)':pct>=60?'var(--amber)':'var(--green)'};width:${Math.min(100,pct)}%"></div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${max}</td>
+        <td>
+          <span style="padding:3px 9px;border-radius:12px;font-size:10px;font-weight:800;
+            background:${isActive?'rgba(52,211,153,0.12)':'rgba(255,107,122,0.12)'};
+            color:${isActive?'var(--green)':'var(--red)'}">
+            ${isActive ? '● ACTIVE' : '✕ INACTIVE'}
+          </span>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${added}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="action-btn ${isActive?'ab-del':'ab-edit'}"
+              onclick="toggleTrialKeyStatus('${id}','${isActive?'inactive':'active'}')"
+              style="font-size:10px;padding:4px 10px">
+              ${isActive ? '⏸ Disable' : '▶ Enable'}
+            </button>
+            <button class="action-btn ab-del" onclick="deleteTrialKey('${id}')"
+              style="font-size:10px;padding:4px 10px">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    setTrialStats(total, active, inactive, totalUsers);
+  } catch(e) {
+    document.getElementById('trialKeysTbl').innerHTML =
+      `<tr class="loading-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function setTrialStats(total, active, inactive, users) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  s('trialStatTotal', total);
+  s('trialStatActive', active);
+  s('trialStatInactive', inactive);
+  s('trialStatUsers', users);
+}
+
+async function addFreeTrialKey() {
+  const keyVal  = document.getElementById('newTrialKey').value.trim();
+  const prov    = document.getElementById('newTrialProvider').value;
+  const maxUse  = parseInt(document.getElementById('newTrialMaxUsage').value) || 5;
+  if (!keyVal) { toast('Please paste an API key', 'err'); return; }
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI').push({
+      apiKey:     keyVal,
+      provider:   prov,
+      usageCount: 0,
+      maxUsage:   maxUse,
+      status:     'active',
+      addedAt:    new Date().toISOString()
+    });
+    document.getElementById('newTrialKey').value = '';
+    toast(`✓ Trial key added (${prov}, max ${maxUse} users)`, 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function toggleTrialKeyStatus(id, newStatus) {
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI/' + id + '/status').set(newStatus);
+    toast(`✓ Key ${newStatus === 'active' ? 'enabled' : 'disabled'}`, 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function deleteTrialKey(id) {
+  if (!confirm('Delete this trial API key? Users currently assigned to it will lose access.')) return;
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI/' + id).remove();
+    toast('✓ Key deleted', 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── Admin Alerts (failed keys) ── */
+async function loadTrialAlerts() {
+  try {
+    const snap = await db.ref('adminAlerts').orderByChild('read').equalTo(false).once('value');
+    const box  = document.getElementById('trialAlertsBox');
+    const list = document.getElementById('trialAlertsList');
+    if (!snap.exists() || !snap.val()) {
+      if (box) box.style.display = 'none';
+      return;
+    }
+    const alerts = Object.entries(snap.val()).sort((a, b) =>
+      (b[1].timestamp || '').localeCompare(a[1].timestamp || '')
+    );
+    if (box) box.style.display = 'block';
+    if (list) {
+      list.innerHTML = alerts.map(([id, a]) => {
+        const d  = new Date(a.timestamp);
+        const ds = isNaN(d) ? a.timestamp : d.toLocaleString('en-IN');
+        return `<div style="padding:8px 10px;background:rgba(255,107,122,0.06);border-radius:8px;margin-bottom:6px;font-size:12px;">
+          <div style="color:var(--red);font-weight:700">${a.message}</div>
+          <div style="color:var(--muted);font-size:10px;margin-top:2px">Key: <code style="color:var(--amber)">${a.apiKey || '—'}</code> · ${ds}</div>
+          ${a.errorMsg ? `<div style="color:var(--dim);font-size:10px;margin-top:1px">${a.errorMsg}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { console.warn('[loadTrialAlerts]', e.message); }
+}
+
+async function clearTrialAlerts() {
+  try {
+    requireAuth();
+    // Mark all as read
+    const snap = await db.ref('adminAlerts').once('value');
+    if (!snap.exists()) return;
+    const updates = {};
+    Object.keys(snap.val()).forEach(id => { updates[id + '/read'] = true; });
+    await db.ref('adminAlerts').update(updates);
+    toast('✓ Alerts cleared', 'ok');
+    const box = document.getElementById('trialAlertsBox');
+    if (box) box.style.display = 'none';
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
   }
 }
 

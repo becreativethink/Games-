@@ -112,20 +112,20 @@ const PROVIDER_LABELS = {
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
 const PLANS = {
-  free:       { name:'Free',        price:'₹0',        genLimit:999, chatLimit:999, comparisonLimit:999, duration:'Lifetime',  activationDays:0, emoji:'○',  color:'--pfree'   },
-  free_trial: { name:'Free Trial',  price:'Free',      genLimit:3,   chatLimit:4,   comparisonLimit:1,   duration:'7 Days',    activationDays:0, emoji:'🚀', color:'--pcustom' },
-  basic:      { name:'Basic',       price:'₹199/mo',   genLimit:15,  chatLimit:20,  comparisonLimit:5,   duration:'Monthly',   activationDays:3, emoji:'★',  color:'--pbasic'  },
-  standard:   { name:'Standard',    price:'₹249/mo',   genLimit:20,  chatLimit:30,  comparisonLimit:10,  duration:'Monthly',   activationDays:4, emoji:'✦',  color:'--pstd'    },
-  premium:    { name:'Premium',     price:'₹399/mo',   genLimit:30,  chatLimit:40,  comparisonLimit:15,  duration:'Monthly',   activationDays:7, emoji:'♛',  color:'--pprem'   },
-  custom:     { name:'Custom',      price:'₹15/use',   genLimit:1,   chatLimit:2,   comparisonLimit:1,   duration:'Per Use',   activationDays:5, emoji:'⚡', color:'--pcustom' }
+  free:       { name:'Free',          price:'₹0',        genLimit:999, chatLimit:999, comparisonLimit:999, duration:'Lifetime',  activationDays:0, emoji:'○',  color:'--pfree',       tagline:'Your own AI, your own rules'          },
+  free_trial: { name:'Free Trial',    price:'₹0 / 7 days',genLimit:5,  chatLimit:6,  comparisonLimit:2,   duration:'7 Days',    activationDays:0, emoji:'🚀', color:'--pfree_trial',  tagline:'Experience GeoMind — no card needed'  },
+  starter:    { name:'Starter',       price:'₹149/mo',   genLimit:12,  chatLimit:20,  comparisonLimit:5,   duration:'Monthly',   activationDays:3, emoji:'★',  color:'--pbasic',       tagline:'Perfect for regular exam prep'        },
+  standard:   { name:'Standard',      price:'₹249/mo',   genLimit:25,  chatLimit:40,  comparisonLimit:12,  duration:'Monthly',   activationDays:4, emoji:'✦',  color:'--pstd',         tagline:'The complete UPSC preparation toolkit'},
+  premium:    { name:'Premium',       price:'₹399/mo',   genLimit:50,  chatLimit:60,  comparisonLimit:20,  duration:'Monthly',   activationDays:7, emoji:'♛',  color:'--pprem',        tagline:'Unlimited power for serious toppers'  },
+  payperuse:  { name:'Pay Per Use',   price:'₹15/session',genLimit:2,  chatLimit:3,   comparisonLimit:1,   duration:'24 Hours',  activationDays:0, emoji:'⚡', color:'--pcustom',      tagline:'Use once, pay once — no commitment'   }
 };
 const PLAN_FEATURES = {
-  free:       ['Own API key required','Unlimited reports (your quota)','Unlimited chat & comparisons','25+ AI model options','Map history & sharing'],
-  free_trial: ['No API key needed','3 AI reports','4 chat messages','1 comparison','System-assigned API','Valid for 7 days'],
-  basic:      ['15 AI reports / month','20 chat messages / month','5 comparisons / month','No API key needed','All learning modes','History & sharing'],
-  standard:   ['20 AI reports / month','30 chat messages / month','10 comparisons / month','No API key needed','Priority AI responses','Full history'],
-  premium:    ['30 AI reports / month','40 chat messages / month','15 comparisons / month','No API key needed','Dual API — max reliability','Priority support'],
-  custom:     ['₹15 per use','1 report + 2 chats + 1 comparison','No monthly commitment','Pay as you go','Admin-assigned API']
+  free:       ['Own API key required','Unlimited reports (your quota)','Unlimited chat & comparisons','25+ AI models to choose from','Map history & sharing','Free forever'],
+  free_trial: ['No API key needed — instant start','5 reports · 6 chats · 2 comparisons','System-assigned AI (automatic)','Full feature access for 7 days','One-time offer — new users only','Auto-expires · no card needed'],
+  starter:    ['12 AI reports / month','20 chat messages / month','5 comparisons / month','No API key needed','All learning modes (Quiz, Timeline)','History & sharing · Email support'],
+  standard:   ['25 AI reports / month','40 chat messages / month','12 comparisons / month','No API key needed','Priority AI processing','All modes + comparison history','Chat support'],
+  premium:    ['50 AI reports / month','60 chat messages / month','20 comparisons / month','No API key needed','Dual admin keys — max reliability','Fastest AI · 24/7 priority support','Download reports (PDF / DOCX)','Dedicated model assignment'],
+  payperuse:  ['₹15 per session (24 hrs)','2 reports + 3 chats + 1 comparison','No monthly commitment','Instant activation','Admin-assigned API for session','Pay as you go — zero subscription']
 };
 
 /* ── STATE ───────────────────────────────────────────── */
@@ -388,62 +388,68 @@ function checkAndShowTrialPopup() {
 }
 
 function showTrialPopup() {
+  // If already used trial, don't show
+  if (userProfile.trialUsed || userProfile.trialStartDate) return;
   let modal = document.getElementById('trialPopupModal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'trialPopupModal';
-    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
       z-index:99990;display:flex;align-items:center;justify-content:center;padding:20px;`;
     modal.innerHTML = `
-      <div style="background:linear-gradient(160deg,#111929 0%,#0a0f1c 100%);
-        border:1px solid rgba(0,229,200,0.25);border-radius:20px;padding:32px 28px;
-        max-width:380px;width:100%;box-shadow:0 0 60px rgba(0,229,200,0.15),0 32px 80px rgba(0,0,0,0.7);
+      <div style="background:linear-gradient(160deg,#0d1828 0%,#080d17 100%);
+        border:1px solid rgba(0,229,200,0.3);border-radius:22px;padding:32px 26px;
+        max-width:390px;width:100%;box-shadow:0 0 80px rgba(0,229,200,0.12),0 32px 80px rgba(0,0,0,0.8);
         animation:authIn 0.4s cubic-bezier(0.22,1,0.36,1);">
-        <div style="text-align:center;margin-bottom:20px;">
-          <div style="font-size:48px;margin-bottom:10px;">🚀</div>
-          <div style="font-size:20px;font-weight:800;color:#e8edf8;margin-bottom:6px;">Try Free Trial for 7 Days!</div>
-          <div style="display:inline-block;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.1));
-            border:1px solid rgba(0,229,200,0.3);border-radius:20px;padding:4px 14px;
-            font-size:11px;font-weight:800;color:#00e5c8;margin-bottom:12px;">⭐ BEST TO START</div>
-          <div style="font-size:13px;color:#b8c4d8;line-height:1.6;">
-            Get instant AI access — no API key needed!<br>
-            <strong style="color:#e8edf8">3 reports · 4 chats · 1 comparison</strong>
+        <div style="text-align:center;margin-bottom:22px;">
+          <div style="font-size:52px;margin-bottom:8px;filter:drop-shadow(0 0 16px rgba(0,229,200,0.4))">🚀</div>
+          <div style="font-size:22px;font-weight:900;color:#e8edf8;margin-bottom:6px;letter-spacing:-0.02em;">Try Free Trial for 7 Days!</div>
+          <div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.12));
+            border:1px solid rgba(0,229,200,0.35);border-radius:20px;padding:4px 14px;
+            font-size:11px;font-weight:800;color:#00e5c8;margin-bottom:10px;">🌟 BEST WAY TO START</div>
+          <div style="font-size:13px;color:#8899bb;line-height:1.7;">
+            Instant AI access — <strong style="color:#e8edf8">no API key, no payment</strong> needed.<br>
+            Experience real GeoMind power before you upgrade.
           </div>
         </div>
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
-          border-radius:12px;padding:14px;margin-bottom:20px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
-            <div>
-              <div style="font-size:20px;font-weight:800;color:#00e5c8;font-family:monospace">3</div>
-              <div style="font-size:10px;color:#5a6a88">Reports</div>
+          border-radius:14px;padding:16px;margin-bottom:18px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
+            <div style="padding:8px;background:rgba(0,229,200,0.06);border-radius:10px;border:1px solid rgba(0,229,200,0.12);">
+              <div style="font-size:26px;font-weight:900;color:#00e5c8;font-family:monospace;line-height:1">5</div>
+              <div style="font-size:10px;color:#5a6a88;margin-top:4px;font-weight:600">AI Reports</div>
             </div>
-            <div>
-              <div style="font-size:20px;font-weight:800;color:#4a9eff;font-family:monospace">4</div>
-              <div style="font-size:10px;color:#5a6a88">Chats</div>
+            <div style="padding:8px;background:rgba(74,158,255,0.06);border-radius:10px;border:1px solid rgba(74,158,255,0.12);">
+              <div style="font-size:26px;font-weight:900;color:#4a9eff;font-family:monospace;line-height:1">6</div>
+              <div style="font-size:10px;color:#5a6a88;margin-top:4px;font-weight:600">Chats</div>
             </div>
-            <div>
-              <div style="font-size:20px;font-weight:800;color:#9d7aff;font-family:monospace">1</div>
-              <div style="font-size:10px;color:#5a6a88">Comparison</div>
+            <div style="padding:8px;background:rgba(157,122,255,0.06);border-radius:10px;border:1px solid rgba(157,122,255,0.12);">
+              <div style="font-size:26px;font-weight:900;color:#9d7aff;font-family:monospace;line-height:1">2</div>
+              <div style="font-size:10px;color:#5a6a88;margin-top:4px;font-weight:600">Comparisons</div>
             </div>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:10px;color:#3a4a62;">
+            ⏱ Valid for 7 days · One-time offer · No card required
           </div>
         </div>
         <button onclick="activateFreeTrial()" id="trialActivateBtn"
-          style="width:100%;padding:14px;background:linear-gradient(135deg,#00e5c8,#4a9eff);
-          border:none;border-radius:12px;font-weight:800;font-size:15px;color:#04060e;
-          cursor:pointer;transition:all 0.2s;margin-bottom:10px;letter-spacing:0.02em;">
-          🚀 Activate Free Trial
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#00e5c8,#4a9eff);
+          border:none;border-radius:13px;font-weight:900;font-size:15px;color:#04060e;
+          cursor:pointer;transition:all 0.2s;margin-bottom:10px;letter-spacing:0.02em;
+          box-shadow:0 4px 20px rgba(0,229,200,0.3);">
+          🚀 Activate Free Trial — It's Free!
         </button>
         <button onclick="closeTrialPopup()"
-          style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);
-          border-radius:10px;font-size:12px;color:#5a6a88;cursor:pointer;">
-          No thanks, I'll add my own API key
+          style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.08);
+          border-radius:11px;font-size:12px;color:#3a4a62;cursor:pointer;transition:color 0.2s;"
+          onmouseover="this.style.color='#5a6a88'" onmouseout="this.style.color='#3a4a62'">
+          No thanks, I'll use my own API key
         </button>
       </div>`;
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
 }
-
 function closeTrialPopup() {
   const m = document.getElementById('trialPopupModal');
   if (m) m.style.display = 'none';
@@ -677,20 +683,20 @@ function canCompare() {
 
 function getPlanComparisonLimit() {
   const plan = userProfile.plan || 'free';
-  if (plan === 'custom') return userProfile.customComparisonLimit ?? PLANS.custom.comparisonLimit;
+  if (plan === 'payperuse') return userProfile.customComparisonLimit ?? PLANS.payperuse.comparisonLimit;
   return PLANS[plan]?.comparisonLimit ?? 0;
 }
 
 function getPlanGenLimit() {
   const plan = userProfile.plan || 'free';
-  if (plan === 'custom') return userProfile.customGenLimit ?? PLANS.custom.genLimit;
-  return PLANS[plan]?.genLimit ?? 30;
+  if (plan === 'payperuse') return userProfile.customGenLimit ?? PLANS.payperuse.genLimit;
+  return PLANS[plan]?.genLimit ?? 999;
 }
 
 function getPlanChatLimit() {
   const plan = userProfile.plan || 'free';
-  if (plan === 'custom') return userProfile.customChatLimit ?? PLANS.custom.chatLimit;
-  return PLANS[plan]?.chatLimit ?? 60;
+  if (plan === 'payperuse') return userProfile.customChatLimit ?? PLANS.payperuse.chatLimit;
+  return PLANS[plan]?.chatLimit ?? 999;
 }
 
 function getNoKeyMessage() {
@@ -3322,33 +3328,56 @@ function previewDownload(fmt) {
 function renderPlansPage() { renderPlansInto(document.getElementById('plansPageContent')); }
 function renderPricingTab() { renderPlansInto(document.getElementById('pricingContent')); }
 function renderPlansInto(wrap) {
-  const currentPlan=userProfile.plan||'free';
-  let html=`<div class="pricing-title">⭐ GeoMind Plans</div>
-    <div class="pricing-sub">Choose the plan that fits your learning goals. Paid plans include admin-managed API keys — no setup needed.</div>
+  const currentPlan = userProfile.plan || 'free';
+  let html = `<div class="pricing-title">🌟 GeoMind Plans</div>
+    <div class="pricing-sub">From free forever to unlimited power — choose the plan that fits your exam prep goals.<br>Paid plans include admin-managed API keys · No setup needed · Activate instantly.</div>
     <div class="plans-grid">`;
-  const planOrder=['free','basic','standard','premium','custom'];
-  planOrder.forEach(key=>{
-    const P=PLANS[key]; const feats=PLAN_FEATURES[key]; const isCur=key===currentPlan;
-    const btnClick = key==='free' ? `goPage('settings')` : `openPlanModal('${key}')`;
-    const btnLabel = (isCur && key!=='free') ? '✓ Current Plan' : (key==='free' ? '⚙ Add API Key' : 'Purchase ' + P.name);
-    const btnDisabled = (isCur && key!=='free') ? 'disabled' : '';
-    const isPopular = key === 'standard';
-    html+=`<div class="plan-card ${key}${isCur?' current-plan':''}${isPopular?' popular-plan':''}">
-      ${isPopular ? '<div class="popular-badge">⭐ MOST POPULAR</div>' : ''}
+  const planOrder = ['free', 'free_trial', 'starter', 'standard', 'premium', 'payperuse'];
+  planOrder.forEach(key => {
+    const P = PLANS[key]; if (!P) return;
+    const feats      = PLAN_FEATURES[key] || [];
+    const isCur      = key === currentPlan;
+    const isPopular  = key === 'standard';
+    const isTrial    = key === 'free_trial';
+    const alreadyUsedTrial = userProfile.trialUsed || userProfile.trialStartDate;
+
+    let btnClick, btnLabel, btnDisabled = '';
+    if (key === 'free') {
+      btnClick = `goPage('settings')`;
+      btnLabel = '⚙ Add API Key';
+    } else if (key === 'free_trial') {
+      if (isCur) { btnClick = ''; btnLabel = '✓ Trial Active'; btnDisabled = 'disabled'; }
+      else if (alreadyUsedTrial) { btnClick = ''; btnLabel = 'Trial Used'; btnDisabled = 'disabled'; }
+      else { btnClick = `showTrialPopup()`; btnLabel = '🚀 Start Free Trial'; }
+    } else {
+      btnClick  = isCur ? '' : `openPlanModal('${key}')`;
+      btnLabel  = isCur ? '✓ Current Plan' : `Purchase ${P.name}`;
+      btnDisabled = isCur ? 'disabled' : '';
+    }
+
+    // badge color mapping
+    const badgeKey = key === 'free_trial' ? 'free_trial' :
+                     key === 'starter'    ? 'basic'      :
+                     key === 'payperuse'  ? 'custom'     : key;
+
+    html += `<div class="plan-card ${key}${isCur?' current-plan':''}${isPopular?' popular-plan':''}${isTrial?' trial-plan':''}">
+      ${isPopular ? '<div class="popular-badge">⭐ MOST POPULAR · BEST VALUE</div>' : ''}
+      ${isTrial   ? '<div class="popular-badge" style="background:linear-gradient(135deg,#00c8a0,#3a8eff);letter-spacing:0.04em;">🌟 BEST WAY TO START</div>' : ''}
       <div class="plan-header">
-        <div>
-          <div class="plan-name pn-${key}">${P.emoji} ${P.name}</div>
-          ${isCur?'<span class="plan-active-badge">✓ ACTIVE</span>':''}
+        <div style="flex:1">
+          <div class="plan-name pn-${badgeKey}">${P.emoji} ${P.name}</div>
+          ${P.tagline ? `<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.4;font-style:italic">${P.tagline}</div>` : ''}
+          ${isCur ? '<span class="plan-active-badge" style="margin-top:5px;display:inline-block">✓ ACTIVE</span>' : ''}
         </div>
-        <div class="plan-price">
-          <div class="amt">${P.price.replace('/mo','')}</div>
-          <div class="per">per month</div>
+        <div class="plan-price" style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div class="amt">${key==='payperuse'?'₹15':key==='free_trial'?'₹0':P.price.replace('/mo','')}</div>
+          <div class="per">${key==='payperuse'?'per session':key==='free_trial'?'7 days free':key==='free'?'forever':'per month'}</div>
         </div>
       </div>
-      <div class="plan-features">
-        ${feats.map(f=>`<div class="pf ${f.includes('report')||f.includes('message')||f.includes('Dual')?'highlight':''}"><span class="pf-check">✓</span>${f}</div>`).join('')}
+      <div class="plan-features" style="margin-top:10px">
+        ${feats.map(f => `<div class="pf ${f.includes('report')||f.includes('message')||f.includes('Dual')||f.includes('Priority')||f.includes('Fastest')||f.includes('PDF')?'highlight':''}"><span class="pf-check">✓</span>${f}</div>`).join('')}
       </div>
-      <button class="plan-btn pb-${key==='standard'?'std':key}-btn" onclick="${btnClick}" ${btnDisabled}>
+      <button class="plan-btn pb-${badgeKey}-btn" onclick="${btnClick}" ${btnDisabled}>
         ${btnLabel}
       </button>
     </div>`;

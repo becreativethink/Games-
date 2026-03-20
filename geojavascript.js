@@ -112,20 +112,18 @@ const PROVIDER_LABELS = {
 
 /* ── PLAN DEFINITIONS ────────────────────────────────── */
 const PLANS = {
-  free:       { name:'Free',          price:'₹0',        genLimit:999, chatLimit:999, comparisonLimit:999, duration:'Lifetime',  activationDays:0, emoji:'○',  color:'--pfree',       tagline:'Your own AI, your own rules'          },
-  free_trial: { name:'Free Trial',    price:'₹0 / 7 days',genLimit:5,  chatLimit:6,  comparisonLimit:2,   duration:'7 Days',    activationDays:0, emoji:'🚀', color:'--pfree_trial',  tagline:'Experience GeoMind — no card needed'  },
-  starter:    { name:'Starter',       price:'₹149/mo',   genLimit:12,  chatLimit:20,  comparisonLimit:5,   duration:'Monthly',   activationDays:3, emoji:'★',  color:'--pbasic',       tagline:'Perfect for regular exam prep'        },
-  standard:   { name:'Standard',      price:'₹249/mo',   genLimit:25,  chatLimit:40,  comparisonLimit:12,  duration:'Monthly',   activationDays:4, emoji:'✦',  color:'--pstd',         tagline:'The complete UPSC preparation toolkit'},
-  premium:    { name:'Premium',       price:'₹399/mo',   genLimit:50,  chatLimit:60,  comparisonLimit:20,  duration:'Monthly',   activationDays:7, emoji:'♛',  color:'--pprem',        tagline:'Unlimited power for serious toppers'  },
-  payperuse:  { name:'Pay Per Use',   price:'₹15/session',genLimit:2,  chatLimit:3,   comparisonLimit:1,   duration:'24 Hours',  activationDays:0, emoji:'⚡', color:'--pcustom',      tagline:'Use once, pay once — no commitment'   }
+  free_trial: { name:'Free Trial',    price:'₹0 / 14 days',genLimit:5,  chatLimit:8,  comparisonLimit:2,   duration:'14 Days',   activationDays:0, emoji:'🚀', color:'--pfree_trial',  tagline:'Experience GeoMind free for 14 days'  },
+  starter:    { name:'Starter',       price:'₹149/mo',      genLimit:12, chatLimit:20, comparisonLimit:5,   duration:'Monthly',   activationDays:3, emoji:'★',  color:'--pbasic',       tagline:'Perfect for regular exam prep'        },
+  standard:   { name:'Standard',      price:'₹249/mo',      genLimit:25, chatLimit:40, comparisonLimit:12,  duration:'Monthly',   activationDays:4, emoji:'✦',  color:'--pstd',         tagline:'The complete UPSC preparation toolkit'},
+  premium:    { name:'Premium',       price:'₹399/mo',      genLimit:50, chatLimit:60, comparisonLimit:20,  duration:'Monthly',   activationDays:7, emoji:'♛',  color:'--pprem',        tagline:'Unlimited power for serious toppers'  },
+  payperuse:  { name:'Pay Per Use',   price:'₹15/session',  genLimit:2,  chatLimit:3,  comparisonLimit:1,   duration:'24 Hours',  activationDays:0, emoji:'⚡', color:'--pcustom',      tagline:'Use once, pay once — no commitment'   }
 };
 const PLAN_FEATURES = {
-  free:       ['Own API key required','Unlimited reports (your quota)','Unlimited chat & comparisons','25+ AI models to choose from','Map history & sharing','Free forever'],
-  free_trial: ['No API key needed — instant start','5 reports · 6 chats · 2 comparisons','System-assigned AI (automatic)','Full feature access for 7 days','One-time offer — new users only','Auto-expires · no card needed'],
+  free_trial: ['No API key needed — instant start','5 reports · 8 chats · 2 comparisons','System-assigned AI (automatic)','Full feature access for 14 days','One-time offer — new users only','Auto-expires · no card needed'],
   starter:    ['12 AI reports / month','20 chat messages / month','5 comparisons / month','No API key needed','All learning modes (Quiz, Timeline)','History & sharing · Email support'],
   standard:   ['25 AI reports / month','40 chat messages / month','12 comparisons / month','No API key needed','Priority AI processing','All modes + comparison history','Chat support'],
   premium:    ['50 AI reports / month','60 chat messages / month','20 comparisons / month','No API key needed','Dual admin keys — max reliability','Fastest AI · 24/7 priority support','Download reports (PDF / DOCX)','Dedicated model assignment'],
-  payperuse:  ['₹15 per session (24 hrs)','2 reports + 3 chats + 1 comparison','No monthly commitment','Instant activation','Admin-assigned API for session','Pay as you go — zero subscription']
+  payperuse:  ['₹15 per session (24 hrs)','Own API key = high limits (reports/chats/compare)','No API key = 2 reports + 3 chats + 1 comparison','No monthly commitment','Instant activation','Pay as you go — zero subscription']
 };
 
 /* ── STATE ───────────────────────────────────────────── */
@@ -169,9 +167,9 @@ auth.onAuthStateChanged(async user => {
   await checkPlanChangedRemotely();
   // Check trial expiry
   if (isTrialExpired() && userProfile.plan === 'free_trial') {
-    userProfile.plan = 'free';
-    await db.ref('users/' + currentUser.uid + '/plan').set('free');
-    toast('⏱ Your 7-day free trial has ended. Add an API key or purchase a plan.', 'warn');
+    // Don't silently downgrade — show upgrade popup
+    toast('⏱ Your 14-day free trial has ended. Please upgrade to continue.', 'warn');
+    setTimeout(() => showTrialExpiredPopup(), 800);
   }
   buildModelSelector();
   initMap();
@@ -259,6 +257,7 @@ async function loadUserProfile() {
       if (userProfile.planUsed === undefined)      { userProfile.planUsed = 0; needsMigration = true; }
       if (userProfile.planChatUsed === undefined)  { userProfile.planChatUsed = 0; needsMigration = true; }
       if (userProfile.comparisonUsed === undefined)   { userProfile.comparisonUsed = 0;   needsMigration = true; }
+      if (userProfile.usingOwnAPI === undefined)       { userProfile.usingOwnAPI = false;    needsMigration = true; }
       if (userProfile.totalComparisons === undefined) { userProfile.totalComparisons = 0; needsMigration = true; }
       if (userProfile.planStartDate === undefined) {
         // Set planStartDate to start of current month so old reports don't contaminate
@@ -270,26 +269,36 @@ async function loadUserProfile() {
         console.log('[GeoMind] Migrated user profile to v5.1 tracking');
       }
     } else {
-      // Brand new user
-      const now = new Date().toISOString();
+      // Brand new user → auto-activate Free Trial immediately
+      const now     = new Date();
+      const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
       userProfile = {
-        name: currentUser.displayName || currentUser.email.split('@')[0],
-        email: currentUser.email,
-        phone: '',
-        plan: 'free',
-        totalReports: 0,
-        totalChats: 0,
-        totalComparisons: 0,
-        planUsed: 0,
-        planChatUsed: 0,
-        comparisonUsed: 0,
-        planStartDate: now,
+        name:            currentUser.displayName || currentUser.email.split('@')[0],
+        email:           currentUser.email,
+        phone:           '',
+        plan:            'free_trial',
+        totalReports:    0,
+        totalChats:      0,
+        totalComparisons:0,
+        planUsed:        0,
+        planChatUsed:    0,
+        comparisonUsed:  0,
+        planStartDate:   now.toISOString(),
+        trialStartDate:  now.toISOString(),
+        trialEndDate:    endDate.toISOString(),
+        trialUsed:       true,
         monthlyGenerationsUsed: 0,
-        monthlyMessagesUsed: 0,
-        lastResetMonth: monthStr(),
-        signupDate: now
+        monthlyMessagesUsed:    0,
+        lastResetMonth:  monthStr(),
+        signupDate:      now.toISOString()
       };
+      // Try to auto-assign a free trial API key
+      try {
+        const apiKey = await assignFreeTrialAPI();
+        if (apiKey) userProfile.assignedTrialAPI = apiKey;
+      } catch(e) { console.warn('[newUser] no trial API available:', e.message); }
       await db.ref('users/' + currentUser.uid).set(userProfile);
+      toast('🚀 Welcome! Your 14-day Free Trial has started!', 'ok');
     }
     updateNavUI();
     updateUsageWidget();
@@ -378,12 +387,12 @@ async function activatePlan(newPlan) {
 
 /* Step 1: Show trial popup on first login (if not already used/active) */
 function checkAndShowTrialPopup() {
+  // New users are auto-enrolled in Free Trial on signup.
+  // This popup is now only a legacy fallback for old 'free' plan accounts.
   if (!currentUser) return;
-  const plan = userProfile.plan || 'free';
-  // Show only if on free plan and never used trial
-  if (plan !== 'free') return;
+  const plan = userProfile.plan || 'free_trial';
+  if (plan !== 'free') return; // most users are already on free_trial
   if (userProfile.trialUsed || userProfile.trialStartDate) return;
-  // Show after short delay so app loads first
   setTimeout(() => showTrialPopup(), 1500);
 }
 
@@ -403,7 +412,7 @@ function showTrialPopup() {
         animation:authIn 0.4s cubic-bezier(0.22,1,0.36,1);">
         <div style="text-align:center;margin-bottom:22px;">
           <div style="font-size:52px;margin-bottom:8px;filter:drop-shadow(0 0 16px rgba(0,229,200,0.4))">🚀</div>
-          <div style="font-size:22px;font-weight:900;color:#e8edf8;margin-bottom:6px;letter-spacing:-0.02em;">Try Free Trial for 7 Days!</div>
+          <div style="font-size:22px;font-weight:900;color:#e8edf8;margin-bottom:6px;letter-spacing:-0.02em;">Try Free Trial for 14 Days!</div>
           <div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.12));
             border:1px solid rgba(0,229,200,0.35);border-radius:20px;padding:4px 14px;
             font-size:11px;font-weight:800;color:#00e5c8;margin-bottom:10px;">🌟 BEST WAY TO START</div>
@@ -420,7 +429,7 @@ function showTrialPopup() {
               <div style="font-size:10px;color:#5a6a88;margin-top:4px;font-weight:600">AI Reports</div>
             </div>
             <div style="padding:8px;background:rgba(74,158,255,0.06);border-radius:10px;border:1px solid rgba(74,158,255,0.12);">
-              <div style="font-size:26px;font-weight:900;color:#4a9eff;font-family:monospace;line-height:1">6</div>
+              <div style="font-size:26px;font-weight:900;color:#4a9eff;font-family:monospace;line-height:1">8</div>
               <div style="font-size:10px;color:#5a6a88;margin-top:4px;font-weight:600">Chats</div>
             </div>
             <div style="padding:8px;background:rgba(157,122,255,0.06);border-radius:10px;border:1px solid rgba(157,122,255,0.12);">
@@ -429,7 +438,7 @@ function showTrialPopup() {
             </div>
           </div>
           <div style="text-align:center;margin-top:10px;font-size:10px;color:#3a4a62;">
-            ⏱ Valid for 7 days · One-time offer · No card required
+            ⏱ Valid for 14 days · One-time offer · No card required
           </div>
         </div>
         <button onclick="activateFreeTrial()" id="trialActivateBtn"
@@ -470,7 +479,7 @@ async function activateFreeTrial() {
     }
 
     const now     = new Date();
-    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
     userProfile.plan            = 'free_trial';
     userProfile.planStartDate   = now.toISOString();
@@ -497,7 +506,7 @@ async function activateFreeTrial() {
     closeTrialPopup();
     updateNavUI();
     updateUsageWidget();
-    toast('🚀 Free Trial activated! 7 days of AI access — enjoy GeoMind!', 'ok');
+    toast('🚀 Free Trial activated! 14 days of AI access — enjoy GeoMind!', 'ok');
     console.log('[FreeTrial] Activated. API assigned. Ends:', endDate.toISOString());
 
   } catch(e) {
@@ -555,7 +564,7 @@ function showTrialExpiredPopup() {
         <div style="font-size:48px;margin-bottom:12px;">⏱</div>
         <div style="font-size:20px;font-weight:800;color:#e8edf8;margin-bottom:8px;">Free Trial Expired</div>
         <div style="font-size:13px;color:#b8c4d8;line-height:1.6;margin-bottom:20px;">
-          Your 7-day free trial has ended.<br>
+          Your 14-day free trial has ended.<br>
           Upgrade to continue using GeoMind AI.
         </div>
         <button onclick="goPage('plans');document.getElementById('trialExpiredModal').style.display='none';"
@@ -650,12 +659,12 @@ async function computePlanUsedFromHistory() {
 /* ── PLAN LIMIT VALIDATION ───────────────────────────── */
 
 function canGenerate() {
-  const plan = userProfile.plan || 'free';
-  // Block expired trials immediately with popup
+  const plan = userProfile.plan || 'free_trial';
+  // Block expired trials
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
-  // Free plan: unlimited IF user has their own API key
-  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
-  // All other plans: check planUsed vs limit
+  // payperuse with own API key → high limit (999)
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return true;
+  // All plans: check planUsed vs limit
   const limit = getPlanGenLimit();
   const used  = userProfile.planUsed || 0;
   console.log(`[canGenerate] plan=${plan} planUsed=${used} limit=${limit}`);
@@ -663,18 +672,18 @@ function canGenerate() {
 }
 
 function canChat() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
-  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return true;
   const limit = getPlanChatLimit();
   const used  = userProfile.planChatUsed || 0;
   return used < limit;
 }
 
 function canCompare() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
-  if (plan === 'free') return !!(userSettings.apiKey && userSettings.apiKey.trim());
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return true;
   const limit = getPlanComparisonLimit();
   const used  = userProfile.comparisonUsed || 0;
   console.log(`[canCompare] plan=${plan} comparisonUsed=${used} limit=${limit}`);
@@ -682,25 +691,29 @@ function canCompare() {
 }
 
 function getPlanComparisonLimit() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
+  // payperuse with own API → very high limit
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return 999;
   if (plan === 'payperuse') return userProfile.customComparisonLimit ?? PLANS.payperuse.comparisonLimit;
-  return PLANS[plan]?.comparisonLimit ?? 0;
+  return PLANS[plan]?.comparisonLimit ?? 2;
 }
 
 function getPlanGenLimit() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return 999;
   if (plan === 'payperuse') return userProfile.customGenLimit ?? PLANS.payperuse.genLimit;
-  return PLANS[plan]?.genLimit ?? 999;
+  return PLANS[plan]?.genLimit ?? 5;
 }
 
 function getPlanChatLimit() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return 999;
   if (plan === 'payperuse') return userProfile.customChatLimit ?? PLANS.payperuse.chatLimit;
-  return PLANS[plan]?.chatLimit ?? 999;
+  return PLANS[plan]?.chatLimit ?? 8;
 }
 
 function getNoKeyMessage() {
-  return `Please add your API key in <strong>Settings</strong> or <a href="#" onclick="goPage('plans');return false;" style="color:var(--cyan)">purchase a plan</a>.`;
+  return `Your plan has expired or has no quota. Please <a href="#" onclick="goPage('plans');return false;" style="color:var(--cyan)">upgrade your plan</a> or add your own API key in <strong>Settings</strong>.`;
 }
 
 async function incrementGeneration() {
@@ -753,6 +766,8 @@ async function checkPlanChangedRemotely() {
       userProfile.totalReports     = remote.totalReports     ?? userProfile.totalReports;
       userProfile.totalChats       = remote.totalChats       ?? userProfile.totalChats;
       userProfile.totalComparisons = remote.totalComparisons ?? userProfile.totalComparisons;
+      userProfile.usingOwnAPI   = remote.usingOwnAPI   ?? false;
+      userProfile.customApiKey  = remote.customApiKey  ?? '';
       if (remotePlan !== localPlan && remotePlan !== 'free') {
         toast(`🎉 Your plan has been upgraded to ${PLANS[remotePlan]?.name || remotePlan}!`, 'ok');
       }
@@ -772,8 +787,22 @@ async function saveSettings() {
   userSettings = { apiKey: key, model };
   try {
     await db.ref('users/' + currentUser.uid + '/settings').set(userSettings);
+    // If user is on payperuse plan and provides an API key → activate own-API mode
+    if (userProfile.plan === 'payperuse' && key) {
+      userProfile.usingOwnAPI = true;
+      userProfile.customApiKey = key;
+      await db.ref('users/' + currentUser.uid).update({ usingOwnAPI: true, customApiKey: key });
+      toast('✓ Settings saved! Pay Per Use unlocked with your own API key.', 'ok');
+    } else if (userProfile.plan === 'payperuse' && !key) {
+      userProfile.usingOwnAPI = false;
+      await db.ref('users/' + currentUser.uid).update({ usingOwnAPI: false });
+      toast('Settings saved. Using admin-assigned API (limited usage).', 'ok');
+    } else {
+      toast('Settings saved!', 'ok');
+    }
     updateSettingsUI();
-    toast('Settings saved!', 'ok');
+    updateNavUI();
+    updateUsageWidget();
   } catch(e) { toast('Failed to save: ' + e.message, 'err'); }
 }
 
@@ -782,15 +811,22 @@ function updateSettingsUI() {
   const modelEl = document.getElementById('settingsModel');
   if (keyEl)   keyEl.value   = userSettings.apiKey || '';
   if (modelEl) { modelEl.value = userSettings.model || 'gemini-1.5-flash'; showModelDesc(); }
-  const plan   = userProfile.plan || 'free';
-  const hasKey = !!(userSettings.apiKey && userSettings.apiKey.trim());
+  const plan    = userProfile.plan || 'free_trial';
+  const hasKey  = !!(userSettings.apiKey && userSettings.apiKey.trim());
   const hasAdminKey = !!(adminAPIConfig?.reportAPIKey);
-  const box    = document.getElementById('apiStatusBox');
-  const txt    = document.getElementById('apiStatusText');
+  const box     = document.getElementById('apiStatusBox');
+  const txt     = document.getElementById('apiStatusText');
   if (!box) return;
-  if (plan !== 'free' && hasAdminKey) {
+
+  if (plan === 'payperuse' && hasKey && userProfile.usingOwnAPI) {
     box.className = 'api-status';
-    txt.textContent = `Admin-assigned API key active for ${PLANS[plan].name} plan.`;
+    txt.textContent = '⚡ Pay Per Use — Own API mode: High usage limits active. Your API quota applies.';
+  } else if (plan === 'payperuse' && !hasKey) {
+    box.className = 'api-status no-key';
+    txt.innerHTML = '⚡ Pay Per Use — <strong>Add your own API key</strong> to unlock high limits, or use admin API (limited).';
+  } else if (plan !== 'free_trial' && hasAdminKey) {
+    box.className = 'api-status';
+    txt.textContent = `Admin-assigned API key active for ${PLANS[plan]?.name || plan} plan.`;
   } else if (hasKey) {
     box.className = 'api-status';
     txt.textContent = 'Your API key is configured. Reports will use your quota.';
@@ -802,42 +838,48 @@ function updateSettingsUI() {
 
 /* ── API KEY RESOLUTION ──────────────────────────────── */
 function getReportAPIKey() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
   // Free trial: use system-assigned trial API key
   if (plan === 'free_trial') {
     const trialKey = getTrialAPIKey();
     if (trialKey) return trialKey;
   }
+  // payperuse with own API: use user's own key
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) {
+    return userSettings.apiKey.trim();
+  }
   // Paid plans: admin-assigned key takes priority
-  if (plan !== 'free' && plan !== 'free_trial' && adminAPIConfig?.reportAPIKey) return adminAPIConfig.reportAPIKey;
+  if (adminAPIConfig?.reportAPIKey) return adminAPIConfig.reportAPIKey;
   // Fallback: user's own API key
   if (userSettings.apiKey) return userSettings.apiKey;
   return null;
 }
 function getChatAPIKey() {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial') {
     const trialKey = getTrialAPIKey();
     if (trialKey) return trialKey;
   }
-  if (plan !== 'free' && plan !== 'free_trial' && adminAPIConfig?.chatAPIKey) return adminAPIConfig.chatAPIKey;
+  if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) {
+    return userSettings.apiKey.trim();
+  }
+  if (adminAPIConfig?.chatAPIKey) return adminAPIConfig.chatAPIKey;
   if (userSettings.apiKey) return userSettings.apiKey;
   return null;
 }
 function getSelectedModel(forChat=false) {
-  const plan = userProfile.plan || 'free';
+  const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial') {
-    // Trial users use Gemini Flash (fast, reliable, works with most keys)
     return adminGlobalModel || 'gemini-1.5-flash';
   }
-  if (plan !== 'free') {
-    // 1. Per-user admin-assigned model
+  if (plan === 'payperuse' && userProfile.usingOwnAPI) {
+    return userSettings.model || 'gemini-1.5-flash';
+  }
+  if (plan !== 'free_trial') {
     if (forChat  && adminAPIConfig?.chatModel)   return adminAPIConfig.chatModel;
     if (!forChat && adminAPIConfig?.reportModel) return adminAPIConfig.reportModel;
-    // 2. Admin global default model
     if (adminGlobalModel) return adminGlobalModel;
   }
-  // 3. User's own chosen model
   return userSettings.model || 'gemini-1.5-flash';
 }
 
@@ -1462,18 +1504,37 @@ async function generateAIReport(lat, lon, geo, country, wiki) {
   const lPick  = document.getElementById('langPick');
   const langName = lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
 
-  const prompt = `You are an Advanced AI Educational Geo-Intelligence System.
+  const prompt = `You are GeoMind — an Expert AI Educational Geo-Intelligence System for Indian competitive exam preparation (UPSC, SSC, State PCS, Class 11-12 Geography).
+
+GENERATE A DETAILED, COMPREHENSIVE, EXAM-READY REPORT. Every field MUST have 2-3 detailed sentences minimum with specific facts, names, dates, and numbers. No vague or one-word answers.
+
 LOCATION: ${loc} | LAT: ${lat} | LON: ${lon}
 COUNTRY: ${country_input} | STATE: ${addr.state||'?'} | DISTRICT: ${addr.county||addr.district||'?'}
 CLASS: ${cls} | EXAM: ${exam} | MODE: ${mode} | RESPONSE LANGUAGE: ${langName}
-${userQ?'USER QUESTION: '+userQ:''}
-WIKI: ${wiki?.extract?.substring(0,350)||'N/A'}
-POP: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
-COUNTRY LANGUAGES: ${country?.languages?Object.values(country.languages).join(', '):'Unknown'}
+${userQ?'STUDENT QUESTION: '+userQ:''}
+WIKI: ${wiki?.extract?.substring(0,500)||'N/A'}
+POPULATION: ${country?.population||'?'} | CAPITAL: ${country?.capital?.[0]||'?'}
+LANGUAGES: ${country?.languages?Object.values(country.languages).join(', '):'N/A'}
 
-Return ONLY compact valid JSON (no markdown, no backticks):
-{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"","climate":"","soilType":"","rivers":"","naturalResources":""},"agriculture":{"majorCrops":["","",""],"whyCropsGrow":"","irrigationSources":"","seasonalPattern":""},"history":{"ancient":"","medieval":"","modern":"","freedomMovement":""},"economy":{"majorIndustries":["",""],"gdpContribution":"","employmentPattern":""},"currentRelevance":{"environmentalIssues":"","developmentProjects":"","strategicImportance":""},"localInfo":{"localLanguages":"","famousFor":["","",""],"famousPlaces":["",""],"famousPersonalities":["",""],"festivals":["",""],"localCuisine":["",""],"importantFacts":["","",""]}${userQ?',"userAnswer":"Direct answer to: '+userQ+' in 2-3 sentences"':''},"timeline":[{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""},{"year":"","event":""}],"quiz":{"mcqs":[{"q":"","options":["A.","B.","C.","D."],"answer":"A"},{"q":"","options":["A.","B.","C.","D."],"answer":"B"},{"q":"","options":["A.","B.","C.","D."],"answer":"C"},{"q":"","options":["A.","B.","C.","D."],"answer":"D"},{"q":"","options":["A.","B.","C.","D."],"answer":"A"}],"assertionReason":[{"assertion":"","reason":"","answer":""},{"assertion":"","reason":"","answer":""}],"mapQuestion":""},"examFocus":["","",""]}
-Rules: All values in ${langName}. 1-2 sentences per field. Valid closed JSON.`;
+REPORT STRUCTURE RULES:
+- geography.terrain: Describe landforms, elevation range, hills, plains, plateaus in 2-3 sentences
+- geography.climate: Name the climate zone, annual rainfall mm, temperature range, seasons with months
+- geography.soilType: Specific soil types (alluvial/black/red/laterite etc.) with agricultural significance
+- geography.rivers: Name all major rivers, tributaries, their origin and destination
+- geography.naturalResources: List minerals, forests, energy sources with quantities if known
+- agriculture.majorCrops: Each entry = "CropName — reason it grows here (soil/climate factor)"
+- agriculture.whyCropsGrow: Detailed agri-geography explanation with soil, rainfall, temperature data
+- history.ancient/medieval/modern/freedomMovement: Specific dynasties, rulers, battles, years, events
+- economy.majorIndustries: Each entry = "IndustryName — scale/significance with numbers"
+- currentRelevance.developmentProjects: Real government schemes, missions, corridors relevant here
+- localInfo.importantFacts: 4 unique, exam-specific facts ONLY about this location
+- timeline: 5 specific historical events with exact years
+- quiz.mcqs: 5 MCQs specific to this location — not generic India geography
+- examFocus: 4 key points a student MUST remember for competitive exams
+
+Return ONLY compact valid JSON (no markdown, no backticks, no explanation outside JSON):
+{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"2-3 detailed sentences","climate":"2-3 detailed sentences with data","soilType":"specific types and significance","rivers":"all major rivers named","naturalResources":"specific resources listed"},"agriculture":{"majorCrops":["Crop1 — reason","Crop2 — reason","Crop3 — reason"],"whyCropsGrow":"detailed agri-geo explanation","irrigationSources":"rivers/canals/groundwater with names","seasonalPattern":"Kharif/Rabi/Zaid with months"},"history":{"ancient":"specific dynasties and periods","medieval":"specific rulers and events","modern":"British era and key events","freedomMovement":"specific freedom fighters and events from this region"},"economy":{"majorIndustries":["Industry1 — scale","Industry2 — scale","Industry3 — scale"],"gdpContribution":"contribution data if known","employmentPattern":"dominant employment sectors"},"currentRelevance":{"environmentalIssues":"specific local environmental challenges","developmentProjects":"real schemes and projects — PMGSY, Smart City, Industrial Corridor etc.","strategicImportance":"border/defense/trade significance if any"},"localInfo":{"localLanguages":"languages and dialects","famousFor":["specific thing 1","specific thing 2","specific thing 3"],"famousPlaces":["Place1 — why famous","Place2 — why famous"],"famousPersonalities":["Person1 — contribution","Person2 — contribution"],"festivals":["Festival1 — season","Festival2 — season"],"localCuisine":["dish1","dish2"],"importantFacts":["unique exam fact 1","unique exam fact 2","unique exam fact 3","unique exam fact 4"]}${userQ?',"userAnswer":"Detailed answer to: '+userQ+' — minimum 4 sentences with specific data and facts"':''}},"timeline":[{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"}],"quiz":{"mcqs":[{"q":"Location-specific question","options":["A. option","B. option","C. option","D. option"],"answer":"A"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"B"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"C"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"D"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"A"}],"assertionReason":[{"assertion":"factual assertion about this location","reason":"scientific/historical reason","answer":"Both A and R are true and R is the correct explanation"},{"assertion":"assertion","reason":"reason","answer":"Both A and R are true but R is NOT the correct explanation"}],"mapQuestion":"Describe exact map position, surrounding states/countries, nearest major city"},"examFocus":["Exam point 1 — unique to this location","Exam point 2 — must-know fact","Exam point 3 — often asked in exams","Exam point 4 — recent development"]}
+All values in ${langName}. Produce complete, highly detailed, exam-ready content with specific facts, numbers, and names throughout.`;
 
   const raw = await callAI(prompt, apiKey, model);
   let text = raw.replace(/```json|```/g,'').trim();
@@ -1615,6 +1676,346 @@ function reloadHist(enc) {
 }
 
 /* ── CHAT ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   CHART.JS VISUALIZATION ENGINE  — GeoMind v5
+   Section 10: Report · Chat · Comparison Charts
+   ═══════════════════════════════════════════════════════════ */
+
+// ── Chart color palette (dark-theme safe) ──────────────────
+const CHART_COLORS = {
+  cyan:   'rgba(0,229,200,0.8)',
+  blue:   'rgba(74,158,255,0.8)',
+  green:  'rgba(52,211,153,0.8)',
+  amber:  'rgba(255,202,69,0.8)',
+  purple: 'rgba(157,122,255,0.8)',
+  red:    'rgba(255,100,100,0.8)',
+  teal:   'rgba(20,184,166,0.8)',
+  orange: 'rgba(251,146,60,0.8)',
+};
+const PALETTE = Object.values(CHART_COLORS);
+
+// Shared Chart.js default config for dark theme
+const CHART_DEFAULTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      labels: { color: '#b8c4d8', font: { size: 11, family: 'Inter, sans-serif' }, boxWidth: 14 }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(10,15,28,0.95)',
+      titleColor: '#e8edf8',
+      bodyColor: '#b8c4d8',
+      borderColor: 'rgba(255,255,255,0.08)',
+      borderWidth: 1,
+    }
+  },
+  scales: {
+    x: { ticks: { color: '#8899bb', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#8899bb', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+  }
+};
+
+// ── Destroy any existing Chart on a canvas (prevents memory leak) ──
+function destroyChart(canvasId) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
+}
+
+// ── Create a wrapper div for a chart ──────────────────────
+function makeChartBox(title, height = 220) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `
+    background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+    border-radius:12px;padding:14px 12px;margin:10px 0;
+  `;
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase;';
+  titleEl.textContent = title;
+  wrap.appendChild(titleEl);
+  const canvasWrap = document.createElement('div');
+  canvasWrap.style.cssText = `position:relative;height:${height}px;width:100%;`;
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'max-width:100%;';
+  canvasWrap.appendChild(canvas);
+  wrap.appendChild(canvasWrap);
+  return { wrap, canvas };
+}
+
+// ── Render a single generic chart ─────────────────────────
+function renderSingleChart(container, type, title, labels, values, colors) {
+  if (!labels || labels.length < 2 || !values || values.every(v => !v || v === 0)) return false;
+  const clrs = colors || PALETTE.slice(0, labels.length);
+  const h = type === 'pie' || type === 'doughnut' ? 200 : 200;
+  const { wrap, canvas } = makeChartBox(title, h);
+  const id = 'chart-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  canvas.id = id;
+  container.appendChild(wrap);
+  const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  if (type === 'pie' || type === 'doughnut') {
+    delete cfg.scales;
+  }
+  new Chart(canvas, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        label: title,
+        data: values,
+        backgroundColor: type === 'bar' ? clrs.map(c => c.replace('0.8','0.65')) : clrs,
+        borderColor:     type === 'bar' ? clrs : 'transparent',
+        borderWidth: type === 'bar' ? 1.5 : 0,
+        borderRadius: type === 'bar' ? 6 : 0,
+        hoverOffset: type === 'doughnut' ? 8 : 0,
+      }]
+    },
+    options: cfg
+  });
+  return true;
+}
+
+// ── Extract crop data from AI agriculture object ───────────
+function extractCropsChart(ai) {
+  const crops = ai?.agriculture?.majorCrops;
+  if (!crops || crops.length < 2) return null;
+  // crops are strings like "Wheat — grows due to alluvial soil"
+  const labels = crops.map(c => c.split(/[—\-–]/)[0].trim().substring(0, 20));
+  // Assign symbolic values (1st=prominent) — no fake percentages, just rank indicators
+  const values = crops.map((_, i) => Math.max(10 - i * 2, 2));
+  return { labels, values, note: '* Relative prominence, not production volume' };
+}
+
+// ── Extract industry/economy data ────────────────────────
+function extractEconomyChart(ai) {
+  const inds = ai?.economy?.majorIndustries;
+  if (!inds || inds.length < 2) return null;
+  const labels = inds.map(ind => (typeof ind === 'string' ? ind.split(/[—\-–]/)[0].trim().substring(0,18) : String(ind)));
+  const values = inds.map((_, i) => Math.max(10 - i * 2, 2));
+  return { labels, values };
+}
+
+// ── Build Info Cards (Key Facts) ──────────────────────────
+function renderInfoCards(container, ai) {
+  const facts = ai?.localInfo?.importantFacts;
+  const examFocus = ai?.examFocus;
+  const items = [...(facts || []), ...(examFocus || [])].slice(0, 6);
+  if (!items.length) return;
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0;';
+  items.forEach((fact, i) => {
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px;padding:10px 12px;font-size:11px;color:#b8c4d8;line-height:1.5;
+      border-left:3px solid ${PALETTE[i % PALETTE.length]};
+    `;
+    card.textContent = fact;
+    grid.appendChild(card);
+  });
+  const wrap = document.createElement('div');
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase;margin-top:14px;';
+  titleEl.textContent = '📌 Key Facts & Exam Focus';
+  wrap.appendChild(titleEl);
+  wrap.appendChild(grid);
+  container.appendChild(wrap);
+}
+
+// ── Climate/Geography Mini Cards ─────────────────────────
+function renderGeoCards(container, ai) {
+  const geo = ai?.geography;
+  if (!geo) return;
+  const items = [
+    { icon: '⛰', label: 'Terrain',   val: geo.terrain },
+    { icon: '🌡', label: 'Climate',   val: geo.climate },
+    { icon: '🌊', label: 'Rivers',    val: geo.rivers  },
+    { icon: '🌱', label: 'Soil Type', val: geo.soilType },
+  ].filter(x => x.val && x.val.length > 3);
+  if (!items.length) return;
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0;';
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+      border-radius:10px;padding:10px 12px;
+    `;
+    card.innerHTML = `
+      <div style="font-size:18px;margin-bottom:4px">${item.icon}</div>
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">${item.label}</div>
+      <div style="font-size:10px;color:#b8c4d8;line-height:1.4">${item.val.substring(0, 90)}…</div>
+    `;
+    grid.appendChild(card);
+  });
+  const wrap = document.createElement('div');
+  const titleEl = document.createElement('div');
+  titleEl.style.cssText = 'font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase;margin-top:14px;';
+  titleEl.textContent = '🌏 Geography Overview';
+  wrap.appendChild(titleEl);
+  wrap.appendChild(grid);
+  container.appendChild(wrap);
+}
+
+// ── MAIN: Render all report charts into a container ───────
+function renderReportCharts(container, ai) {
+  if (!ai || !container) return;
+  // Divider
+  const divider = document.createElement('div');
+  divider.style.cssText = 'margin:18px 0 10px;border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;';
+  const vizTitle = document.createElement('div');
+  vizTitle.style.cssText = 'font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;';
+  vizTitle.innerHTML = '📊 Data Visualizations';
+  const vizSub = document.createElement('div');
+  vizSub.style.cssText = 'font-size:10px;color:var(--muted);margin-bottom:12px;';
+  vizSub.textContent = 'Charts show relative prominence based on AI-reported data. Values are indicative, not official statistics.';
+  divider.appendChild(vizTitle);
+  divider.appendChild(vizSub);
+  container.appendChild(divider);
+
+  // 1 — Geography Info Cards
+  renderGeoCards(container, ai);
+
+  // 2 — Crops Bar Chart
+  const crops = extractCropsChart(ai);
+  if (crops) {
+    renderSingleChart(container, 'bar', '🌾 Major Crops (Relative Prominence)', crops.labels, crops.values,
+      [CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.cyan, CHART_COLORS.blue, CHART_COLORS.purple]
+    );
+    // note
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-6px;margin-bottom:6px;';
+    note.textContent = crops.note;
+    container.appendChild(note);
+  }
+
+  // 3 — Industries Doughnut Chart
+  const econ = extractEconomyChart(ai);
+  if (econ) {
+    renderSingleChart(container, 'doughnut', '💼 Key Industries (Relative Importance)', econ.labels, econ.values, PALETTE);
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-6px;margin-bottom:6px;';
+    note.textContent = '* Relative importance, not GDP share';
+    container.appendChild(note);
+  }
+
+  // 4 — Key Facts Info Cards
+  renderInfoCards(container, ai);
+}
+
+// ── Chat: parse AI response for embedded chart JSON ────────
+function parseChatCharts(rawAnswer) {
+  // AI may return JSON with text + charts array
+  try {
+    const parsed = JSON.parse(rawAnswer);
+    if (parsed.text && parsed.charts) return parsed;
+  } catch (_) {}
+  // Try to extract JSON block from mixed response
+  const jsonMatch = rawAnswer.match(/\{[\s\S]*"charts"\s*:\s*\[[\s\S]*?\][\s\S]*?\}/);
+  if (jsonMatch) {
+    try { const p = JSON.parse(jsonMatch[0]); if (p.charts) return p; } catch (_) {}
+  }
+  return { text: rawAnswer, charts: [] };
+}
+
+// ── Chat: render chart data below a message ──────────────
+function renderChatCharts(container, charts) {
+  if (!charts || !charts.length) return;
+  charts.forEach(chart => {
+    if (!chart.labels || !chart.values || chart.labels.length < 2) return;
+    if (chart.values.every(v => !v || v === 0)) return;
+    const type = chart.type || 'bar';
+    renderSingleChart(container, type, chart.title || 'Data', chart.labels, chart.values, PALETTE);
+  });
+}
+
+// ── Comparison: side-by-side bar chart ───────────────────
+function renderComparisonCharts(container, aiA, aiB, nameA, nameB) {
+  if (!aiA || !aiB || !container) return;
+
+  // 1 — Crops comparison
+  const cropsA = (aiA.agriculture?.majorCrops || []).slice(0, 4).map(c => c.split(/[—\-–]/)[0].trim().substring(0,15));
+  const cropsB = (aiB.agriculture?.majorCrops || []).slice(0, 4).map(c => c.split(/[—\-–]/)[0].trim().substring(0,15));
+  const allCrops = [...new Set([...cropsA, ...cropsB])].slice(0, 6);
+
+  if (allCrops.length >= 2) {
+    const valsA = allCrops.map(c => cropsA.includes(c) ? (cropsA.length - cropsA.indexOf(c)) : 0);
+    const valsB = allCrops.map(c => cropsB.includes(c) ? (cropsB.length - cropsB.indexOf(c)) : 0);
+    const { wrap, canvas } = makeChartBox(`🌾 Crops Comparison: ${nameA} vs ${nameB}`, 210);
+    container.appendChild(wrap);
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: allCrops,
+        datasets: [
+          { label: nameA, data: valsA, backgroundColor: CHART_COLORS.cyan, borderRadius: 5 },
+          { label: nameB, data: valsB, backgroundColor: CHART_COLORS.blue, borderRadius: 5 },
+        ]
+      },
+      options: { ...JSON.parse(JSON.stringify(CHART_DEFAULTS)), plugins: { ...JSON.parse(JSON.stringify(CHART_DEFAULTS)).plugins, title: { display: false } } }
+    });
+  }
+
+  // 2 — Industries comparison
+  const indsA = (aiA.economy?.majorIndustries || []).slice(0, 4).map(i => (typeof i === 'string' ? i.split(/[—\-–]/)[0].trim().substring(0,15) : String(i)));
+  const indsB = (aiB.economy?.majorIndustries || []).slice(0, 4).map(i => (typeof i === 'string' ? i.split(/[—\-–]/)[0].trim().substring(0,15) : String(i)));
+  const allInds = [...new Set([...indsA, ...indsB])].slice(0, 6);
+
+  if (allInds.length >= 2) {
+    const vA = allInds.map(c => indsA.includes(c) ? (indsA.length - indsA.indexOf(c)) : 0);
+    const vB = allInds.map(c => indsB.includes(c) ? (indsB.length - indsB.indexOf(c)) : 0);
+    const { wrap, canvas } = makeChartBox(`💼 Industries Comparison: ${nameA} vs ${nameB}`, 210);
+    container.appendChild(wrap);
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: allInds,
+        datasets: [
+          { label: nameA, data: vA, backgroundColor: CHART_COLORS.green, borderRadius: 5 },
+          { label: nameB, data: vB, backgroundColor: CHART_COLORS.amber, borderRadius: 5 },
+        ]
+      },
+      options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+    });
+  }
+
+  // 3 — Side-by-side Geography Info Cards for both locations
+  const geoFields = [
+    { key: 'terrain',   icon: '⛰', label: 'Terrain'   },
+    { key: 'climate',   icon: '🌡', label: 'Climate'   },
+    { key: 'soilType',  icon: '🌱', label: 'Soil'      },
+    { key: 'rivers',    icon: '🌊', label: 'Rivers'    },
+  ];
+  const geoTitle = document.createElement('div');
+  geoTitle.style.cssText = 'font-size:11px;font-weight:700;color:var(--cyan);margin:14px 0 8px;letter-spacing:0.04em;text-transform:uppercase;';
+  geoTitle.textContent = '🌏 Geography Side-by-Side';
+  container.appendChild(geoTitle);
+  const geoGrid = document.createElement('div');
+  geoGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
+  [[aiA, nameA, CHART_COLORS.cyan], [aiB, nameB, CHART_COLORS.blue]].forEach(([ai, name, color]) => {
+    const col = document.createElement('div');
+    col.style.cssText = `background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;border-top:2px solid ${color};`;
+    const locName = document.createElement('div');
+    locName.style.cssText = 'font-size:11px;font-weight:800;color:#e8edf8;margin-bottom:8px;';
+    locName.textContent = name;
+    col.appendChild(locName);
+    geoFields.forEach(f => {
+      const val = ai?.geography?.[f.key];
+      if (!val) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:5px;';
+      row.innerHTML = `<span style="font-size:9px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:1px">${f.icon} ${f.label}</span><span style="font-size:10px;color:#b8c4d8;line-height:1.4">${val.substring(0,80)}…</span>`;
+      col.appendChild(row);
+    });
+    geoGrid.appendChild(col);
+  });
+  container.appendChild(geoGrid);
+
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:9px;color:var(--muted);margin-top:8px;text-align:center;';
+  note.textContent = '* Bar chart values show relative ranking from AI-reported data, not official statistics.';
+  container.appendChild(note);
+}
+
 async function sendChat() {
   // Improved: check network before chat
   const inp=document.getElementById('cinput');
@@ -1622,7 +2023,7 @@ async function sendChat() {
   if (!q) return;
   if (!curData.lat) { toast('Click a map location and Send first','err'); return; }
   if (!canChat()) {
-    if (userProfile.plan==='free') { showNoKeyError(); goPage('map'); return; }
+    if (userProfile.plan==='free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return; }
     showLimitReached('chat'); goTab('p',document.getElementById('t-p')); return;
   }
   inp.value='';
@@ -1637,20 +2038,57 @@ async function sendChat() {
   const loc=[addr.city,addr.state,addr.country].filter(Boolean).join(', ');
   const lPick=document.getElementById('langPick');
   const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
-  const prompt=`You are a geography & history tutor. Location: ${loc}.
+
+  // Chart-aware prompt: ask AI for structured data when question implies data
+  const wantsChart = /crop|industry|economy|GDP|rainfall|climate|population|compare|production|statistics|data|numbers|percentage/i.test(q);
+  const prompt = wantsChart
+    ? `You are a geography & history tutor. Location: ${loc}.
+Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
+Answer in ${langName}. Question: ${q}
+
+If you have REAL DATA to show as a chart, return ONLY valid JSON in this exact format:
+{"text":"Your 2-4 sentence answer with exam-relevant facts.","charts":[{"type":"bar","title":"Chart Title","labels":["Item1","Item2","Item3"],"values":[real_number,real_number,real_number]}]}
+
+If you do NOT have real data for a chart, return ONLY valid JSON: {"text":"Your answer here.","charts":[]}
+
+IMPORTANT: Only include a chart if you have REAL, ACCURATE data. Do NOT fabricate numbers. Use only verified data.`
+    : `You are a geography & history tutor. Location: ${loc}.
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
 Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
-  let answer='No response received.';
+
+  let answerText = 'No response received.';
+  let chartData = [];
   try {
     const apiKey=getChatAPIKey();
     if (!apiKey) throw new Error('No API key available for chat.');
     const model=getSelectedModel(true);
-    answer = await callAI(prompt, apiKey, model);
+    const rawAnswer = await callAI(prompt, apiKey, model);
+    if (wantsChart) {
+      const parsed = parseChatCharts(rawAnswer);
+      answerText = parsed.text || rawAnswer;
+      chartData = parsed.charts || [];
+    } else {
+      answerText = rawAnswer;
+    }
     await incrementChat();
-    await saveChatMsg(q, answer);
-  } catch(e) { answer='Error: '+e.message; }
-  document.getElementById(aid).textContent=answer;
+    await saveChatMsg(q, answerText);
+  } catch(e) { answerText='Error: '+e.message; }
+
+  // Update answer text
+  const answerEl = document.getElementById(aid);
+  if (answerEl) answerEl.textContent = answerText;
+
+  // Render charts below the message (if any valid charts)
+  if (chartData.length) {
+    const chartContainer = document.createElement('div');
+    chartContainer.style.cssText = 'margin-top:8px;';
+    renderChatCharts(chartContainer, chartData);
+    if (chartContainer.children.length) {
+      div.appendChild(chartContainer);
+    }
+  }
+
   msgs.scrollTop=msgs.scrollHeight;
 }
 document.getElementById('cinput').addEventListener('keydown', e=>{if(e.key==='Enter')sendChat();});
@@ -1780,6 +2218,27 @@ function renderReport(lat,lon,geo,country,wiki,ai) {
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
   goTab('a',document.getElementById('t-a'));
+
+  // ── Inject Chart.js Visualizations AFTER DOM is set ──
+  if (ai) {
+    requestAnimationFrame(() => {
+      try {
+        const chartSection = document.createElement('div');
+        chartSection.id = 'report-charts-' + Date.now();
+        chartSection.style.cssText = 'padding:0 2px;';
+        renderReportCharts(chartSection, ai);
+        // Insert before share row
+        const shareRow = wrap.querySelector('.share-row');
+        if (shareRow) {
+          wrap.insertBefore(chartSection, shareRow);
+        } else {
+          wrap.appendChild(chartSection);
+        }
+      } catch(chartErr) {
+        console.warn('[GeoMind Charts]', chartErr.message);
+      }
+    });
+  }
 }
 
 function toggleSeeMore(contentId, btnId) {
@@ -2993,6 +3452,26 @@ function renderComparison(dA, dB) {
   wrap.style.display = 'block';
   toast('✓ Comparison ready!','ok');
 
+  // ── Inject Side-by-Side Charts ──
+  requestAnimationFrame(() => {
+    try {
+      const chartSection = document.createElement('div');
+      chartSection.style.cssText = 'margin-top:16px;padding:0 2px;';
+      const chartTitle = document.createElement('div');
+      chartTitle.style.cssText = 'font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;';
+      chartTitle.innerHTML = '📊 Visual Comparison';
+      const chartSub = document.createElement('div');
+      chartSub.style.cssText = 'font-size:10px;color:var(--muted);margin-bottom:10px;';
+      chartSub.textContent = 'Charts show relative prominence from AI data. Not official statistics.';
+      chartSection.appendChild(chartTitle);
+      chartSection.appendChild(chartSub);
+      renderComparisonCharts(chartSection, aiA, aiB, nameA, nameB);
+      wrap.appendChild(chartSection);
+    } catch(chartErr) {
+      console.warn('[GeoMind Comparison Charts]', chartErr.message);
+    }
+  });
+
   // Save to Firebase comparison history (fire-and-forget, never blocks UI)
   saveComparisonHistory(nameA, nameB, aiA, aiB, h).catch(e =>
     console.warn('[saveComparisonHistory]', e.message)
@@ -3332,7 +3811,7 @@ function renderPlansInto(wrap) {
   let html = `<div class="pricing-title">🌟 GeoMind Plans</div>
     <div class="pricing-sub">From free forever to unlimited power — choose the plan that fits your exam prep goals.<br>Paid plans include admin-managed API keys · No setup needed · Activate instantly.</div>
     <div class="plans-grid">`;
-  const planOrder = ['free', 'free_trial', 'starter', 'standard', 'premium', 'payperuse'];
+  const planOrder = ['free_trial', 'starter', 'standard', 'premium', 'payperuse'];
   planOrder.forEach(key => {
     const P = PLANS[key]; if (!P) return;
     const feats      = PLAN_FEATURES[key] || [];
@@ -3450,9 +3929,7 @@ function updateNavUI() {
   badge.textContent = badgeLabel;
   badge.className   = `plan-badge pb-${plan}`;
   const usageMini = document.getElementById('usageMini');
-  if (plan === 'free') {
-    usageMini.textContent = 'Free Plan · Own API Key';
-  } else if (plan === 'free_trial') {
+  if (plan === 'free_trial') {
     const days = getTrialDaysRemaining();
     usageMini.textContent = `Trial: ${planUsed}/${P.genLimit} rpts · ${chatUsed}/${P.chatLimit} chats · ${days}d left`;
     // Turn red when ≤1 day left
@@ -3472,19 +3949,7 @@ function updateUsageWidget() {
   const el       = document.getElementById('uwContent');
   if (!el) return;
 
-  if (plan === 'free') {
-    el.innerHTML = `
-      <div style="text-align:center;padding:10px 0">
-        <div style="font-size:11px;color:${hasKey?'var(--green)':'var(--amber)'};margin-bottom:8px">${hasKey?'✓ API Key Connected':'⚠ No API Key'}</div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.6">${hasKey?'Unlimited reports using your API quota.':'Add your API key in Settings to start generating reports.'}</div>
-        <div style="margin-top:12px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;text-align:center;">
-          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Total Reports</div>
-          <div style="font-size:22px;font-weight:800;color:var(--cyan);font-family:var(--ff-mono)">${total}</div>
-        </div>
-        ${!hasKey?`<button onclick="goPage('settings')" style="margin-top:10px;background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;">⚙ Settings</button>`:''}
-        <button onclick="showTrialPopup()" style="margin-top:8px;width:100%;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.1));border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;">🚀 Try Free Trial</button>
-      </div>`;
-  } else if (plan === 'free_trial') {
+  if (plan === 'free_trial') {
     // ── Free Trial specific widget with countdown ──
     const days    = getTrialDaysRemaining();
     const rUsed   = userProfile.planUsed        || 0;
@@ -3516,6 +3981,26 @@ function updateUsageWidget() {
       <div class="uw-bar"><div class="uw-bar-fill ${cpPct>=100?'danger':''}" style="width:${cpPct}%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div></div>
       <!-- Upgrade prompt -->
       <button onclick="goPage('plans')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,rgba(74,158,255,0.15),rgba(157,122,255,0.1));border:1px solid rgba(74,158,255,0.3);color:var(--blue);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Upgrade to Paid Plan</button>`;
+  } else if (plan === 'payperuse') {
+    const hasOwnAPI = !!(userProfile.usingOwnAPI && userSettings.apiKey?.trim());
+    const rUsed  = userProfile.planUsed       || 0;
+    const cUsed  = userProfile.planChatUsed   || 0;
+    const cpUsed = userProfile.comparisonUsed || 0;
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(0,229,200,0.06));border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">⚡ Pay Per Use</div>
+        ${hasOwnAPI
+          ? '<div style="font-size:12px;color:var(--green);font-weight:700">✓ Own API Mode — High Limits Active</div>'
+          : '<div style="font-size:11px;color:var(--amber);font-weight:700">Admin API — Limited Usage</div>'
+        }
+      </div>
+      ${hasOwnAPI
+        ? `<div style="font-size:10px;color:var(--muted);text-align:center;padding:6px 0">Your API key is in use. Reports/chats/comparisons use your own quota — very high limits apply.</div>`
+        : `<div class="uw-row"><span class="uw-label">Reports Used</span><span class="uw-val">${rUsed} / 2</span></div>
+           <div class="uw-bar"><div class="uw-bar-fill ${rUsed>=2?'danger':''}" style="width:${Math.min(100,rUsed/2*100)}%"></div></div>
+           <div class="uw-row" style="margin-top:6px"><span class="uw-label">Chats Used</span><span class="uw-val">${cUsed} / 3</span></div>
+           <button onclick="goPage('settings')" style="margin-top:10px;width:100%;padding:7px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:var(--green);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">⚡ Add Own API → Unlock High Limits</button>`
+      }`;
   } else {
     const genLimit  = getPlanGenLimit();
     const chatLimit = getPlanChatLimit();

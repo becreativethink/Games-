@@ -3972,15 +3972,15 @@ function updateUsageWidget() {
       </div>
       <!-- Reports bar -->
       <div class="uw-row"><span class="uw-label">📊 Reports</span><span class="uw-val" style="${rPct>=90?'color:var(--red)':''}">${rUsed} / ${rLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${rPct>=100?'danger':''}" style="width:${rPct}%"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill reports-fill ${rPct>=100?'danger':''}" style="width:${rPct}%"></div></div>
       <!-- Chat bar -->
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">💬 Chats</span><span class="uw-val" style="${cPct>=90?'color:var(--red)':''}">${cUsed} / ${cLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${cPct>=100?'danger':''}" style="width:${cPct}%"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill chats-fill ${cPct>=100?'danger':''}" style="width:${cPct}%"></div></div>
       <!-- Comparison bar -->
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">⚖ Comparisons</span><span class="uw-val" style="${cpPct>=90?'color:var(--red)':''}">${cpUsed} / ${cpLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${cpPct>=100?'danger':''}" style="width:${cpPct}%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill compare-fill ${cpPct>=100?'danger':''}" style="width:${cpPct}%"></div></div>
       <!-- Upgrade prompt -->
-      <button onclick="goPage('plans')" style="margin-top:12px;width:100%;padding:8px;background:linear-gradient(135deg,rgba(74,158,255,0.15),rgba(157,122,255,0.1));border:1px solid rgba(74,158,255,0.3);color:var(--blue);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">⭐ Upgrade to Paid Plan</button>`;
+      <button onclick="goPage('plans')" style="class="upgrade-cta-btn" style="margin-top:14px;">⭐ Upgrade to Paid Plan</button>`;
   } else if (plan === 'payperuse') {
     const hasOwnAPI = !!(userProfile.usingOwnAPI && userSettings.apiKey?.trim());
     const rUsed  = userProfile.planUsed       || 0;
@@ -4018,11 +4018,11 @@ function updateUsageWidget() {
         <div style="font-size:14px;font-weight:800;color:var(--cyan);font-family:var(--ff-mono)">${total}</div>
       </div>
       <div class="uw-row"><span class="uw-label">Plan Reports Used</span><span class="uw-val" style="${genPct>=90?'color:var(--red)':''}">${planUsed} / ${genLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill reports-fill ${genPct>=100?'danger':''}" style="width:${genPct}%"></div></div>
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">Chat Messages Used</span><span class="uw-val" style="${chatPct>=90?'color:var(--red)':''}">${chatUsed} / ${chatLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill chats-fill ${chatPct>=100?'danger':''}" style="width:${chatPct}%"></div></div>
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">⚖ Comparisons Used</span><span class="uw-val" style="${cmpPct>=90?'color:var(--red)':''}">${cmpUsed} / ${cmpLimit}</span></div>
-      <div class="uw-bar"><div class="uw-bar-fill ${cmpPct>=100?'danger':''}" style="width:${cmpPct}%;background:linear-gradient(90deg,var(--purple),var(--blue))"></div></div>
+      <div class="uw-bar"><div class="uw-bar-fill compare-fill ${cmpPct>=100?'danger':''}" style="width:${cmpPct}%"></div></div>
       <div style="margin-top:10px;font-size:10px;color:var(--dim);text-align:center;line-height:1.6">
         <span style="color:var(--pprem)">${P.name}</span> · Active since ${planDate}<br>
         <span style="color:var(--muted)">Counts since plan activation only</span>

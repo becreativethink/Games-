@@ -10,7 +10,7 @@
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"/>
 
 <!-- Map CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
@@ -34,7 +34,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <div class="auth-globe">🌍</div>
+      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -84,7 +84,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <div class="auth-globe">🌍</div>
+      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -176,7 +176,7 @@
   <!-- TOP NAV -->
   <div id="topNav">
     <div class="nav-logo" onclick="goPage('map')">
-      <div class="nav-logo-gem">🌍</div>
+      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="nav-logo-img"/>
       <div class="nav-logo-name">GeoMind</div>
     </div>
     <div class="page-tabs">
@@ -278,12 +278,16 @@
         </div>
         <div class="tpanel on" id="tp-a">
           <div class="scroll">
-            <div class="idle" id="idleBox">
+          <div id="idleBox" class="idle">
               <div class="idle-icon">🌍</div>
               <h3 id="i-title">Click map, then Send Report</h3>
               <p id="i-desc">GeoMind generates AI-powered exam-ready reports on geography, history, agriculture &amp; economy.</p>
+              <div class="idle-status-row">
+                <span class="status-dot"></span>
+                <span class="status-text">AI Engine Online</span>
+              </div>
               <div class="usage-widget">
-                <div class="uw-title">Monthly Usage</div>
+                <div class="uw-title">📊 Monthly Usage</div>
                 <div id="uwContent"></div>
               </div>
             </div>
@@ -493,7 +497,14 @@
   </div>
 
   <!-- FOOTER -->
-  <div id="footer">GeoMind v5.1 — Multi-Provider AI · OpenStreetMap · Nominatim · REST Countries · Wikipedia · Firebase<span id="statusDot">● ONLINE</span></div>
+  <div id="footer">
+    <div class="footer-status">
+      <span class="footer-dot"></span>
+      <span class="footer-label">Online</span>
+    </div>
+    <div class="footer-copy">GeoMind v5.2 · AI Geo-Intelligence Platform · <span>© 2025</span></div>
+    <div style="font-size:9px;color:var(--dim);">OpenStreetMap · Firebase · Wikipedia</div>
+  </div>
 </div>
 
 <!-- Plan upgrade modal -->
@@ -547,5 +558,48 @@
 
 <!-- ══ GEOMIND APPLICATION SCRIPT ══ -->
 <script src="geojavascript.js"></script>
+
+<!-- ══ MICRO-INTERACTIONS (Section 10) ══ -->
+<script>
+(function(){
+  // ── Ripple Effect on buttons ──────────────────
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button, .abtn, .plan-btn, .hist-tab, .mob-tab, .page-tab');
+    if(!btn) return;
+    const r = document.createElement('span');
+    r.className = 'ripple-wave';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+    btn.classList.add('ripple-host');
+    btn.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+  });
+
+  // ── Animate usage bars on load ────────────────
+  function animateBars(){
+    document.querySelectorAll('.uw-bar-fill').forEach(bar => {
+      const w = bar.style.width;
+      if(w && w !== '0%'){
+        bar.style.setProperty('--target-w', w);
+        bar.style.width = '0%';
+        requestAnimationFrame(() => {
+          setTimeout(() => { bar.style.width = w; }, 80);
+        });
+      }
+    });
+  }
+  // Watch for usage widget DOM changes
+  const obs = new MutationObserver(animateBars);
+  const uw = document.getElementById('uwContent');
+  if(uw) obs.observe(uw, {childList:true, subtree:true});
+
+  // ── Smooth page transition classes ───────────
+  document.querySelectorAll('.page').forEach(p => {
+    const orig = p.style.display;
+    if(orig === 'flex') p.classList.add('fade-in-up');
+  });
+})();
+</script>
 </body>
 </html>

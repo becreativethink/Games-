@@ -743,16 +743,206 @@ a{text-decoration:none;}
   border-color:rgba(0,229,200,0.18);
   box-shadow:0 0 16px rgba(0,229,200,0.08);
 }
-.hcontent{flex:1;overflow-y:auto;padding:16px 20px;}
-.hcontent:not(:first-of-type){display:none;}
-.hempty{padding:40px;text-align:center;color:var(--muted);}
-.hempty p{font-size:12px;margin-top:10px;}
-.h-item{
-  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
-  border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;
+/* ── hcontent: NEVER auto-hide — JS controls display exclusively ── */
+.hcontent{flex:1;overflow-y:auto;padding:16px 20px;min-height:0;}
+/* REMOVED: .hcontent:not(:first-of-type){display:none;} — this was the bug */
+
+/* ── Empty state ── */
+.hempty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 30px;text-align:center;color:var(--muted);
+  animation:fadeUp 0.4s ease;
+}
+.hempty .hempty-icon{font-size:48px;opacity:0.25;margin-bottom:14px;}
+.hempty p{font-size:13px;margin-top:8px;line-height:1.7;max-width:280px;}
+
+/* ── Clear history button ── */
+.hclr{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 16px;margin-bottom:14px;
+  background:rgba(255,107,122,0.07);
+  border:1px solid rgba(255,107,122,0.18);
+  color:var(--red);border-radius:20px;
+  font-size:11px;font-weight:600;
+  transition:all var(--trans);cursor:pointer;
+}
+.hclr:hover{background:rgba(255,107,122,0.15);border-color:rgba(255,107,122,0.35);}
+.cmp-clr-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 16px;margin-bottom:14px;
+  background:rgba(255,107,122,0.07);
+  border:1px solid rgba(255,107,122,0.18);
+  color:var(--red);border-radius:20px;
+  font-size:11px;font-weight:600;
+  transition:all var(--trans);cursor:pointer;
+}
+.cmp-clr-btn:hover{background:rgba(255,107,122,0.15);border-color:rgba(255,107,122,0.35);}
+
+/* ── Search/filter bar for history ── */
+.hist-search-bar{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:14px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:12px;padding:8px 14px;
   transition:all var(--trans);
 }
-.h-item:hover{background:rgba(255,255,255,0.06);border-color:rgba(0,229,200,0.15);transform:translateX(2px);}
+.hist-search-bar:focus-within{border-color:var(--secondary);box-shadow:0 0 0 3px rgba(0,212,255,0.1);}
+.hist-search-bar input{
+  flex:1;background:none;border:none;
+  color:var(--text);font-size:12px;
+  font-family:var(--ff-body);
+}
+.hist-search-bar input::placeholder{color:var(--muted);}
+.hist-search-icon{color:var(--muted);font-size:14px;flex-shrink:0;}
+
+/* ── History count badge ── */
+.hist-count{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;color:var(--muted);
+  margin-bottom:12px;
+}
+.hist-count strong{
+  color:var(--cyan);font-family:var(--ff-mono);
+}
+
+/* ── History grid ── */
+.hgrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:12px;
+}
+
+/* ── History item card — FULL REDESIGN ── */
+.hitem{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:16px;padding:16px;
+  cursor:pointer;
+  transition:transform var(--trans),border-color var(--trans),box-shadow var(--trans);
+  position:relative;overflow:hidden;
+  animation:fadeUp 0.3s ease both;
+}
+.hitem::before{
+  content:'';position:absolute;inset:0;border-radius:16px;
+  background:linear-gradient(135deg,rgba(74,124,255,0.04),transparent);
+  opacity:0;transition:opacity var(--trans);
+}
+.hitem:hover{
+  transform:translateY(-3px);
+  border-color:rgba(0,212,255,0.25);
+  box-shadow:0 8px 32px rgba(0,0,0,0.35),0 0 20px rgba(74,124,255,0.08);
+}
+.hitem:hover::before{opacity:1;}
+
+/* Card top row: icon + name + badge */
+.hitem-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.hitem-pin{
+  width:34px;height:34px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(74,124,255,0.12));
+  border:1px solid rgba(0,212,255,0.2);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.hitem-title{flex:1;min-width:0;}
+.hname{
+  font-family:var(--ff-head);font-weight:700;font-size:13px;
+  color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;
+}
+.hbadge{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:3px;padding:2px 8px;
+  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.15);
+  border-radius:10px;font-size:9px;font-weight:700;color:var(--secondary);
+  text-transform:uppercase;letter-spacing:0.05em;
+}
+
+/* Meta row */
+.hmeta{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;}
+.hmeta-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.hmeta-tag{
+  padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;
+  background:rgba(157,122,255,0.1);color:var(--purple);
+}
+.hmeta-tag.green{background:rgba(52,211,153,0.1);color:var(--green);}
+.hmeta-tag.amber{background:rgba(255,202,69,0.1);color:var(--amber);}
+
+/* Coordinates chip */
+.hcoord{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:8px;padding:3px 10px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;font-size:10px;font-weight:600;
+  color:var(--muted);font-family:var(--ff-mono);
+}
+
+/* Divider */
+.hitem-divider{height:1px;background:rgba(255,255,255,0.05);margin:10px 0;}
+
+/* Footer */
+.hitem-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;
+}
+.hts{
+  font-size:10px;color:var(--dim);font-family:var(--ff-mono);
+  display:flex;align-items:center;gap:4px;
+}
+.hts::before{content:'🕐';font-size:10px;}
+.hitem-actions{display:flex;gap:6px;}
+.h-view-btn{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(0,212,255,0.08);
+  border:1px solid rgba(0,212,255,0.2);
+  color:var(--secondary);padding:5px 12px;
+  border-radius:8px;font-size:10px;font-weight:700;
+  transition:all var(--trans);
+}
+.h-view-btn:hover{background:rgba(0,212,255,0.18);border-color:rgba(0,212,255,0.4);transform:translateY(-1px);}
+.h-map-btn{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(74,124,255,0.08);
+  border:1px solid rgba(74,124,255,0.2);
+  color:var(--primary);padding:5px 12px;
+  border-radius:8px;font-size:10px;font-weight:700;
+  transition:all var(--trans);
+}
+.h-map-btn:hover{background:rgba(74,124,255,0.18);border-color:rgba(74,124,255,0.4);transform:translateY(-1px);}
+
+/* ── History page header bar ── */
+.hist-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 0;flex-shrink:0;flex-wrap:wrap;gap:10px;
+}
+.hist-header h2{
+  font-family:var(--ff-head);font-size:20px;font-weight:700;
+}
+.hist-header p{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* ── Pagination ── */
+.hist-pagination{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:16px 0 8px;flex-shrink:0;
+}
+.hist-page-btn{
+  padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);
+  color:var(--text2);transition:all var(--trans);
+}
+.hist-page-btn:hover:not([disabled]){
+  background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.25);color:var(--secondary);
+}
+.hist-page-btn[disabled]{opacity:0.4;cursor:not-allowed;}
+.hist-page-info{font-size:11px;color:var(--muted);font-family:var(--ff-mono);padding:0 8px;}
+
+/* ── Compare history improvements ── */
+.cmp-hist-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:12px;padding:0;
+}
+
 .h-loc{font-weight:700;font-size:13px;color:var(--text);}
 .h-meta{font-size:10px;color:var(--muted);margin-top:3px;}
 .h-view-btn{
@@ -1308,8 +1498,234 @@ html{scroll-behavior:smooth;}
 .cmp-hist-btn:hover{background:rgba(74,158,255,0.2);}
 
 /* ═══════════════════════════════════════
+   PROFILE PAGE — FORM FIELDS (fixes white inputs)
+   ═══════════════════════════════════════ */
+.pf-field{
+  display:flex;flex-direction:column;gap:5px;
+  margin-bottom:14px;
+}
+.pf-field label{
+  font-size:11px;font-weight:600;color:var(--muted);
+  letter-spacing:0.02em;text-transform:uppercase;
+}
+.pf-field input,.pf-field select,.pf-field textarea{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:11px;color:var(--text);
+  padding:11px 14px;font-size:13px;
+  transition:all var(--trans);
+  width:100%;
+}
+.pf-field input::placeholder{color:var(--muted);}
+.pf-field input:focus,.pf-field select:focus,.pf-field textarea:focus{
+  border-color:var(--secondary);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
+  background:rgba(0,212,255,0.04);
+  outline:none;
+}
+.pf-field input[readonly]{opacity:0.5;cursor:not-allowed;}
+.pwd-feedback{font-size:11px;min-height:16px;margin-bottom:6px;line-height:1.4;}
+
+/* Plan info card in profile */
+.plan-info-left{flex:1;}
+.plan-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
+
+/* Save button (profile + settings) */
+.save-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:11px 24px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  color:#fff;font-family:var(--ff-head);font-weight:700;font-size:13px;
+  border-radius:11px;cursor:pointer;border:none;
+  transition:all var(--trans);
+  box-shadow:0 4px 16px rgba(74,124,255,0.3);
+  margin-top:4px;
+}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 7px 22px rgba(74,124,255,0.45);}
+.save-btn:active{transform:translateY(0);}
+
+/* ═══════════════════════════════════════
+   SETTINGS PAGE — FORM FIELDS (fixes white inputs)
+   ═══════════════════════════════════════ */
+.sf-field{
+  display:flex;flex-direction:column;gap:5px;
+  margin-bottom:14px;
+}
+.sf-field label{
+  font-size:11px;font-weight:600;color:var(--muted);
+  letter-spacing:0.02em;
+}
+.sf-field input,.sf-field select,.sf-field textarea{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:11px;color:var(--text);
+  padding:11px 14px;font-size:13px;
+  transition:all var(--trans);width:100%;
+}
+.sf-field input::placeholder{color:var(--muted);}
+.sf-field input:focus,.sf-field select:focus{
+  border-color:var(--secondary);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
+  background:rgba(0,212,255,0.04);
+  outline:none;
+}
+
+/* Info box (settings descriptions) */
+.info-box{
+  background:rgba(74,124,255,0.05);
+  border:1px solid rgba(74,124,255,0.15);
+  border-radius:11px;padding:14px;
+  font-size:12px;color:var(--text2);line-height:1.7;
+  margin-top:10px;
+}
+
+/* API status dot */
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:6px;
+  background:var(--green);
+  box-shadow:0 0 6px rgba(52,211,153,0.6);
+}
+.no-key .dot{background:var(--amber);box-shadow:0 0 6px rgba(255,202,69,0.5);}
+
+/* ═══════════════════════════════════════
+   COMPARE PAGE — FULL REDESIGN
+   ═══════════════════════════════════════ */
+.compare-scroll{flex:1;overflow-y:auto;padding:20px;}
+
+/* How-to info banner */
+.compare-info{
+  background:rgba(74,124,255,0.07);
+  border:1px solid rgba(74,124,255,0.18);
+  border-radius:12px;padding:14px 16px;
+  font-size:12px;color:var(--text2);line-height:1.7;
+  margin-bottom:20px;
+}
+.compare-info strong{color:var(--text);}
+.compare-info em{color:var(--secondary);font-style:normal;font-weight:600;}
+
+/* Location pin cards grid */
+.compare-pins{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-bottom:16px;
+}
+@media(max-width:480px){.compare-pins{grid-template-columns:1fr;}}
+
+/* Individual pin card */
+.cpin-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;padding:18px;
+  transition:all var(--trans);
+  position:relative;overflow:hidden;
+}
+.cpin-card::before{
+  content:'';position:absolute;inset:0;border-radius:16px;
+  opacity:0;transition:opacity var(--trans);
+}
+#cpinA{border-top:3px solid var(--cyan);}
+#cpinA::before{background:linear-gradient(135deg,rgba(0,229,200,0.04),transparent);}
+#cpinB{border-top:3px solid var(--primary);}
+#cpinB::before{background:linear-gradient(135deg,rgba(74,124,255,0.04),transparent);}
+.cpin-card:hover::before{opacity:1;}
+
+/* Pin label */
+.cpin-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.07em;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.cpin-label-a{color:var(--cyan);}
+.cpin-label-b{color:var(--primary);}
+
+/* Pin name (location name once selected) */
+.cpin-name{
+  font-family:var(--ff-head);font-size:14px;font-weight:700;
+  color:var(--text);margin-bottom:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cpin-sub{
+  font-size:11px;color:var(--muted);margin-bottom:14px;
+  line-height:1.5;
+}
+
+/* Set location buttons */
+.cpin-btn{
+  width:100%;padding:10px;border-radius:10px;
+  font-size:12px;font-weight:700;
+  transition:all var(--trans);cursor:pointer;
+  letter-spacing:0.01em;
+}
+.cpin-btn-a{
+  background:rgba(0,229,200,0.1);
+  border:1px solid rgba(0,229,200,0.25);
+  color:var(--cyan);
+}
+.cpin-btn-a:hover{
+  background:rgba(0,229,200,0.2);
+  border-color:rgba(0,229,200,0.45);
+  transform:translateY(-1px);
+}
+.cpin-btn-b{
+  background:rgba(74,124,255,0.1);
+  border:1px solid rgba(74,124,255,0.25);
+  color:var(--primary);
+}
+.cpin-btn-b:hover{
+  background:rgba(74,124,255,0.2);
+  border-color:rgba(74,124,255,0.45);
+  transform:translateY(-1px);
+}
+
+/* VS divider between the two cards (desktop) */
+.compare-vs-divider{
+  display:none;/* only shown on wider screens */
+}
+
+/* Generate comparison button */
+#compareRunBtn{
+  width:100%;padding:14px;margin-bottom:16px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;font-family:var(--ff-head);font-size:14px;font-weight:700;
+  border-radius:13px;cursor:pointer;border:none;
+  transition:all var(--trans);
+  box-shadow:0 4px 20px rgba(74,158,255,0.3);
+  letter-spacing:0.02em;
+}
+#compareRunBtn:not([disabled]):hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 28px rgba(74,158,255,0.5);
+}
+#compareRunBtn[disabled]{
+  opacity:0.35;cursor:not-allowed;transform:none;
+  box-shadow:none;
+}
+
+/* Compare load state */
+.compare-load{
+  display:flex;flex-direction:column;align-items:center;
+  padding:30px;gap:14px;
+}
+
+/* ═══════════════════════════════════════
+   HISTORY PAGE — ensure flex layout works
+   ═══════════════════════════════════════ */
+#historyPage{flex-direction:column;}
+.hist-tabs{
+  display:flex;gap:6px;padding:12px 20px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  flex-shrink:0;background:transparent;
+}
+/* hcontent overflow fix for mobile */
+@media(max-width:900px){
+  .hcontent{padding:12px 14px;}
+  .hist-header{padding:14px 14px 0;}
+}
+
+/* ═══════════════════════════════════════
    COMPARE HIST MODAL
    ═══════════════════════════════════════ */
+
 #compareHistModal{
   position:fixed;inset:0;background:rgba(0,0,0,0.82);
   backdrop-filter:blur(10px);z-index:7000;

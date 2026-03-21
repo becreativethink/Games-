@@ -320,24 +320,28 @@
 
   <!-- ══ PAGE: HISTORY ══ -->
   <div class="page" id="historyPage">
-    <div class="page-header">
-      <h2>📋 History</h2>
-      <p>Revisit past reports and comparisons — stored results open instantly without AI calls</p>
+    <!-- Header -->
+    <div class="hist-header">
+      <div>
+        <h2>📋 History</h2>
+        <p>Revisit past reports, comparisons &amp; chats — stored results open instantly without AI calls</p>
+      </div>
     </div>
-    <!-- History Tabs -->
-    <div class="hist-tabs">
+    <!-- Tabs -->
+    <div class="hist-tabs" style="padding:12px 20px 0;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
       <button class="hist-tab active" id="htab-reports"  onclick="switchHistTab('reports')">📊 Reports</button>
       <button class="hist-tab"        id="htab-compare"  onclick="switchHistTab('compare')">⚖ Comparisons</button>
       <button class="hist-tab"        id="htab-chat"     onclick="switchHistTab('chat')">💬 Chats</button>
     </div>
-    <div class="hcontent" id="historyPageContent">
-      <div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading your history…</p></div>
+    <!-- Tab panels — all start hidden, JS controls display -->
+    <div class="hcontent" id="historyPageContent" style="display:block;">
+      <div class="hempty"><div class="hempty-icon">📊</div><p>Loading your reports…</p></div>
     </div>
-    <div class="hcontent" id="historyCompareContent" style="display:none">
-      <div class="hempty"><div style="font-size:44px;opacity:0.2">⚖</div><p>Loading comparison history…</p></div>
+    <div class="hcontent" id="historyCompareContent" style="display:none;">
+      <div class="hempty"><div class="hempty-icon">⚖</div><p>Loading comparison history…</p></div>
     </div>
-    <div class="hcontent" id="historyChatContent" style="display:none">
-      <div class="hempty"><div style="font-size:44px;opacity:0.2">💬</div><p>Loading chat history…</p></div>
+    <div class="hcontent" id="historyChatContent" style="display:none;">
+      <div class="hempty"><div class="hempty-icon">💬</div><p>Loading chat history…</p></div>
     </div>
   </div>
 
@@ -400,20 +404,38 @@
       </div>
       <!-- Edit Profile -->
       <div class="profile-section">
-        <h3>Edit Profile</h3>
-        <div class="pf-field"><label>Full Name</label><input type="text" id="pfName" placeholder="Your name"/></div>
-        <div class="pf-field"><label>Email</label><input type="email" id="pfEmail" placeholder="your@email.com" readonly style="opacity:0.6;cursor:not-allowed"/></div>
-        <div class="pf-field"><label>Phone Number</label><input type="tel" id="pfPhone" placeholder="+91 00000 00000"/></div>
+        <h3>✏️ Edit Profile</h3>
+        <div class="pf-field">
+          <label>Full Name</label>
+          <input type="text" id="pfName" placeholder="Your full name" autocomplete="name"/>
+        </div>
+        <div class="pf-field">
+          <label>Email</label>
+          <input type="email" id="pfEmail" placeholder="your@email.com" readonly/>
+        </div>
+        <div class="pf-field">
+          <label>Phone Number</label>
+          <input type="tel" id="pfPhone" placeholder="+91 00000 00000" autocomplete="tel"/>
+        </div>
         <button class="save-btn" onclick="saveProfile()">💾 Save Changes</button>
       </div>
       <!-- Password Change -->
       <div class="profile-section">
         <h3>🔒 Change Password</h3>
-        <div class="pf-field"><label>Current Password</label><input type="password" id="pwdCurrent" placeholder="Your current password"/></div>
-        <div class="pf-field"><label>New Password</label><input type="password" id="pwdNew" placeholder="At least 8 characters"/></div>
-        <div class="pf-field"><label>Confirm New Password</label><input type="password" id="pwdConfirm" placeholder="Repeat new password"/></div>
+        <div class="pf-field">
+          <label>Current Password</label>
+          <input type="password" id="pwdCurrent" placeholder="Your current password"/>
+        </div>
+        <div class="pf-field">
+          <label>New Password</label>
+          <input type="password" id="pwdNew" placeholder="At least 8 characters"/>
+        </div>
+        <div class="pf-field">
+          <label>Confirm New Password</label>
+          <input type="password" id="pwdConfirm" placeholder="Repeat new password"/>
+        </div>
         <div class="pwd-feedback" id="pwdFeedback"></div>
-        <button class="save-btn" onclick="changePassword()" style="background:linear-gradient(135deg,var(--purple),var(--blue))">🔑 Update Password</button>
+        <button class="save-btn" style="background:linear-gradient(135deg,var(--purple),var(--blue))" onclick="changePassword()">🔑 Update Password</button>
       </div>
     </div>
   </div>
@@ -460,11 +482,11 @@
         <p>Configure your AI model and API access</p>
       </div>
       <div class="settings-section">
-        <h3>AI Configuration</h3>
-        <p>Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
+        <h3>🤖 AI Configuration</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
         <div class="sf-field">
           <label>Your API Key</label>
-          <input type="password" id="settingsApiKey" placeholder="Paste your API key here…"/>
+          <input type="password" id="settingsApiKey" placeholder="Paste your API key here…" autocomplete="off"/>
         </div>
         <div class="sf-field">
           <label>AI Model</label>
@@ -472,7 +494,7 @@
           <div class="model-desc" id="modelDesc">Fast and efficient — great for most reports.</div>
         </div>
         <div id="apiStatusBox" class="api-status no-key">
-          <div class="dot"></div>
+          <span class="dot"></span>
           <span id="apiStatusText">No API key configured. Add your key above or purchase a plan.</span>
         </div>
         <div class="info-box">
@@ -482,16 +504,16 @@
         <button class="save-btn" style="margin-top:16px" onclick="saveSettings()">💾 Save Settings</button>
       </div>
       <div class="settings-section">
-        <h3>Keyboard Shortcuts</h3>
-        <div class="info-box" style="font-size:11px;line-height:2">
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <div class="info-box" style="font-size:12px;line-height:2.2">
           <strong>Alt + 1</strong> — Map &nbsp;|&nbsp; <strong>Alt + 2</strong> — Compare &nbsp;|&nbsp; <strong>Alt + 3</strong> — History<br>
           <strong>Alt + 4</strong> — Plans &nbsp;|&nbsp; <strong>Alt + 5</strong> — Profile &nbsp;|&nbsp; <strong>Alt + 6</strong> — Settings
         </div>
       </div>
-      <div class="settings-section">
-        <h3>Danger Zone</h3>
-        <p>Permanently delete all your search history from GeoMind.</p>
-        <button onclick="clearHistory(true)" style="background:rgba(255,107,122,0.1);border:1px solid rgba(255,107,122,0.3);color:var(--red);padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;">🗑 Clear My History</button>
+      <div class="settings-section" style="border-color:rgba(255,107,122,0.2);">
+        <h3 style="color:var(--red)">⚠️ Danger Zone</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Permanently delete all your search history from GeoMind.</p>
+        <button onclick="clearHistory(true)" class="danger-btn">🗑 Clear My History</button>
       </div>
     </div>
   </div>

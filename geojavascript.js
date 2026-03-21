@@ -1605,57 +1605,240 @@ function goTab(name,btn) {
 /* ── HISTORY ─────────────────────────────────────────── */
 async function loadHistoryTab() {
   const hc=document.getElementById('hcontent');
-  hc.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Loading…</div>';
+  hc.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px"><div class="spin-lg" style="margin:0 auto 10px"></div>Loading…</div>';
   await renderHistoryInto(hc, true);
 }
+
 async function loadHistoryPage() {
-  if (_histTab === 'compare') {
+  const activeTab = _histTab || 'reports';
+  // Ensure only the right tab is visible
+  const repContent  = document.getElementById('historyPageContent');
+  const cmpContent  = document.getElementById('historyCompareContent');
+  const chatContent = document.getElementById('historyChatContent');
+  [repContent, cmpContent, chatContent].forEach(el => { if (el) el.style.display = 'none'; });
+
+  if (activeTab === 'compare') {
+    if (cmpContent) cmpContent.style.display = 'block';
     loadComparisonHistory();
-  } else if (_histTab === 'chat') {
+  } else if (activeTab === 'chat') {
+    if (chatContent) chatContent.style.display = 'block';
     loadChatHistory();
   } else {
-    const hc = document.getElementById('historyPageContent');
-    if (hc) hc.innerHTML = '<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>Loading history…</p></div>';
-    await renderHistoryInto(hc, false);
+    if (repContent) { repContent.style.display = 'block'; }
+    if (repContent) repContent.innerHTML = '<div class="hempty"><div class="spin-lg" style="margin:0 auto 12px"></div><p>Loading reports…</p></div>';
+    await renderHistoryInto(repContent, false);
   }
 }
+
+/* ════════════════════════════════════════════════════
+   HISTORY RENDERING ENGINE — v2 (full fix)
+   Pagination: 20 per page, all sorted newest-first
+   ════════════════════════════════════════════════════ */
+const HIST_PAGE_SIZE = 20;
+let _histAllEntries = [];   // full sorted dataset
+let _histCurrentPage = 1;  // active page
+let _histContainer   = null;
+let _histCompact     = false;
+let _histSearchQuery = '';
+
 async function renderHistoryInto(container, compact) {
+  _histContainer = container;
+  _histCompact   = compact;
   try {
-    const snap=await db.ref('users/'+currentUser.uid+'/queries').once('value');
-    if (!snap.exists()||!snap.val()) {
-      container.innerHTML='<div class="hempty"><div style="font-size:44px;opacity:0.2">📊</div><p>No history yet. Click a location on the map to get started!</p></div>'; return;
+    console.log('[GeoMind History] Fetching all records for uid:', currentUser.uid);
+    const snap = await db.ref('users/' + currentUser.uid + '/queries').once('value');
+
+    if (!snap.exists() || !snap.val()) {
+      console.log('[GeoMind History] No records found');
+      container.innerHTML = `
+        <div class="hempty">
+          <div class="hempty-icon">📍</div>
+          <p>No history yet.<br>Start exploring the map!</p>
+        </div>`;
+      return;
     }
-    const entries=Object.entries(snap.val()).sort((a,b)=>(b[1].timestamp||'').localeCompare(a[1].timestamp||''));
-    let html=`<button class="hclr" onclick="clearHistory()">🗑 Clear My History</button>`;
-    if (!compact) html+=`<div class="hgrid">`;
-    entries.forEach(([,rec])=>{
-      const d=new Date(rec.timestamp);
-      const ds=isNaN(d)?rec.timestamp:d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-      const enc=encodeURIComponent(JSON.stringify(rec));
-      html+=`<div class="hitem">
-        <div class="hname">📍 ${rec.selectedPlace||'Unknown'}</div>
-        <div class="hmeta">${[rec.state,rec.country].filter(Boolean).join(', ')} · ${rec.userClass||''} · ${rec.examType||''}</div>
-        ${rec.localLanguages?`<div class="hmeta" style="color:var(--purple)">🗣 ${rec.localLanguages}</div>`:''}
-        ${rec.famousFor?.length?`<div class="hmeta">⭐ ${rec.famousFor.slice(0,3).join(', ')}</div>`:''}
-        <div class="hcoord">${(rec.latitude||0).toFixed(4)}°, ${(rec.longitude||0).toFixed(4)}°</div>
+
+    const raw = snap.val();
+    // Sort ALL entries newest-first — NO limit
+    _histAllEntries = Object.entries(raw)
+      .map(([id, rec]) => ({ id, ...rec }))
+      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+
+    console.log('[GeoMind History] Total records:', _histAllEntries.length);
+
+    _histCurrentPage = 1;
+    _histSearchQuery = '';
+    _renderHistPage(container, compact);
+  } catch(e) {
+    console.error('[GeoMind History] Load error:', e);
+    container.innerHTML = `<div class="ebox">❌ Failed to load history: ${e.message}</div>`;
+  }
+}
+
+function _renderHistPage(container, compact) {
+  if (!container) return;
+
+  // Filter by search query
+  const q = (_histSearchQuery || '').toLowerCase().trim();
+  const filtered = q
+    ? _histAllEntries.filter(r =>
+        (r.selectedPlace || '').toLowerCase().includes(q) ||
+        (r.state || '').toLowerCase().includes(q) ||
+        (r.country || '').toLowerCase().includes(q)
+      )
+    : _histAllEntries;
+
+  const total    = filtered.length;
+  const totalPgs = Math.max(1, Math.ceil(total / HIST_PAGE_SIZE));
+  const page     = Math.min(_histCurrentPage, totalPgs);
+  const start    = (page - 1) * HIST_PAGE_SIZE;
+  const pageData = filtered.slice(start, start + HIST_PAGE_SIZE);
+
+  console.log(`[GeoMind History] Rendering page ${page}/${totalPgs}, items ${start+1}–${start+pageData.length} of ${total}`);
+
+  let html = '';
+
+  // ── Search bar + controls row ─────────────────────
+  html += `
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="hist-search-bar" style="flex:1;min-width:200px;">
+        <span class="hist-search-icon">🔍</span>
+        <input type="text" placeholder="Search locations…" value="${_histSearchQuery}"
+          oninput="histSearchFilter(this.value)" id="histSearchInput"/>
+      </div>
+      <button class="hclr" onclick="clearHistory()">🗑 Clear All</button>
+    </div>`;
+
+  // ── Count row ─────────────────────────────────────
+  html += `<div class="hist-count">
+    <strong>${total}</strong> record${total !== 1 ? 's' : ''}
+    ${q ? ` matching "<em>${q}</em>"` : ''}
+    ${totalPgs > 1 ? ` · Page <strong>${page}</strong> of <strong>${totalPgs}</strong>` : ''}
+  </div>`;
+
+  if (total === 0) {
+    html += `<div class="hempty"><div class="hempty-icon">🔍</div><p>No results for "${q}"</p></div>`;
+    container.innerHTML = html;
+    return;
+  }
+
+  // ── Cards grid ────────────────────────────────────
+  if (!compact) html += `<div class="hgrid">`;
+
+  pageData.forEach((rec, idx) => {
+    const d  = new Date(rec.timestamp);
+    const ds = isNaN(d)
+      ? (rec.timestamp || '—')
+      : d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})
+        + ' · ' + d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+
+    // Store record by ID for retrieval (avoids URL encoding giant JSON)
+    const safeId = encodeURIComponent(rec.id);
+
+    const classTag = rec.userClass ? `<span class="hmeta-tag">${rec.userClass}</span>` : '';
+    const examTag  = rec.examType  ? `<span class="hmeta-tag amber">${rec.examType}</span>`  : '';
+    const modeTag  = rec.learningMode ? `<span class="hmeta-tag green">${rec.learningMode}</span>` : '';
+
+    const famousPreview = (rec.famousFor || []).slice(0, 2).join(', ');
+    const locationLine  = [rec.state, rec.country].filter(Boolean).join(', ') || 'Unknown region';
+
+    html += `
+      <div class="hitem" onclick="previewHistByIdOrEnc('${safeId}')">
+        <div class="hitem-top">
+          <div class="hitem-pin">📍</div>
+          <div class="hitem-title">
+            <div class="hname" title="${rec.selectedPlace || 'Unknown'}">${rec.selectedPlace || 'Unknown Location'}</div>
+            <div class="hmeta" style="margin-top:2px;">${locationLine}</div>
+          </div>
+        </div>
+        ${classTag || examTag || modeTag ? `<div class="hmeta-tags">${classTag}${examTag}${modeTag}</div>` : ''}
+        ${famousPreview ? `<div class="hmeta" style="margin-top:6px;color:var(--text2)">⭐ ${famousPreview}</div>` : ''}
+        <div class="hcoord">📡 ${(rec.latitude||0).toFixed(4)}°, ${(rec.longitude||0).toFixed(4)}°</div>
+        <div class="hitem-divider"></div>
         <div class="hitem-footer">
           <div class="hts">${ds}</div>
-          <div style="display:flex;gap:6px;">
-            <button class="h-view-btn" onclick="event.stopPropagation();previewHistReport('${enc}')">📊 See More</button>
-            <button class="h-map-btn" onclick="event.stopPropagation();reloadHist('${enc}')">🗺 Map</button>
+          <div class="hitem-actions">
+            <button class="h-view-btn" onclick="event.stopPropagation();previewHistByIdOrEnc('${safeId}')">📊 Report</button>
+            <button class="h-map-btn"  onclick="event.stopPropagation();reloadHistById('${safeId}')">🗺 Map</button>
           </div>
         </div>
       </div>`;
-    });
-    if (!compact) html+='</div>';
-    container.innerHTML=html;
-  } catch(e) { container.innerHTML=`<div class="ebox">Failed to load: ${e.message}</div>`; }
+  });
+
+  if (!compact) html += '</div>';
+
+  // ── Pagination ────────────────────────────────────
+  if (totalPgs > 1) {
+    html += `<div class="hist-pagination">
+      <button class="hist-page-btn" onclick="histGoPage(1)" ${page<=1?'disabled':''}>«</button>
+      <button class="hist-page-btn" onclick="histGoPage(${page-1})" ${page<=1?'disabled':''}>‹ Prev</button>
+      <span class="hist-page-info">${page} / ${totalPgs}</span>
+      <button class="hist-page-btn" onclick="histGoPage(${page+1})" ${page>=totalPgs?'disabled':''}>Next ›</button>
+      <button class="hist-page-btn" onclick="histGoPage(${totalPgs})" ${page>=totalPgs?'disabled':''}>»</button>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+/* ── Search filter (debounced) ───────────────────── */
+let _histSearchTimer = null;
+function histSearchFilter(query) {
+  clearTimeout(_histSearchTimer);
+  _histSearchTimer = setTimeout(() => {
+    _histSearchQuery  = query;
+    _histCurrentPage  = 1;
+    _renderHistPage(_histContainer, _histCompact);
+  }, 280);
+}
+
+/* ── Pagination handler ──────────────────────────── */
+function histGoPage(p) {
+  const total    = (_histSearchQuery
+    ? _histAllEntries.filter(r =>
+        (r.selectedPlace||'').toLowerCase().includes(_histSearchQuery.toLowerCase()) ||
+        (r.state||'').toLowerCase().includes(_histSearchQuery.toLowerCase()) ||
+        (r.country||'').toLowerCase().includes(_histSearchQuery.toLowerCase())
+      )
+    : _histAllEntries).length;
+  const totalPgs = Math.max(1, Math.ceil(total / HIST_PAGE_SIZE));
+  _histCurrentPage = Math.max(1, Math.min(p, totalPgs));
+  _renderHistPage(_histContainer, _histCompact);
+  // Scroll to top of container
+  if (_histContainer) _histContainer.scrollTop = 0;
+}
+
+/* ── Look up record from in-memory cache ─────────── */
+function _getHistRecById(safeId) {
+  const id = decodeURIComponent(safeId);
+  return _histAllEntries.find(r => r.id === id) || null;
+}
+
+/* ── Preview by ID (uses in-memory cache) ─────────── */
+function previewHistByIdOrEnc(safeId) {
+  const rec = _getHistRecById(safeId);
+  if (!rec) { toast('Record not found in cache — reload the page', 'err'); return; }
+  previewHistReport(encodeURIComponent(JSON.stringify(rec)));
+}
+
+/* ── Reload map from in-memory record ─────────────── */
+function reloadHistById(safeId) {
+  const rec = _getHistRecById(safeId);
+  if (!rec) { toast('Record not found in cache', 'err'); return; }
+  reloadHist(encodeURIComponent(JSON.stringify(rec)));
 }
 async function clearHistory(fromSettings=false) {
-  if (!confirm('Delete all your search history?')) return;
+  if (!confirm('Delete all your report history? This cannot be undone.')) return;
   await db.ref('users/'+currentUser.uid+'/queries').remove();
+  _histAllEntries  = [];
+  _histCurrentPage = 1;
   toast('History cleared','ok');
-  if (!fromSettings) loadHistoryTab();
+  if (!fromSettings) {
+    // Refresh both tabs
+    loadHistoryTab();
+    const hc = document.getElementById('historyPageContent');
+    if (hc) hc.innerHTML = '<div class="hempty"><div class="hempty-icon">📍</div><p>No history yet. Start exploring the map!</p></div>';
+  }
 }
 function reloadHist(enc) {
   try {
@@ -3589,23 +3772,30 @@ function switchHistTab(tab) {
   const cmpTab      = document.getElementById('htab-compare');
   const chatTab     = document.getElementById('htab-chat');
 
-  // Hide all
-  [repContent, cmpContent, chatContent].forEach(el => { if (el) el.style.display = 'none'; });
-  [repTab, cmpTab, chatTab].forEach(el => { if (el) el.classList.remove('active'); });
+  // Hide ALL panels with inline style (overrides any CSS)
+  [repContent, cmpContent, chatContent].forEach(el => {
+    if (el) el.style.display = 'none';
+  });
+  [repTab, cmpTab, chatTab].forEach(el => {
+    if (el) el.classList.remove('active');
+  });
 
+  // Show selected panel — must use 'block' (not '') so CSS won't override
   if (tab === 'reports') {
-    if (repContent)  repContent.style.display  = '';
-    if (repTab)      repTab.classList.add('active');
+    if (repContent)  { repContent.style.display  = 'block'; }
+    if (repTab)      { repTab.classList.add('active'); }
     renderHistoryInto(repContent, false);
   } else if (tab === 'compare') {
-    if (cmpContent)  cmpContent.style.display  = '';
-    if (cmpTab)      cmpTab.classList.add('active');
+    if (cmpContent)  { cmpContent.style.display  = 'block'; }
+    if (cmpTab)      { cmpTab.classList.add('active'); }
     loadComparisonHistory();
   } else if (tab === 'chat') {
-    if (chatContent) chatContent.style.display = '';
-    if (chatTab)     chatTab.classList.add('active');
+    if (chatContent) { chatContent.style.display = 'block'; }
+    if (chatTab)     { chatTab.classList.add('active'); }
     loadChatHistory();
   }
+
+  console.log('[GeoMind History] Switched to tab:', tab);
 }
 
 /* ══════════════════════════════════════════════════════

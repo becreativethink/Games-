@@ -1814,17 +1814,43 @@ function _getHistRecById(safeId) {
   return _histAllEntries.find(r => r.id === id) || null;
 }
 
-/* ── Preview by ID (uses in-memory cache) ─────────── */
-function previewHistByIdOrEnc(safeId) {
-  const rec = _getHistRecById(safeId);
-  if (!rec) { toast('Record not found in cache — reload the page', 'err'); return; }
+/* ── Preview by ID — fetches from Firebase if cache empty ── */
+async function previewHistByIdOrEnc(safeId) {
+  let rec = _getHistRecById(safeId);
+  if (!rec) {
+    // Cache miss — reload from Firebase then retry
+    try {
+      const id  = decodeURIComponent(safeId);
+      const snap = await db.ref('users/' + currentUser.uid + '/queries/' + id).once('value');
+      if (snap.exists()) {
+        rec = { id, ...snap.val() };
+        // Repopulate cache if it is empty
+        if (_histAllEntries.length === 0) {
+          const allSnap = await db.ref('users/' + currentUser.uid + '/queries').once('value');
+          if (allSnap.exists()) {
+            _histAllEntries = Object.entries(allSnap.val())
+              .map(([k, v]) => ({ id: k, ...v }))
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+          }
+        }
+      }
+    } catch(e) { /* fall through */ }
+  }
+  if (!rec) { toast('Report not found — try reloading the History tab', 'err'); return; }
   previewHistReport(encodeURIComponent(JSON.stringify(rec)));
 }
 
-/* ── Reload map from in-memory record ─────────────── */
-function reloadHistById(safeId) {
-  const rec = _getHistRecById(safeId);
-  if (!rec) { toast('Record not found in cache', 'err'); return; }
+/* ── Open on Map — fetches from Firebase if cache empty ── */
+async function reloadHistById(safeId) {
+  let rec = _getHistRecById(safeId);
+  if (!rec) {
+    try {
+      const id   = decodeURIComponent(safeId);
+      const snap = await db.ref('users/' + currentUser.uid + '/queries/' + id).once('value');
+      if (snap.exists()) rec = { id, ...snap.val() };
+    } catch(e) { /* fall through */ }
+  }
+  if (!rec) { toast('Location not found — try reloading the History tab', 'err'); return; }
   reloadHist(encodeURIComponent(JSON.stringify(rec)));
 }
 async function clearHistory(fromSettings=false) {
@@ -4169,8 +4195,8 @@ function updateUsageWidget() {
       <!-- Comparison bar -->
       <div class="uw-row" style="margin-top:8px"><span class="uw-label">⚖ Comparisons</span><span class="uw-val" style="${cpPct>=90?'color:var(--red)':''}">${cpUsed} / ${cpLimit}</span></div>
       <div class="uw-bar"><div class="uw-bar-fill compare-fill ${cpPct>=100?'danger':''}" style="width:${cpPct}%"></div></div>
-      <!-- Upgrade prompt -->
-      <button onclick="goPage('plans')" style="class="upgrade-cta-btn" style="margin-top:14px;">⭐ Upgrade to Paid Plan</button>`;
+      <!-- Upgrade CTA -->
+      <button onclick="goPage('plans')" class="upgrade-cta-btn" style="margin-top:14px;">⭐ Upgrade to Paid Plan</button>`;
   } else if (plan === 'payperuse') {
     const hasOwnAPI = !!(userProfile.usingOwnAPI && userSettings.apiKey?.trim());
     const rUsed  = userProfile.planUsed       || 0;

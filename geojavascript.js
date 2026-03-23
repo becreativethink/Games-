@@ -816,6 +816,30 @@ function updateSettingsUI() {
   const hasAdminKey = !!(adminAPIConfig?.reportAPIKey);
   const box     = document.getElementById('apiStatusBox');
   const txt     = document.getElementById('apiStatusText');
+
+  // Section 3: AI Configuration only visible for free plan / payperuse (own-API users)
+  const aiSection = document.getElementById('aiConfigSection');
+  if (aiSection) {
+    // Show AI config for free_trial and payperuse — paid plans use admin keys
+    const isPaidPlan = (plan === 'starter' || plan === 'standard' || plan === 'premium');
+    const canSeeAI = !isPaidPlan;
+    aiSection.style.display = canSeeAI ? '' : 'none';
+    // Inject plan notice if hidden plans are reached
+    let notice = document.getElementById('aiConfigNotice');
+    if (!canSeeAI) {
+      if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'aiConfigNotice';
+        notice.className = 'settings-plan-notice';
+        notice.innerHTML = '<span class="notice-icon">🔑</span><div>Your <strong>' + (PLANS[plan]?.name || plan) + '</strong> plan uses admin-managed API keys — no configuration needed. AI is automatically optimized for you.</div>';
+        const prevSection = aiSection.previousElementSibling;
+        if (prevSection) prevSection.after(notice);
+      }
+    } else {
+      if (notice) notice.remove();
+    }
+  }
+
   if (!box) return;
 
   if (plan === 'payperuse' && hasKey && userProfile.usingOwnAPI) {
@@ -2241,8 +2265,10 @@ async function sendChat() {
   const ts=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   const div=document.createElement('div'); div.className='cmsg';
   const aid='ca'+Date.now();
-  div.innerHTML=`<div class="cmq">💬 ${q}</div><div class="cma" id="${aid}">○ Thinking…</div><div class="cmts">${ts}</div>`;
+  div.innerHTML=`<div class="cmq">${q}</div><div class="cma" id="${aid}"><div class="chat-typing-indicator"><span></span><span></span><span></span></div></div><div class="cmts">${ts}</div>`;
   msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+  // Human-like delay before API call (simulates "reading" the question)
+  await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
   const addr=curData.geo?.address||{};
   const loc=[addr.city,addr.state,addr.country].filter(Boolean).join(', ');
   const lPick=document.getElementById('langPick');
@@ -2284,9 +2310,22 @@ Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
     await saveChatMsg(q, answerText);
   } catch(e) { answerText='Error: '+e.message; }
 
-  // Update answer text
+  // Update answer with formatted streaming-style reveal
   const answerEl = document.getElementById(aid);
-  if (answerEl) answerEl.textContent = answerText;
+  if (answerEl) {
+    const formatted = answerText
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^[•\-]\s+/gm, '<span style="color:var(--cyan);margin-right:4px">▸</span>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+    // Animate text reveal character by character (fast)
+    answerEl.innerHTML = '';
+    answerEl.classList.add('chat-answer-reveal');
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = formatted;
+    answerEl.appendChild(tempDiv);
+    tempDiv.style.animation = 'chatReveal 0.4s ease both';
+  }
 
   // Render charts below the message (if any valid charts)
   if (chartData.length) {
@@ -3516,29 +3555,49 @@ function initCompare() {
 }
 
 function setComparePin(which) {
+  // Allow setting from map even without full report — just need a clicked location
   if (pendingLat === null || pendingLon === null) {
-    toast('Go to the Map tab and click a location first.','err');
+    toast('Go to the Map tab, click a location, then come back here.', 'err');
+    goPage('map');
     return;
   }
   const geo  = curData?.geo || {address:{}};
   const ai   = curData?.ai  || {};
-  const name = ai.locationId?.nearestCity || geo.address?.city || geo.address?.state || geo.address?.country || `${parseFloat(pendingLat).toFixed(2)}, ${parseFloat(pendingLon).toFixed(2)}`;
-  const sub  = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ') || `${parseFloat(pendingLat).toFixed(4)}°, ${parseFloat(pendingLon).toFixed(4)}°`;
+  const name = ai.locationId?.nearestCity || geo.address?.city || geo.address?.state || geo.address?.country
+             || `${parseFloat(pendingLat).toFixed(2)}°, ${parseFloat(pendingLon).toFixed(2)}°`;
+  const sub  = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ')
+             || `${parseFloat(pendingLat).toFixed(4)}°, ${parseFloat(pendingLon).toFixed(4)}°`;
 
   if (which === 'A') {
-    compareA = {lat: pendingLat, lon: pendingLon, geo, ai, name, sub};
+    compareA = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
+    const el = document.getElementById('cpinA');
     document.getElementById('cpinAName').textContent = name;
+    document.getElementById('cpinAName').classList.add('set');
     document.getElementById('cpinASub').textContent  = sub;
-    document.getElementById('cpinA').classList.add('selected');
-    toast('📍 Location A set: '+name,'ok');
+    el.classList.add('selected');
+    // Visual feedback on button
+    const btn = el.querySelector('.cpin-btn');
+    if (btn) { btn.textContent = '✓ Location A Set'; btn.style.opacity = '0.7'; }
+    toast('📍 Location A: ' + name, 'ok');
   } else {
-    compareB = {lat: pendingLat, lon: pendingLon, geo, ai, name, sub};
+    compareB = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
+    const el = document.getElementById('cpinB');
     document.getElementById('cpinBName').textContent = name;
+    document.getElementById('cpinBName').classList.add('set');
     document.getElementById('cpinBSub').textContent  = sub;
-    document.getElementById('cpinB').classList.add('selected');
-    toast('📍 Location B set: '+name,'ok');
+    el.classList.add('selected');
+    const btn = el.querySelector('.cpin-btn');
+    if (btn) { btn.textContent = '✓ Location B Set'; btn.style.opacity = '0.7'; }
+    toast('📍 Location B: ' + name, 'ok');
   }
-  document.getElementById('compareRunBtn').disabled = !(compareA && compareB);
+  const runBtn = document.getElementById('compareRunBtn');
+  if (runBtn) {
+    runBtn.disabled = !(compareA && compareB);
+    if (compareA && compareB) {
+      runBtn.style.animation = 'pulse 0.5s ease';
+      setTimeout(() => { runBtn.style.animation = ''; }, 600);
+    }
+  }
 }
 
 async function runComparison() {
@@ -4108,7 +4167,14 @@ function closePlanModal() {
 function updateProfilePage() {
   const name=userProfile.name||currentUser?.displayName||currentUser?.email?.split('@')[0]||'?';
   const email=userProfile.email||currentUser?.email||'';
-  document.getElementById('profileAvBig').textContent=name.charAt(0).toUpperCase();
+  const avEl = document.getElementById('profileAvBig');
+  if (avEl) {
+    if (userProfile.photoURL) {
+      avEl.innerHTML = `<img src="${userProfile.photoURL}" alt="Avatar" class="profile-av-img" onerror="this.parentElement.textContent='${name.charAt(0).toUpperCase()}'"/>`;
+    } else {
+      avEl.textContent = name.charAt(0).toUpperCase();
+    }
+  }
   document.getElementById('profileName').textContent=name;
   document.getElementById('profileEmail').textContent=email;
   document.getElementById('profilePlanVal').textContent=PLANS[userProfile.plan||'free']?.name||'Free';
@@ -4126,8 +4192,66 @@ async function saveProfile() {
     await db.ref('users/'+currentUser.uid).update({name,phone});
     await currentUser.updateProfile({displayName:name});
     updateNavUI(); updateProfilePage();
-    toast('Profile saved!','ok');
+    toast('✓ Profile saved!','ok');
   } catch(e) { toast('Failed: '+e.message,'err'); }
+}
+
+/* ── SECTION 8: Profile Photo Upload ── */
+async function uploadProfilePhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { toast('Photo must be under 5 MB', 'err'); return; }
+  if (!file.type.startsWith('image/')) { toast('Please select an image file', 'err'); return; }
+
+  const progWrap = document.getElementById('profileUploadProgress');
+  const progFill = document.getElementById('profileUploadFill');
+  if (progWrap) progWrap.style.display = 'block';
+  toast('Uploading photo…', 'warn');
+
+  try {
+    // Use Firebase Storage if available
+    if (typeof firebase !== 'undefined' && firebase.storage) {
+      const storageRef = firebase.storage().ref('profile_photos/' + currentUser.uid + '.' + file.name.split('.').pop());
+      const uploadTask = storageRef.put(file);
+      uploadTask.on('state_changed',
+        snap => {
+          const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+          if (progFill) progFill.style.width = pct + '%';
+        },
+        err => { toast('Upload failed: ' + err.message, 'err'); if (progWrap) progWrap.style.display = 'none'; },
+        async () => {
+          const url = await uploadTask.snapshot.ref.getDownloadURL();
+          await _applyProfilePhoto(url);
+          if (progWrap) progWrap.style.display = 'none';
+        }
+      );
+    } else {
+      // Fallback: use FileReader (local preview only, saved as data URL up to 1MB)
+      if (file.size > 1024 * 1024) { toast('Firebase Storage unavailable — photo under 1 MB only for local preview', 'warn'); if (progWrap) progWrap.style.display = 'none'; return; }
+      const reader = new FileReader();
+      reader.onload = async e => {
+        await _applyProfilePhoto(e.target.result);
+        if (progWrap) progWrap.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  } catch(e) { toast('Upload error: ' + e.message, 'err'); if (progWrap) progWrap.style.display = 'none'; }
+}
+
+async function _applyProfilePhoto(url) {
+  try {
+    userProfile.photoURL = url;
+    await db.ref('users/' + currentUser.uid).update({ photoURL: url });
+    // Update avatar display
+    const avEl = document.getElementById('profileAvBig');
+    if (avEl) {
+      avEl.innerHTML = `<img src="${url}" alt="Avatar" class="profile-av-img" onerror="this.parentElement.textContent='${(userProfile.name||'?').charAt(0).toUpperCase()}'"/>`;
+    }
+    // Update nav avatar if it shows photo
+    const navAv = document.getElementById('userAv');
+    if (navAv) navAv.style.backgroundImage = `url(${url})`;
+    toast('✓ Profile photo updated!', 'ok');
+  } catch(e) { toast('Failed to save photo URL: ' + e.message, 'err'); }
 }
 
 /* ── NAV + USAGE ─────────────────────────────────────── */
@@ -4450,3 +4574,89 @@ document.addEventListener('keydown', e => {
 })();
 
 /* Network monitor is initialized inside auth.onAuthStateChanged via setupOfflineMode() */
+
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 7 — MAP / REPORT RESIZABLE SLIDER
+   Drag the divider to resize map ↔ right panel
+   ═══════════════════════════════════════════════════════ */
+(function initMapSlider() {
+  const slider    = document.getElementById('mapSlider');
+  const mapPanel  = document.getElementById('mapPanel');
+  const rightPanel= document.getElementById('rightPanel');
+  const mainWrap  = document.getElementById('mainWrap');
+  if (!slider || !mapPanel || !rightPanel) return;
+
+  let dragging = false;
+  let startX   = 0;
+  let startMapW = 0;
+
+  function onStart(e) {
+    dragging  = true;
+    startX    = e.clientX ?? e.touches[0].clientX;
+    startMapW = mapPanel.getBoundingClientRect().width;
+    slider.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const x    = e.clientX ?? e.touches[0].clientX;
+    const dx   = x - startX;
+    const total = mainWrap.getBoundingClientRect().width - slider.offsetWidth;
+    const minW  = 180;   // min map width px
+    const maxW  = total - 200; // min right panel 200px
+    const newMapW = Math.min(maxW, Math.max(minW, startMapW + dx));
+    mapPanel.style.flex  = 'none';
+    mapPanel.style.width = newMapW + 'px';
+    rightPanel.style.flex  = '1';
+    rightPanel.style.width = '';
+    // Invalidate Leaflet map size
+    if (window.map) setTimeout(() => window.map.invalidateSize(), 50);
+  }
+
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    slider.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (window.map) window.map.invalidateSize();
+  }
+
+  // Double-click to reset
+  slider.addEventListener('dblclick', () => {
+    mapPanel.style.flex  = '1';
+    mapPanel.style.width = '';
+    rightPanel.style.flex  = '0 0 360px';
+    rightPanel.style.width = '360px';
+    if (window.map) setTimeout(() => window.map.invalidateSize(), 80);
+    toast('Map size reset', 'ok');
+  });
+
+  slider.addEventListener('mousedown', onStart);
+  slider.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+})();
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 8 — LOAD PROFILE PHOTO FROM FIREBASE ON LOGIN
+   ═══════════════════════════════════════════════════════ */
+// Patch loadUserProfile to also load photoURL
+const _origLoadUserProfile = typeof loadUserProfile === 'function' ? loadUserProfile : null;
+async function _patchedLoadUserProfile() {
+  if (_origLoadUserProfile) await _origLoadUserProfile();
+  // Also restore photo from stored photoURL
+  if (userProfile.photoURL) {
+    const avEl = document.getElementById('profileAvBig');
+    if (avEl) {
+      const name = userProfile.name || '?';
+      avEl.innerHTML = `<img src="${userProfile.photoURL}" alt="Avatar" class="profile-av-img" onerror="this.parentElement.textContent='${name.charAt(0).toUpperCase()}'"/>`;
+    }
+  }
+}

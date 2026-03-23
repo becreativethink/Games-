@@ -1239,16 +1239,6 @@ html{scroll-behavior:smooth;}
    SECTION 11: MOBILE RESPONSIVE
    ═══════════════════════════════════════ */
 @media(max-width:768px){
-  #topNav{display:none;}
-  #mobileBar{display:block;}
-  #mainWrap{flex-direction:column;}
-  #mapPanel{flex:none;height:52vw;min-height:220px;max-height:340px;}
-  #rightPanel{width:100%;border-left:none;border-top:1px solid rgba(255,255,255,0.06);flex:1;}
-  .map-controls-bar{gap:6px;padding:6px 10px;}
-  .nsel{font-size:10px;padding:4px 24px 4px 10px;}
-  .send-bar{padding:8px 10px;gap:7px;}
-  .mc-country{flex:0 0 100px;}
-  #sendBtn{padding:9px 16px;font-size:12px;}
   .cmp-input-grid{grid-template-columns:1fr;}
   .plans-grid{grid-template-columns:1fr;}
   .progress-grid{grid-template-columns:1fr 1fr;}
@@ -1256,14 +1246,13 @@ html{scroll-behavior:smooth;}
   .cmp-hist-grid{grid-template-columns:1fr;}
 }
 @media(max-width:480px){
-  #mapPanel{height:48vw;min-height:200px;}
   .auth-card{padding:24px 16px;}
   .plan-card{padding:16px;}
   .progress-grid{grid-template-columns:1fr 1fr;}
   .page-header h2{font-size:18px;}
 }
-@media(min-width:769px){
-  #mobileBar{display:none;}
+@media(min-width:901px){
+  #mobileBar{display:none !important;}
 }
 
 /* ═══════════════════════════════════════
@@ -1784,11 +1773,11 @@ select option{
    ENHANCED RESPONSIVE — Section 11
    ═══════════════════════════════════════ */
 @media(max-width:900px){
-  #topNav .page-tabs{display:none;}
+  /* ── Navbar collapse ── */
+  #topNav .page-tabs{display:none !important;}
   .nvbtn-logout-text{display:none;}
   .usage-mini{display:none;}
-  #mobileBar{display:flex;}
-
+  #mobileBar{display:flex !important;}
   #topNav{height:50px;min-height:50px;padding:0 14px;}
   .nav-logo-img{width:32px;height:32px;}
   .nav-logo-name{font-size:15px;}
@@ -1797,38 +1786,105 @@ select option{
   .user-nm{font-size:11px;}
   .nvbtn{padding:5px 10px;font-size:10px;}
   .plan-badge{font-size:8px;padding:2px 7px;}
-
   #mobileBar{padding:0 4px;}
   .mob-tab{padding:10px 11px;font-size:11px;gap:3px;}
 
-  #mapPage{flex-direction:column;}
-  #mainWrap{flex-direction:column;flex:1;overflow:hidden;min-height:0;}
-  #mapPanel{flex-shrink:0;height:auto;}
+  /* ── Map Page: vertical stack ── */
+  #mapPage{flex-direction:column !important;}
+  #mainWrap{
+    flex-direction:column !important;
+    flex:1;
+    overflow:hidden;
+    min-height:0;
+  }
 
+  /* ── Map Panel: fixed 38vh ── */
+  #mapPanel{
+    flex:none !important;
+    height:38vh !important;
+    min-height:180px !important;
+    max-height:60vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  #map{
+    flex:1 !important;
+    min-height:0 !important;
+    height:auto !important;
+  }
+
+  /* ── Slider becomes horizontal drag bar ── */
+  #mapSlider{
+    display:flex !important;
+    width:100% !important;
+    height:10px !important;
+    min-height:10px !important;
+    flex-direction:row !important;
+    align-items:center;
+    justify-content:center;
+    cursor:row-resize !important;
+    background:rgba(255,255,255,0.04);
+    border-top:1px solid rgba(255,255,255,0.06);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    border-left:none !important;
+    border-right:none !important;
+    flex-shrink:0;
+    touch-action:none;
+  }
+  #mapSlider:hover,#mapSlider.dragging{
+    background:rgba(0,229,200,0.15) !important;
+    height:12px !important;
+  }
+  .map-slider-handle{flex-direction:row !important;padding:0 8px !important;}
+  .map-slider-dots::before{
+    width:28px !important;
+    height:3px !important;
+    background:repeating-linear-gradient(
+      to right,
+      rgba(255,255,255,0.3) 0,rgba(255,255,255,0.3) 3px,
+      transparent 3px,transparent 6px
+    ) !important;
+  }
+
+  /* ── Right Panel: fills remaining height ── */
+  #rightPanel{
+    flex:1 !important;
+    width:100% !important;
+    border-left:none !important;
+    border-top:1px solid rgba(255,255,255,0.06);
+    min-height:0 !important;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ── Tabs always visible ── */
+  .tabs{flex-shrink:0 !important;display:flex !important;}
+  .tab{padding:9px 2px;font-size:10px;}
+
+  /* ── Panel content fills space ── */
+  .tpanel{flex:1;min-height:0;}
+  .tpanel.on{display:flex !important;}
+  .scroll{flex:1;overflow-y:auto;}
+  .cmsgs{flex:1;}
+
+  /* ── Controls bar ── */
   .map-controls-bar{flex-wrap:nowrap;overflow-x:auto;padding:6px 10px;gap:6px;scrollbar-width:none;}
   .map-controls-bar::-webkit-scrollbar{display:none;}
   .nc-group label{display:none;}
   .nsel{padding:5px 22px 5px 10px;font-size:10px;min-width:80px;}
   #langPick{min-width:80px;}
 
-  #map{height:32vh;min-height:160px;flex:none;}
-
-  .send-bar{padding:7px 10px;gap:7px;flex-wrap:nowrap;align-items:center;}
+  /* ── Send bar compact ── */
+  .send-bar{padding:7px 10px;gap:7px;flex-wrap:nowrap;align-items:center;flex-shrink:0;}
   .mc-country{flex:0 0 100px;}
   .mc-group label{font-size:9px;}
   .mc-group input{padding:6px 9px;font-size:11px;}
   .mc-question{flex:1;min-width:0;}
   #sendBtn{padding:9px 14px;font-size:12px;white-space:nowrap;}
 
-  #rightPanel{flex:1;width:100%;border-left:none;border-top:1px solid rgba(255,255,255,0.06);min-height:0;overflow:hidden;}
-  .tabs{flex-shrink:0;}
-  .tab{padding:9px 2px;font-size:10px;}
-  .tpanel{flex:1;min-height:0;}
-  .tpanel.on{display:flex;}
-  .scroll{flex:1;}
-  .cmsgs{flex:1;}
-  .hitem{padding:10px 12px;}
-  .hname{font-size:12px;}
+  /* ── Misc ── */
   .idle{padding:20px 14px;}
   .idle-icon{font-size:38px;margin-bottom:10px;}
   .idle h3{font-size:14px;}
@@ -2258,3 +2314,61 @@ select option{
 
 /* ── Button ripple override ── */
 .ripple-wave{background:rgba(255,255,255,0.18);}
+
+/* ══════════════════════════════════════════════════
+   COMPARE PAGE — MOBILE IMPROVEMENTS
+   ══════════════════════════════════════════════════ */
+@media(max-width:900px){
+  .compare-pins{grid-template-columns:1fr;}
+  .compare-scroll{padding:14px;}
+  .compare-info{font-size:11px;padding:12px;}
+  #compareRunBtn{font-size:13px;padding:13px;}
+  .cpin-card{padding:14px;}
+}
+
+/* Compare pending state indicator */
+.cpin-card.pending-set{
+  border-color:rgba(0,229,200,0.6) !important;
+  animation:pendingPulse 1.5s ease-in-out infinite;
+}
+@keyframes pendingPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,229,200,0.3);}
+  50%{box-shadow:0 0 0 8px rgba(0,229,200,0);}
+}
+.cpin-card.selected .cpin-btn{
+  background:rgba(52,211,153,0.15) !important;
+  border-color:rgba(52,211,153,0.35) !important;
+  color:var(--green) !important;
+}
+#cpinB.selected .cpin-btn{
+  background:rgba(74,124,255,0.15) !important;
+  border-color:rgba(74,124,255,0.35) !important;
+  color:var(--primary) !important;
+}
+
+/* Compare page how-to guide */
+.compare-step-guide{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 14px;
+  background:rgba(0,229,200,0.05);
+  border:1px solid rgba(0,229,200,0.15);
+  border-radius:11px;margin-bottom:14px;
+  font-size:11px;color:var(--text2);line-height:1.6;
+}
+.compare-step-guide .step-num{
+  width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--primary));
+  color:#fff;font-weight:800;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* Mobile slider improvements — touch target */
+@media(max-width:900px){
+  #mapSlider{
+    height:14px !important;
+    min-height:14px !important;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #mapSlider:active{background:rgba(0,229,200,0.2) !important;}
+}

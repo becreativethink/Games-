@@ -3531,38 +3531,55 @@ let _cmpMapsInited = false;
 /* ── Initialise both mini Leaflet maps (called once) ── */
 function _initCompareMaps() {
   if (_cmpMapsInited) return;
+
+  const elA = document.getElementById('cmpMapA');
+  const elB = document.getElementById('cmpMapB');
+  if (!elA || !elB) return; // DOM not ready yet
+
   _cmpMapsInited = true;
 
   const tileUrl  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const tileOpts = { attribution: '© CARTO', maxZoom: 18 };
+  const tileOpts = { attribution: '', maxZoom: 18 };
   const center   = [20.59, 78.96];
+  const zoom     = 3;
 
   // ── Map A ──
-  _cmpMapA = L.map('cmpMapA', { zoomControl: true, attributionControl: false }).setView(center, 3);
+  _cmpMapA = L.map(elA, {
+    zoomControl: true,
+    attributionControl: false,
+    preferCanvas: true
+  }).setView(center, zoom);
   L.tileLayer(tileUrl, tileOpts).addTo(_cmpMapA);
   _cmpMapA.on('click', function(e) { _onCmpMapClick('A', e.latlng.lat, e.latlng.lng); });
 
   // ── Map B ──
-  _cmpMapB = L.map('cmpMapB', { zoomControl: true, attributionControl: false }).setView(center, 3);
+  _cmpMapB = L.map(elB, {
+    zoomControl: true,
+    attributionControl: false,
+    preferCanvas: true
+  }).setView(center, zoom);
   L.tileLayer(tileUrl, tileOpts).addTo(_cmpMapB);
   _cmpMapB.on('click', function(e) { _onCmpMapClick('B', e.latlng.lat, e.latlng.lng); });
 }
 
 /* ── Called on every visit to compare page ── */
 function initCompare() {
-  _initCompareMaps();
-
-  // Invalidate sizes (needed when switching tabs)
+  // Maps need the DOM to be visible before init — delay slightly
   setTimeout(function() {
-    if (_cmpMapA) _cmpMapA.invalidateSize();
-    if (_cmpMapB) _cmpMapB.invalidateSize();
-  }, 120);
+    _initCompareMaps();
 
-  // Restore persisted selections
-  if (compareA) _renderCmpPin('A', compareA.lat, compareA.lon, compareA.name);
-  if (compareB) _renderCmpPin('B', compareB.lat, compareB.lon, compareB.name);
+    // Force size recalculation after paint
+    setTimeout(function() {
+      if (_cmpMapA) _cmpMapA.invalidateSize();
+      if (_cmpMapB) _cmpMapB.invalidateSize();
+    }, 200);
 
-  _refreshCompareRunBtn();
+    // Restore persisted selections
+    if (compareA) _renderCmpPin('A', compareA.lat, compareA.lon, compareA.name);
+    if (compareB) _renderCmpPin('B', compareB.lat, compareB.lon, compareB.name);
+
+    _refreshCompareRunBtn();
+  }, 80);
 }
 
 /* ── User clicked on mini-map ── */

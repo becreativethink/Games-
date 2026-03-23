@@ -2385,32 +2385,28 @@ select option{
 /* Row holding both maps */
 .cmp-maps-row{
   display:grid;
-  grid-template-columns:1fr 48px 1fr;
+  grid-template-columns:1fr 36px 1fr;
   gap:0;
-  align-items:stretch;
+  align-items:start;
   margin-bottom:14px;
 }
 
 /* Individual map card */
 .cmp-map-card{
   background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:16px;
+  border:2px solid rgba(255,255,255,0.08);
+  border-radius:14px;
   overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  transition:border-color 0.25s ease,box-shadow 0.25s ease;
 }
 #cmpCardA{border-top:3px solid var(--cyan);}
 #cmpCardB{border-top:3px solid var(--primary);}
-#cmpCardA.has-pin{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,229,200,0.12);}
-#cmpCardB.has-pin{border-color:var(--primary);box-shadow:0 0 20px rgba(74,124,255,0.12);}
+#cmpCardA.has-pin{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,229,200,0.15);}
+#cmpCardB.has-pin{border-color:var(--primary);box-shadow:0 0 18px rgba(74,124,255,0.15);}
 
 /* Label inside card */
 .cmp-map-label{
   font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:0.07em;padding:10px 12px 4px;
-  display:flex;align-items:center;gap:5px;flex-shrink:0;
+  letter-spacing:0.07em;padding:8px 10px 2px;
 }
 .cmp-label-a{color:var(--cyan);}
 .cmp-label-b{color:var(--primary);}
@@ -2418,26 +2414,30 @@ select option{
 /* Hint text */
 .cmp-map-hint{
   font-size:10px;color:var(--muted);
-  padding:0 12px 6px;flex-shrink:0;
-  line-height:1.4;
+  padding:0 10px 4px;line-height:1.4;
 }
 
-/* Location name (filled after selection) */
+/* Location name after selection */
 .cmp-map-name{
-  font-size:12px;font-weight:700;color:var(--text);
-  padding:0 12px 6px;flex-shrink:0;min-height:18px;
+  font-size:11px;font-weight:700;color:var(--cyan);
+  padding:0 10px 4px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:16px;
 }
+#cmpCardB .cmp-map-name{color:var(--primary);}
 
-/* The actual Leaflet map container */
+/* THE MAP ITSELF — explicit pixel height so Leaflet renders */
 .cmp-mini-map{
-  flex:1;
-  min-height:160px;
+  width:100%;
+  height:200px;
   cursor:crosshair;
-  position:relative;
+  display:block;
 }
+/* Leaflet internal container must fill the div */
 .cmp-mini-map .leaflet-container{
-  background:#0d1120;
+  width:100% !important;
+  height:100% !important;
+  background:#0a0e1a;
 }
 
 /* Status bar below map */

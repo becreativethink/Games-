@@ -187,12 +187,7 @@ a{text-decoration:none;}
 /* Logo */
 .nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;margin-right:20px;flex-shrink:0;transition:transform var(--trans);}
 .nav-logo:hover{transform:scale(1.03);}
-.nav-logo-img{
-  width:38px;height:38px;object-fit:contain;
-  filter:drop-shadow(0 0 10px rgba(0,229,200,0.4));
-  transition:filter var(--trans);
-}
-.nav-logo:hover .nav-logo-img{filter:drop-shadow(0 0 18px rgba(0,229,200,0.65));}
+/* nav-logo-img → see SECTION 1 block below */
 .nav-logo-name{
   font-family:var(--ff-head);font-size:18px;font-weight:800;letter-spacing:-0.01em;
   background:linear-gradient(135deg,var(--secondary),var(--cyan));
@@ -313,24 +308,7 @@ a{text-decoration:none;}
   text-transform:uppercase;letter-spacing:0.06em;
 }
 
-/* Section 5: Filter Dropdowns — pill design */
-.nsel{
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:20px;
-  color:var(--text2);padding:5px 14px;font-size:11px;font-weight:500;
-  cursor:pointer;transition:all var(--trans);
-  appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a6a88'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:calc(100% - 10px) 50%;
-  padding-right:28px;
-}
-.nsel:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18);}
-.nsel:focus{
-  border-color:var(--secondary);
-  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
-  background:rgba(0,212,255,0.04);
-}
+/* Section 5: Filter Dropdowns → see SECTION 2 block below for full styling */
 
 /* Map container */
 #map{flex:1;min-height:0;border-radius:0;}
@@ -1889,3 +1867,394 @@ select option{
 .pay-text{font-size:12px;color:var(--text2);line-height:1.6;}
 .pay-number{display:inline-block;background:rgba(0,229,200,0.08);border:1px solid rgba(0,229,200,0.2);color:var(--cyan);border-radius:8px;padding:4px 12px;font-family:var(--ff-mono);font-size:12px;}
 
+
+/* ═══════════════════════════════════════
+   SECTION 1 — LOGO UPGRADE
+   ═══════════════════════════════════════ */
+.nav-logo-img{
+  width:38px;height:38px;object-fit:contain;
+  filter:drop-shadow(0 0 12px rgba(0,229,200,0.5));
+  transition:filter var(--trans),transform var(--trans);
+}
+.nav-logo:hover .nav-logo-img{
+  filter:drop-shadow(0 0 22px rgba(0,212,255,0.8));
+  transform:scale(1.08);
+}
+/* auth-logo-img already defined above */
+
+/* ═══════════════════════════════════════
+   SECTION 2 — DROPDOWN ARROW FIX
+   ═══════════════════════════════════════ */
+.nsel{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;
+  color:var(--text2);padding:6px 26px 6px 12px;font-size:11px;font-weight:500;
+  cursor:pointer;transition:all var(--trans);
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a6a88'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:calc(100% - 10px) center;
+  background-size:8px 5px;
+}
+.nsel:hover{background-color:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18);}
+.nsel:focus{
+  border-color:var(--secondary);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
+  background-color:rgba(0,212,255,0.04);
+}
+.nsel option{background:#0d1120;color:#e8edf8;}
+
+/* ═══════════════════════════════════════
+   SECTION 6 — CHAT TYPING ANIMATION
+   ═══════════════════════════════════════ */
+@keyframes typingBounce{
+  0%,80%,100%{transform:translateY(0);opacity:0.4;}
+  40%{transform:translateY(-5px);opacity:1;}
+}
+.chat-typing-indicator{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 2px;
+}
+.chat-typing-indicator span{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--cyan);
+  animation:typingBounce 1.2s infinite;
+}
+.chat-typing-indicator span:nth-child(2){animation-delay:0.2s;}
+.chat-typing-indicator span:nth-child(3){animation-delay:0.4s;}
+.cmq{
+  font-size:12px;font-weight:700;color:var(--secondary);margin-bottom:8px;
+  display:flex;align-items:flex-start;gap:6px;
+}
+.cmq::before{content:"💬";font-size:13px;flex-shrink:0;}
+.cma{
+  font-size:12px;color:var(--text2);line-height:1.7;
+  padding:8px 10px;
+  background:rgba(255,255,255,0.02);
+  border-left:2px solid rgba(0,229,200,0.3);
+  border-radius:0 8px 8px 8px;
+  margin-left:4px;
+}
+
+/* ═══════════════════════════════════════
+   SECTION 7 — MAP/REPORT RESIZE SLIDER
+   ═══════════════════════════════════════ */
+.map-slider{
+  width:6px;flex-shrink:0;
+  background:rgba(255,255,255,0.04);
+  border-left:1px solid rgba(255,255,255,0.06);
+  border-right:1px solid rgba(255,255,255,0.06);
+  cursor:col-resize;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--trans);
+  position:relative;z-index:10;
+  user-select:none;
+}
+.map-slider:hover,.map-slider.dragging{
+  background:rgba(0,229,200,0.15);
+  border-color:rgba(0,229,200,0.3);
+  width:8px;
+}
+.map-slider-handle{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 0;
+}
+.map-slider-dots::before{
+  content:"";display:block;
+  width:3px;height:24px;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.25) 0px,
+    rgba(255,255,255,0.25) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  border-radius:2px;
+}
+@media(max-width:900px){.map-slider{display:none;}}
+
+/* ═══════════════════════════════════════
+   SECTION 8 — PROFILE AVATAR UPLOAD
+   ═══════════════════════════════════════ */
+.profile-av-wrap{
+  position:relative;cursor:pointer;
+  width:80px;height:80px;margin:0 auto 14px;
+  display:block;
+}
+.profile-av-wrap .profile-av-big{
+  width:100%;height:100%;margin:0;
+  transition:opacity var(--trans),filter var(--trans);
+}
+.profile-av-overlay{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(0,0,0,0.45);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;opacity:0;transition:opacity var(--trans);
+  backdrop-filter:blur(2px);
+}
+.profile-av-wrap:hover .profile-av-overlay{opacity:1;}
+.profile-av-wrap:hover .profile-av-big{opacity:0.7;filter:brightness(0.7);}
+.profile-av-big{
+  width:80px;height:80px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:800;color:#fff;
+  margin:0 auto 14px;
+  box-shadow:0 0 32px rgba(74,124,255,0.4);
+  overflow:hidden;
+}
+.profile-av-img{
+  width:100%;height:100%;object-fit:cover;border-radius:50%;
+}
+.profile-upload-hint{
+  font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:10px;
+  letter-spacing:0.03em;
+}
+.profile-upload-progress{
+  width:80px;height:3px;margin:4px auto;
+  background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;
+  display:none;
+}
+.profile-upload-progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--primary),var(--secondary));
+  border-radius:2px;transition:width 0.3s ease;
+  width:0%;
+}
+
+/* ═══════════════════════════════════════
+   SECTION 9 — UI POLISH IMPROVEMENTS
+   ═══════════════════════════════════════ */
+/* Glowing active compare pin */
+.cpin-card.selected{
+  background:rgba(0,229,200,0.07);
+  border-color:rgba(0,229,200,0.4) !important;
+  box-shadow:0 0 20px rgba(0,229,200,0.12);
+}
+#cpinB.selected{
+  border-color:rgba(74,124,255,0.4) !important;
+  background:rgba(74,124,255,0.07);
+  box-shadow:0 0 20px rgba(74,124,255,0.12);
+}
+.cpin-name.set{color:var(--cyan);font-weight:800;}
+#cpinB .cpin-name.set{color:var(--primary);}
+
+/* Improved history hcoord */
+.hcoord{
+  font-family:var(--ff-mono);font-size:9px;color:var(--muted);
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:6px;padding:2px 8px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;
+}
+
+/* Usage bars smooth */
+.uw-bar-fill{
+  height:100%;border-radius:4px;
+  transition:width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+/* Settings section gating notice */
+.settings-plan-notice{
+  background:rgba(0,212,255,0.06);
+  border:1px solid rgba(0,212,255,0.18);
+  border-radius:11px;padding:14px;
+  font-size:12px;color:var(--text2);line-height:1.7;
+  margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.settings-plan-notice .notice-icon{font-size:20px;flex-shrink:0;}
+
+/* Smooth page + modal animations */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+.profile-section{animation:slideUp 0.35s ease both;}
+.profile-section:nth-child(2){animation-delay:0.05s;}
+.profile-section:nth-child(3){animation-delay:0.1s;}
+.profile-section:nth-child(4){animation-delay:0.15s;}
+
+/* Improved cpin cards */
+.cpin-coord-badge{
+  font-size:9px;color:var(--muted);font-family:var(--ff-mono);
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px;padding:2px 8px;margin-top:6px;
+  display:inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FINAL CLEANUP & POLISH — v5.3
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Chat answer reveal animation ── */
+@keyframes chatReveal{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:none;}
+}
+.chat-answer-reveal{overflow:hidden;}
+.cmsg{
+  animation:fadeUp 0.25s ease both;
+  transition:border-color var(--trans);
+}
+.cmsg:hover{border-color:rgba(255,255,255,0.1);}
+
+/* ── Compare pin selected state ── */
+.cpin-card.selected{
+  background:rgba(0,229,200,0.06);
+  border-color:rgba(0,229,200,0.35) !important;
+  box-shadow:0 0 24px rgba(0,229,200,0.1);
+}
+#cpinB.selected{
+  background:rgba(74,124,255,0.06);
+  border-color:rgba(74,124,255,0.35) !important;
+  box-shadow:0 0 24px rgba(74,124,255,0.1);
+}
+.cpin-name.set{color:var(--cyan) !important;font-weight:800;}
+#cpinB .cpin-name.set{color:var(--primary) !important;}
+
+/* ── Logo nav improvement ── */
+.nav-logo-img{
+  width:36px;height:36px;object-fit:contain;
+  filter:drop-shadow(0 0 10px rgba(0,229,200,0.45));
+  transition:filter 0.3s ease,transform 0.3s ease;
+}
+.nav-logo:hover .nav-logo-img{
+  filter:drop-shadow(0 0 20px rgba(0,212,255,0.75));
+  transform:scale(1.1) rotate(-3deg);
+}
+
+/* ── Dropdown arrow — clean and small ── */
+.nsel{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;
+  color:var(--text2);
+  padding:6px 24px 6px 12px;
+  font-size:11px;font-weight:500;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23607090' opacity='0.8'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:calc(100% - 9px) center;
+  background-size:8px 5px;
+}
+.nsel:hover{background-color:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18);}
+.nsel:focus{
+  border-color:var(--secondary);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
+  background-color:rgba(0,212,255,0.03);
+  outline:none;
+}
+.nsel option{background:#0d1120;color:#e8edf8;}
+
+/* ── Compare Run Button pulse ── */
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(74,124,255,0.6);}
+  70%{box-shadow:0 0 0 12px rgba(74,124,255,0);}
+  100%{box-shadow:0 0 0 0 rgba(74,124,255,0);}
+}
+
+/* ── Settings plan notice improved ── */
+.settings-plan-notice{
+  background:linear-gradient(135deg,rgba(74,124,255,0.07),rgba(0,212,255,0.04));
+  border:1px solid rgba(74,124,255,0.2);
+  border-radius:13px;padding:16px;
+  font-size:12px;color:var(--text2);line-height:1.8;
+  margin-bottom:14px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.settings-plan-notice .notice-icon{font-size:24px;flex-shrink:0;margin-top:2px;}
+
+/* ── Auth screen logo improved ── */
+.auth-logo-img{
+  width:80px;height:80px;object-fit:contain;
+  filter:drop-shadow(0 0 20px rgba(0,229,200,0.55));
+  margin-bottom:12px;
+  transition:filter 0.3s ease;
+}
+.auth-card:hover .auth-logo-img{
+  filter:drop-shadow(0 0 28px rgba(0,212,255,0.7));
+}
+
+/* ── Profile upload improvements ── */
+.profile-av-wrap{cursor:pointer;position:relative;width:80px;height:80px;margin:0 auto 14px;display:block;}
+.profile-av-big{
+  width:80px;height:80px;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:800;color:#fff;
+  margin:0 auto 14px;
+  box-shadow:0 0 32px rgba(74,124,255,0.4);
+  overflow:hidden;transition:box-shadow 0.3s ease;
+}
+.profile-av-wrap:hover .profile-av-big{box-shadow:0 0 44px rgba(0,212,255,0.55);}
+.profile-av-overlay{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(0,0,0,0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;opacity:0;transition:opacity 0.2s ease;
+  backdrop-filter:blur(2px);
+}
+.profile-av-wrap:hover .profile-av-overlay{opacity:1;}
+.profile-av-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.profile-upload-hint{font-size:10px;color:var(--muted);margin-top:-8px;margin-bottom:10px;letter-spacing:0.03em;text-align:center;}
+.profile-upload-progress{width:80px;height:3px;margin:4px auto;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;display:none;}
+.profile-upload-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:2px;transition:width 0.3s ease;width:0%;}
+
+/* ── Map slider refined ── */
+.map-slider{
+  width:5px;flex-shrink:0;
+  background:rgba(255,255,255,0.03);
+  cursor:col-resize;
+  display:flex;align-items:center;justify-content:center;
+  transition:width 0.15s ease,background 0.15s ease;
+  position:relative;z-index:10;user-select:none;
+  border-left:1px solid rgba(255,255,255,0.05);
+  border-right:1px solid rgba(255,255,255,0.05);
+}
+.map-slider:hover,.map-slider.dragging{
+  width:8px;
+  background:rgba(0,229,200,0.18);
+  border-color:rgba(0,229,200,0.4);
+}
+.map-slider-handle{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;}
+.map-slider-dots::before{
+  content:"";display:block;width:3px;height:28px;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,0.3) 0,rgba(255,255,255,0.3) 3px,transparent 3px,transparent 6px);
+  border-radius:2px;
+}
+.map-slider.dragging .map-slider-dots::before{
+  background:repeating-linear-gradient(to bottom,rgba(0,229,200,0.7) 0,rgba(0,229,200,0.7) 3px,transparent 3px,transparent 6px);
+}
+@media(max-width:900px){.map-slider{display:none;}}
+
+/* ── Typing animation ── */
+.chat-typing-indicator{display:inline-flex;align-items:center;gap:5px;padding:4px 2px;}
+.chat-typing-indicator span{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);opacity:0.7;
+  animation:typingBounce 1.2s infinite ease-in-out;
+}
+.chat-typing-indicator span:nth-child(2){animation-delay:0.15s;}
+.chat-typing-indicator span:nth-child(3){animation-delay:0.3s;}
+@keyframes typingBounce{
+  0%,60%,100%{transform:translateY(0);opacity:0.5;}
+  30%{transform:translateY(-6px);opacity:1;}
+}
+.cmq{font-size:12px;font-weight:700;color:var(--secondary);margin-bottom:8px;line-height:1.4;}
+.cma{font-size:12px;color:var(--text2);line-height:1.75;border-left:2px solid rgba(0,229,200,0.25);padding-left:10px;margin-left:2px;}
+
+/* ── Bottom tab active glow ── */
+.mob-tab.active{
+  color:var(--cyan);
+  border-bottom-color:var(--cyan);
+  text-shadow:0 0 10px rgba(0,229,200,0.5);
+}
+
+/* ── Page tab active glow ── */
+.page-tab.active::after{box-shadow:0 0 12px rgba(0,229,200,0.8);}
+
+/* ── Button ripple override ── */
+.ripple-wave{background:rgba(255,255,255,0.18);}

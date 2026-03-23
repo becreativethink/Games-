@@ -817,27 +817,14 @@ function updateSettingsUI() {
   const box     = document.getElementById('apiStatusBox');
   const txt     = document.getElementById('apiStatusText');
 
-  // Section 3: AI Configuration only visible for free plan / payperuse (own-API users)
+  // AI Configuration: ONLY visible when plan === 'custom'
   const aiSection = document.getElementById('aiConfigSection');
   if (aiSection) {
-    // Show AI config for free_trial and payperuse — paid plans use admin keys
-    const isPaidPlan = (plan === 'starter' || plan === 'standard' || plan === 'premium');
-    const canSeeAI = !isPaidPlan;
+    const canSeeAI = (plan === 'custom');
     aiSection.style.display = canSeeAI ? '' : 'none';
-    // Inject plan notice if hidden plans are reached
-    let notice = document.getElementById('aiConfigNotice');
-    if (!canSeeAI) {
-      if (!notice) {
-        notice = document.createElement('div');
-        notice.id = 'aiConfigNotice';
-        notice.className = 'settings-plan-notice';
-        notice.innerHTML = '<span class="notice-icon">🔑</span><div>Your <strong>' + (PLANS[plan]?.name || plan) + '</strong> plan uses admin-managed API keys — no configuration needed. AI is automatically optimized for you.</div>';
-        const prevSection = aiSection.previousElementSibling;
-        if (prevSection) prevSection.after(notice);
-      }
-    } else {
-      if (notice) notice.remove();
-    }
+    // Remove any stale notice
+    const notice = document.getElementById('aiConfigNotice');
+    if (notice) notice.remove();
   }
 
   if (!box) return;
@@ -1277,6 +1264,8 @@ function initMap() {
   map.on('click', e=>{
     pendingLat = e.latlng.lat; pendingLon = e.latlng.lng;
     pendingCountryCode = null; // reset — will be fetched below
+    // Auto-complete pending compare slot
+    if (typeof _checkPendingCompare === 'function') _checkPendingCompare();
     console.log('[map click] lat='+pendingLat.toFixed(4)+' lon='+pendingLon.toFixed(4));
     placePin(pendingLat, pendingLon, '#00d4aa');
     showPill(pendingLat, pendingLon);
@@ -3554,11 +3543,47 @@ function initCompare() {
   if (runBtn) runBtn.disabled = !(compareA && compareB);
 }
 
+// Track which compare slot is pending a map click
+let _comparePendingSlot = null;
+
 function setComparePin(which) {
-  // Allow setting from map even without full report — just need a clicked location
+  // If user already clicked a map location → set immediately
+  if (pendingLat !== null && pendingLon !== null) {
+    _doSetComparePin(which);
+    return;
+  }
+
+  // No location clicked yet → guide user to map and remember slot
+  _comparePendingSlot = which;
+  const label = which === 'A' ? 'A' : 'B';
+
+  // Show guidance toast
+  toast(`Tap a location on the Map, then tap "Set as Location ${label}" again`, 'warn');
+
+  // Highlight the map tab to guide user
+  const mapTab = document.getElementById('pt-map') || document.querySelector('.mob-tab[onclick*="map"]');
+  if (mapTab) {
+    mapTab.style.boxShadow = '0 0 0 2px var(--cyan)';
+    setTimeout(() => { mapTab.style.boxShadow = ''; }, 3000);
+  }
+
+  // Go to map page so user can click
+  goPage('map');
+
+  // Show pulsing hint on the map
+  setTimeout(() => {
+    const idle = document.getElementById('i-title');
+    if (idle) {
+      idle.textContent = `📍 Tap map for Location ${label}`;
+      idle.style.color = 'var(--cyan)';
+      setTimeout(() => { idle.textContent = 'Click map, then Send Report'; idle.style.color = ''; }, 4000);
+    }
+  }, 200);
+}
+
+function _doSetComparePin(which) {
   if (pendingLat === null || pendingLon === null) {
-    toast('Go to the Map tab, click a location, then come back here.', 'err');
-    goPage('map');
+    toast('No location selected — tap the map first', 'err');
     return;
   }
   const geo  = curData?.geo || {address:{}};
@@ -3570,33 +3595,51 @@ function setComparePin(which) {
 
   if (which === 'A') {
     compareA = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
-    const el = document.getElementById('cpinA');
-    document.getElementById('cpinAName').textContent = name;
-    document.getElementById('cpinAName').classList.add('set');
-    document.getElementById('cpinASub').textContent  = sub;
-    el.classList.add('selected');
-    // Visual feedback on button
-    const btn = el.querySelector('.cpin-btn');
-    if (btn) { btn.textContent = '✓ Location A Set'; btn.style.opacity = '0.7'; }
+    _updateCpinUI('cpinA', name, sub, '✓ Location A Set', 'a');
     toast('📍 Location A: ' + name, 'ok');
   } else {
     compareB = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
-    const el = document.getElementById('cpinB');
-    document.getElementById('cpinBName').textContent = name;
-    document.getElementById('cpinBName').classList.add('set');
-    document.getElementById('cpinBSub').textContent  = sub;
-    el.classList.add('selected');
-    const btn = el.querySelector('.cpin-btn');
-    if (btn) { btn.textContent = '✓ Location B Set'; btn.style.opacity = '0.7'; }
+    _updateCpinUI('cpinB', name, sub, '✓ Location B Set', 'b');
     toast('📍 Location B: ' + name, 'ok');
   }
+  _comparePendingSlot = null;
+  _refreshCompareRunBtn();
+}
+
+function _updateCpinUI(elId, name, sub, btnLabel, slot) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const nameEl = el.querySelector('.cpin-name');
+  const subEl  = el.querySelector('.cpin-sub');
+  const btn    = el.querySelector('.cpin-btn');
+  if (nameEl) { nameEl.textContent = name; nameEl.classList.add('set'); }
+  if (subEl)  { subEl.textContent  = sub; }
+  if (btn)    { btn.textContent = btnLabel; btn.style.background = 'rgba(0,229,200,0.15)'; }
+  el.classList.add('selected');
+}
+
+function _refreshCompareRunBtn() {
   const runBtn = document.getElementById('compareRunBtn');
-  if (runBtn) {
-    runBtn.disabled = !(compareA && compareB);
-    if (compareA && compareB) {
-      runBtn.style.animation = 'pulse 0.5s ease';
-      setTimeout(() => { runBtn.style.animation = ''; }, 600);
-    }
+  if (!runBtn) return;
+  runBtn.disabled = !(compareA && compareB);
+  if (compareA && compareB) {
+    runBtn.style.animation = 'pulse 0.6s ease';
+    setTimeout(() => { runBtn.style.animation = ''; }, 700);
+    runBtn.textContent = '⚖ Generate Comparison Report';
+  }
+}
+
+// Hook into map click to auto-complete pending compare slot
+const _origMapClick = typeof onMapClick === 'function' ? onMapClick : null;
+function _checkPendingCompare() {
+  if (_comparePendingSlot && pendingLat !== null && pendingLon !== null) {
+    const slot = _comparePendingSlot;
+    // Short delay to let geo/AI data populate
+    setTimeout(() => {
+      _doSetComparePin(slot);
+      // Navigate back to compare page
+      setTimeout(() => goPage('compare'), 600);
+    }, 300);
   }
 }
 
@@ -4581,40 +4624,59 @@ document.addEventListener('keydown', e => {
    Drag the divider to resize map ↔ right panel
    ═══════════════════════════════════════════════════════ */
 (function initMapSlider() {
-  const slider    = document.getElementById('mapSlider');
-  const mapPanel  = document.getElementById('mapPanel');
-  const rightPanel= document.getElementById('rightPanel');
-  const mainWrap  = document.getElementById('mainWrap');
+  const slider     = document.getElementById('mapSlider');
+  const mapPanel   = document.getElementById('mapPanel');
+  const rightPanel = document.getElementById('rightPanel');
+  const mainWrap   = document.getElementById('mainWrap');
   if (!slider || !mapPanel || !rightPanel) return;
 
-  let dragging = false;
-  let startX   = 0;
-  let startMapW = 0;
+  let dragging  = false;
+  let startPos  = 0;       // startX (desktop) or startY (mobile)
+  let startSize = 0;       // start width (desktop) or start height (mobile)
+
+  function isMobile() { return window.innerWidth <= 900; }
 
   function onStart(e) {
-    dragging  = true;
-    startX    = e.clientX ?? e.touches[0].clientX;
-    startMapW = mapPanel.getBoundingClientRect().width;
+    dragging = true;
+    const pt = e.touches ? e.touches[0] : e;
+    startPos  = isMobile() ? pt.clientY : pt.clientX;
+    startSize = isMobile()
+      ? mapPanel.getBoundingClientRect().height
+      : mapPanel.getBoundingClientRect().width;
     slider.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    document.body.style.cursor = isMobile() ? 'row-resize' : 'col-resize';
     e.preventDefault();
   }
 
   function onMove(e) {
     if (!dragging) return;
-    const x    = e.clientX ?? e.touches[0].clientX;
-    const dx   = x - startX;
-    const total = mainWrap.getBoundingClientRect().width - slider.offsetWidth;
-    const minW  = 180;   // min map width px
-    const maxW  = total - 200; // min right panel 200px
-    const newMapW = Math.min(maxW, Math.max(minW, startMapW + dx));
-    mapPanel.style.flex  = 'none';
-    mapPanel.style.width = newMapW + 'px';
-    rightPanel.style.flex  = '1';
-    rightPanel.style.width = '';
-    // Invalidate Leaflet map size
-    if (window.map) setTimeout(() => window.map.invalidateSize(), 50);
+    const pt = e.touches ? e.touches[0] : e;
+
+    if (isMobile()) {
+      // ── MOBILE: drag up/down to resize map height ──
+      const dy   = (pt.clientY - startPos);
+      const total = mainWrap.getBoundingClientRect().height - slider.offsetHeight;
+      const minH  = 120;   // px — minimum map height
+      const maxH  = total - 100; // minimum right panel 100px
+      const newH  = Math.min(maxH, Math.max(minH, startSize + dy));
+      mapPanel.style.flex   = 'none';
+      mapPanel.style.height = newH + 'px';
+      rightPanel.style.flex = '1';
+      if (window.map) window.map.invalidateSize();
+    } else {
+      // ── DESKTOP: drag left/right to resize map width ──
+      const dx   = (pt.clientX - startPos);
+      const total = mainWrap.getBoundingClientRect().width - slider.offsetWidth;
+      const minW  = 200;
+      const maxW  = total - 220;
+      const newW  = Math.min(maxW, Math.max(minW, startSize + dx));
+      mapPanel.style.flex   = 'none';
+      mapPanel.style.width  = newW + 'px';
+      rightPanel.style.flex = '1';
+      rightPanel.style.width = '';
+      if (window.map) window.map.invalidateSize();
+    }
   }
 
   function onEnd() {
@@ -4623,18 +4685,32 @@ document.addEventListener('keydown', e => {
     slider.classList.remove('dragging');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-    if (window.map) window.map.invalidateSize();
+    if (window.map) setTimeout(() => window.map.invalidateSize(), 60);
   }
 
-  // Double-click to reset
-  slider.addEventListener('dblclick', () => {
-    mapPanel.style.flex  = '1';
-    mapPanel.style.width = '';
-    rightPanel.style.flex  = '0 0 360px';
-    rightPanel.style.width = '360px';
-    if (window.map) setTimeout(() => window.map.invalidateSize(), 80);
-    toast('Map size reset', 'ok');
+  // Double-tap/double-click to reset to default
+  let lastTap = 0;
+  slider.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTap < 300) resetSlider();
+    lastTap = now;
   });
+  slider.addEventListener('dblclick', resetSlider);
+
+  function resetSlider() {
+    if (isMobile()) {
+      mapPanel.style.flex   = 'none';
+      mapPanel.style.height = '38vh';
+      rightPanel.style.flex = '1';
+    } else {
+      mapPanel.style.flex   = '1';
+      mapPanel.style.width  = '';
+      rightPanel.style.flex = '0 0 360px';
+      rightPanel.style.width = '360px';
+    }
+    if (window.map) setTimeout(() => window.map.invalidateSize(), 80);
+    toast('Layout reset', 'ok');
+  }
 
   slider.addEventListener('mousedown', onStart);
   slider.addEventListener('touchstart', onStart, { passive: false });

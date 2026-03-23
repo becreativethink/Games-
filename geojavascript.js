@@ -3929,17 +3929,45 @@ async function openCompareHistRecord(encId) {
   try {
     const snap = await db.ref('comparisonHistory/' + currentUser.uid + '/' + id).once('value');
     if (!snap.exists()) { toast('Record not found', 'err'); return; }
-    const rec = snap.val();
-    const nameA = rec.locationA?.name || 'Location A';
-    const nameB = rec.locationB?.name || 'Location B';
+    const rec   = snap.val();
+    const nameA = (rec.locationA && rec.locationA.name) || 'Location A';
+    const nameB = (rec.locationB && rec.locationB.name) || 'Location B';
 
     const modal = document.getElementById('compareHistModal');
     const body  = document.getElementById('chmBody');
     const title = document.getElementById('chmTitle');
 
-    title.textContent = `⚖ ${nameA} vs ${nameB}`;
-    // Use stored HTML — zero API calls
+    title.textContent = '⚖ ' + nameA + ' vs ' + nameB;
+
+    // Show table HTML
     body.innerHTML = rec.resultHtml || '<div class="hempty">No result data stored.</div>';
+
+    // Re-render charts from saved AI data (they were not stored in resultHtml)
+    if (rec.aiA && rec.aiB) {
+      requestAnimationFrame(function() {
+        try {
+          var aiA = JSON.parse(rec.aiA);
+          var aiB = JSON.parse(rec.aiB);
+          var chartWrap = document.createElement('div');
+          chartWrap.style.cssText = 'margin-top:16px;padding:0 2px;';
+          var chartTitle = document.createElement('div');
+          chartTitle.style.cssText = 'font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;';
+          chartTitle.textContent = '📊 Visual Comparison';
+          var chartSub = document.createElement('div');
+          chartSub.style.cssText = 'font-size:10px;color:var(--muted);margin-bottom:10px;';
+          chartSub.textContent = 'Charts based on saved AI data.';
+          chartWrap.appendChild(chartTitle);
+          chartWrap.appendChild(chartSub);
+          if (typeof renderComparisonCharts === 'function') {
+            renderComparisonCharts(chartWrap, aiA, aiB, nameA, nameB);
+          }
+          body.appendChild(chartWrap);
+        } catch(chartErr) {
+          console.warn('[cmpHistCharts]', chartErr);
+        }
+      });
+    }
+
     modal.style.display = 'flex';
   } catch(e) {
     toast('Failed to open: ' + e.message, 'err');
@@ -4325,42 +4353,77 @@ async function saveProfile() {
 async function uploadProfilePhoto(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  if (file.size > 5 * 1024 * 1024) { toast('Photo must be under 5 MB', 'err'); return; }
   if (!file.type.startsWith('image/')) { toast('Please select an image file', 'err'); return; }
+  if (file.size > 8 * 1024 * 1024) { toast('Photo must be under 8 MB', 'err'); return; }
 
   const progWrap = document.getElementById('profileUploadProgress');
   const progFill = document.getElementById('profileUploadFill');
-  if (progWrap) progWrap.style.display = 'block';
-  toast('Uploading photo…', 'warn');
+  if (progWrap) { progWrap.style.display = 'block'; }
+  if (progFill) { progFill.style.width = '10%'; }
+  toast('Processing photo…', 'warn');
 
   try {
-    // Use Firebase Storage if available
-    if (typeof firebase !== 'undefined' && firebase.storage) {
-      const storageRef = firebase.storage().ref('profile_photos/' + currentUser.uid + '.' + file.name.split('.').pop());
-      const uploadTask = storageRef.put(file);
-      uploadTask.on('state_changed',
-        snap => {
-          const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
-          if (progFill) progFill.style.width = pct + '%';
-        },
-        err => { toast('Upload failed: ' + err.message, 'err'); if (progWrap) progWrap.style.display = 'none'; },
-        async () => {
-          const url = await uploadTask.snapshot.ref.getDownloadURL();
-          await _applyProfilePhoto(url);
-          if (progWrap) progWrap.style.display = 'none';
-        }
-      );
-    } else {
-      // Fallback: use FileReader (local preview only, saved as data URL up to 1MB)
-      if (file.size > 1024 * 1024) { toast('Firebase Storage unavailable — photo under 1 MB only for local preview', 'warn'); if (progWrap) progWrap.style.display = 'none'; return; }
-      const reader = new FileReader();
-      reader.onload = async e => {
-        await _applyProfilePhoto(e.target.result);
-        if (progWrap) progWrap.style.display = 'none';
+    // ── Step 1: Read file into canvas and compress/resize ──
+    const dataUrl = await new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = function() {
+        URL.revokeObjectURL(url);
+        const MAX = 256; // max dimension px
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+        else       { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
       };
-      reader.readAsDataURL(file);
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    if (progFill) progFill.style.width = '60%';
+
+    // ── Step 2: Try Firebase Storage first ──
+    let finalUrl = null;
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+      try {
+        const storage = firebase.storage();
+        const ext     = 'jpg';
+        const ref     = storage.ref('profile_photos/' + currentUser.uid + '.' + ext);
+        // Convert base64 data URL to blob
+        const res  = await fetch(dataUrl);
+        const blob = await res.blob();
+        const snap = await ref.put(blob, { contentType: 'image/jpeg' });
+        finalUrl   = await snap.ref.getDownloadURL();
+        console.log('[Profile] Uploaded to Firebase Storage:', finalUrl);
+      } catch(storageErr) {
+        console.warn('[Profile] Firebase Storage failed, falling back to base64:', storageErr.message);
+        finalUrl = null;
+      }
     }
-  } catch(e) { toast('Upload error: ' + e.message, 'err'); if (progWrap) progWrap.style.display = 'none'; }
+
+    // ── Step 3: Fallback — save compressed base64 to Realtime DB ──
+    if (!finalUrl) {
+      finalUrl = dataUrl; // compressed ≈ 10-30 KB
+    }
+
+    if (progFill) progFill.style.width = '90%';
+
+    await _applyProfilePhoto(finalUrl);
+
+    if (progFill) progFill.style.width = '100%';
+    setTimeout(function() {
+      if (progWrap) progWrap.style.display = 'none';
+      if (progFill) progFill.style.width = '0%';
+    }, 600);
+
+  } catch(e) {
+    console.error('[Profile upload]', e);
+    toast('Upload failed: ' + e.message, 'err');
+    if (progWrap) progWrap.style.display = 'none';
+  }
 }
 
 async function _applyProfilePhoto(url) {

@@ -455,28 +455,52 @@
   <!-- ══ PAGE: COMPARE ══ -->
   <div class="page" id="comparePage">
     <div class="compare-scroll">
-      <div class="page-header" style="padding:0 0 16px">
+      <div class="page-header" style="padding:0 0 14px">
         <h2>⚖ Location Comparison</h2>
-        <p>Select two locations on the map, then generate a detailed side-by-side comparison</p>
+        <p>Tap directly on each map below to pick two locations, then compare</p>
       </div>
-      <div class="compare-info">
-        💡 <strong>How to use:</strong> Click <em>Set as Location A</em> below — GeoMind will guide you to the map. Tap any location, then it auto-returns here. Repeat for Location B.
-      </div>
-      <div class="compare-pins">
-        <div class="cpin-card" id="cpinA">
-          <div class="cpin-label cpin-label-a">📍 Location A</div>
-          <div class="cpin-name" id="cpinAName">Not selected</div>
-          <div class="cpin-sub" id="cpinASub">Tap "Set as Location A" then click map</div>
-          <button class="cpin-btn cpin-btn-a" onclick="setComparePin('A')">Set as Location A</button>
+
+      <!-- ── Two mini-maps side by side ── -->
+      <div class="cmp-maps-row">
+
+        <!-- Location A map -->
+        <div class="cmp-map-card" id="cmpCardA">
+          <div class="cmp-map-label cmp-label-a">📍 Location A</div>
+          <div class="cmp-map-hint" id="cmpHintA">Tap map to select</div>
+          <div class="cmp-map-name" id="cmpNameA"></div>
+          <div id="cmpMapA" class="cmp-mini-map"></div>
+          <div class="cmp-map-status" id="cmpStatusA">
+            <span class="cmp-status-dot cmp-dot-a"></span>
+            <span id="cmpStatusTextA">Not selected</span>
+          </div>
         </div>
-        <div class="cpin-card" id="cpinB">
-          <div class="cpin-label cpin-label-b">📍 Location B</div>
-          <div class="cpin-name" id="cpinBName">Not selected</div>
-          <div class="cpin-sub" id="cpinBSub">Tap "Set as Location B" then click map</div>
-          <button class="cpin-btn cpin-btn-b" onclick="setComparePin('B')">Set as Location B</button>
+
+        <!-- VS divider -->
+        <div class="cmp-vs-badge">VS</div>
+
+        <!-- Location B map -->
+        <div class="cmp-map-card" id="cmpCardB">
+          <div class="cmp-map-label cmp-label-b">📍 Location B</div>
+          <div class="cmp-map-hint" id="cmpHintB">Tap map to select</div>
+          <div class="cmp-map-name" id="cmpNameB"></div>
+          <div id="cmpMapB" class="cmp-mini-map"></div>
+          <div class="cmp-map-status" id="cmpStatusB">
+            <span class="cmp-status-dot cmp-dot-b"></span>
+            <span id="cmpStatusTextB">Not selected</span>
+          </div>
         </div>
+
       </div>
+
+      <!-- ── Clear buttons row ── -->
+      <div class="cmp-clear-row">
+        <button class="cmp-clear-btn" onclick="clearComparePin('A')">✕ Clear A</button>
+        <button class="cmp-clear-btn" onclick="clearComparePin('B')">✕ Clear B</button>
+      </div>
+
+      <!-- ── Generate button ── -->
       <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
+
       <div id="compareLoad" class="compare-load" style="display:none">
         <div class="spin-lg"></div>
         <div class="lstep" id="cmpStep">Initializing…</div>

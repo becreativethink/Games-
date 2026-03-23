@@ -396,6 +396,7 @@ a{text-decoration:none;}
   content:'';position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);
   opacity:0;transition:opacity var(--trans);
+  pointer-events:none;
 }
 #sendBtn:hover{
   transform:translateY(-2px) scale(1.02);
@@ -474,6 +475,7 @@ a{text-decoration:none;}
   content:'';position:absolute;inset:-1px;border-radius:17px;
   background:linear-gradient(135deg,rgba(0,229,200,0.2),rgba(74,124,255,0.15),rgba(157,122,255,0.1));
   z-index:-1;
+  pointer-events:none;
 }
 .uw-title{
   font-size:10px;font-weight:700;text-transform:uppercase;
@@ -516,6 +518,7 @@ a{text-decoration:none;}
   content:'';position:absolute;inset:0;
   background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent);
   opacity:0;transition:opacity var(--trans);
+  pointer-events:none;
 }
 .upgrade-cta-btn:hover{
   transform:translateY(-2px);
@@ -808,6 +811,7 @@ a{text-decoration:none;}
   content:'';position:absolute;inset:0;border-radius:16px;
   background:linear-gradient(135deg,rgba(74,124,255,0.04),transparent);
   opacity:0;transition:opacity var(--trans);
+  pointer-events:none;
 }
 .hitem:hover{
   transform:translateY(-3px);
@@ -1621,6 +1625,7 @@ select option{
 .cpin-card::before{
   content:'';position:absolute;inset:0;border-radius:16px;
   opacity:0;transition:opacity var(--trans);
+  pointer-events:none;
 }
 #cpinA{border-top:3px solid var(--cyan);}
 #cpinA::before{background:linear-gradient(135deg,rgba(0,229,200,0.04),transparent);}

@@ -3521,126 +3521,178 @@ async function changePassword() {
 }
 
 /* ══════════════════════════════════════════════════════
-   LOCATION COMPARISON — setComparePin (clean rewrite)
+   LOCATION COMPARISON — Mini-Map Click to Set (v3)
    ══════════════════════════════════════════════════════ */
 let compareA = null, compareB = null;
+let _cmpMapA  = null, _cmpMapB  = null;
+let _cmpPinA  = null, _cmpPinB  = null;
+let _cmpMapsInited = false;
 
+/* ── Initialise both mini Leaflet maps (called once) ── */
+function _initCompareMaps() {
+  if (_cmpMapsInited) return;
+  _cmpMapsInited = true;
+
+  const tileUrl  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const tileOpts = { attribution: '© CARTO', maxZoom: 18 };
+  const center   = [20.59, 78.96];
+
+  // ── Map A ──
+  _cmpMapA = L.map('cmpMapA', { zoomControl: true, attributionControl: false }).setView(center, 3);
+  L.tileLayer(tileUrl, tileOpts).addTo(_cmpMapA);
+  _cmpMapA.on('click', function(e) { _onCmpMapClick('A', e.latlng.lat, e.latlng.lng); });
+
+  // ── Map B ──
+  _cmpMapB = L.map('cmpMapB', { zoomControl: true, attributionControl: false }).setView(center, 3);
+  L.tileLayer(tileUrl, tileOpts).addTo(_cmpMapB);
+  _cmpMapB.on('click', function(e) { _onCmpMapClick('B', e.latlng.lat, e.latlng.lng); });
+}
+
+/* ── Called on every visit to compare page ── */
 function initCompare() {
-  // Restore display of previously set pins
-  if (compareA) _restorePinUI('cpinA', compareA.name, `${parseFloat(compareA.lat).toFixed(4)}°, ${parseFloat(compareA.lon).toFixed(4)}°`, '✓ Location A Set');
-  if (compareB) _restorePinUI('cpinB', compareB.name, `${parseFloat(compareB.lat).toFixed(4)}°, ${parseFloat(compareB.lon).toFixed(4)}°`, '✓ Location B Set');
-  const runBtn = document.getElementById('compareRunBtn');
-  if (runBtn) runBtn.disabled = !(compareA && compareB);
-  // Remove any stale no-location banner
-  const banner = document.getElementById('cmpNoBanner');
-  if (banner) banner.remove();
+  _initCompareMaps();
+
+  // Invalidate sizes (needed when switching tabs)
+  setTimeout(function() {
+    if (_cmpMapA) _cmpMapA.invalidateSize();
+    if (_cmpMapB) _cmpMapB.invalidateSize();
+  }, 120);
+
+  // Restore persisted selections
+  if (compareA) _renderCmpPin('A', compareA.lat, compareA.lon, compareA.name);
+  if (compareB) _renderCmpPin('B', compareB.lat, compareB.lon, compareB.name);
+
+  _refreshCompareRunBtn();
 }
 
-function _restorePinUI(elId, name, sub, btnLabel) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  el.querySelector('.cpin-name').textContent = name;
-  el.querySelector('.cpin-sub').textContent  = sub;
-  const btn = el.querySelector('.cpin-btn');
-  if (btn) { btn.textContent = btnLabel; }
-  el.classList.add('selected');
-}
+/* ── User clicked on mini-map ── */
+async function _onCmpMapClick(slot, lat, lon) {
+  // Show loading in status
+  _setCmpStatus(slot, 'Locating…', false);
 
-function setComparePin(which) {
-  // Remove any stale banner
-  const oldBanner = document.getElementById('cmpNoBanner');
-  if (oldBanner) oldBanner.remove();
+  // Place pin immediately
+  _renderCmpPin(slot, lat, lon, lat.toFixed(4) + '°, ' + lon.toFixed(4) + '°');
 
-  // ── Case 1: User has clicked a map location → set immediately ──
-  if (pendingLat !== null && pendingLon !== null) {
-    const geo  = (curData && curData.geo) ? curData.geo : {address:{}};
-    const ai   = (curData && curData.ai)  ? curData.ai  : {};
-    const addr = geo.address || {};
+  // Reverse-geocode to get proper name
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&zoom=10&addressdetails=1';
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    const addr = data.address || {};
+    const name = addr.city || addr.town || addr.village || addr.county
+               || addr.state_district || addr.state || addr.country
+               || (lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°');
+    const sub  = [addr.state, addr.country].filter(Boolean).join(', ') || '';
 
-    // Build display name (fallback to coordinates)
-    const name = (ai.locationId && ai.locationId.nearestCity)
-               || addr.city || addr.state || addr.county || addr.country
-               || (pendingLat.toFixed(2) + '°, ' + pendingLon.toFixed(2) + '°');
-    const sub  = [addr.state, addr.country].filter(Boolean).join(', ')
-               || (pendingLat.toFixed(4) + '°, ' + pendingLon.toFixed(4) + '°');
-
-    if (which === 'A') {
-      compareA = { lat: pendingLat, lon: pendingLon, geo: geo, ai: ai, name: name, sub: sub };
-      const el = document.getElementById('cpinA');
-      if (el) {
-        el.querySelector('.cpin-name').textContent = name;
-        el.querySelector('.cpin-sub').textContent  = sub;
-        const btn = el.querySelector('.cpin-btn');
-        if (btn) btn.textContent = '✓ Location A Set';
-        el.classList.add('selected');
-      }
-      toast('📍 Location A: ' + name, 'ok');
+    // Update pin data
+    const geoObj = { address: { city: addr.city||addr.town||addr.village||'', state: addr.state||'', country: addr.country||'', county: addr.county||'' } };
+    if (slot === 'A') {
+      compareA = { lat: lat, lon: lon, geo: geoObj, ai: {}, name: name, sub: sub };
     } else {
-      compareB = { lat: pendingLat, lon: pendingLon, geo: geo, ai: ai, name: name, sub: sub };
-      const el = document.getElementById('cpinB');
-      if (el) {
-        el.querySelector('.cpin-name').textContent = name;
-        el.querySelector('.cpin-sub').textContent  = sub;
-        const btn = el.querySelector('.cpin-btn');
-        if (btn) btn.textContent = '✓ Location B Set';
-        el.classList.add('selected');
-      }
-      toast('📍 Location B: ' + name, 'ok');
+      compareB = { lat: lat, lon: lon, geo: geoObj, ai: {}, name: name, sub: sub };
     }
 
-    // Enable run button if both are set
-    const runBtn = document.getElementById('compareRunBtn');
-    if (runBtn) {
-      runBtn.disabled = !(compareA && compareB);
-      if (compareA && compareB) {
-        runBtn.style.animation = 'pulse 0.6s ease';
-        setTimeout(function() { runBtn.style.animation = ''; }, 700);
-      }
+    _renderCmpPin(slot, lat, lon, name);
+    toast('📍 Location ' + slot + ': ' + name, 'ok');
+  } catch(e) {
+    // Keep coordinates as name on failure
+    const name = lat.toFixed(3) + '°, ' + lon.toFixed(3) + '°';
+    const geoObj = { address: {} };
+    if (slot === 'A') {
+      compareA = { lat: lat, lon: lon, geo: geoObj, ai: {}, name: name, sub: '' };
+    } else {
+      compareB = { lat: lat, lon: lon, geo: geoObj, ai: {}, name: name, sub: '' };
     }
-    return;
+    toast('📍 Location ' + slot + ' set', 'ok');
   }
 
-  // ── Case 2: No map location yet → show banner with clear instruction ──
-  const label  = which === 'A' ? 'A' : 'B';
-  const pinArea = document.getElementById('cpinA') && document.getElementById('cpinA').parentElement;
+  _refreshCompareRunBtn();
+}
 
-  // Insert instruction banner above the pins
-  const banner = document.createElement('div');
-  banner.id = 'cmpNoBanner';
-  banner.style.cssText = [
-    'background:rgba(0,229,200,0.08)',
-    'border:1px solid rgba(0,229,200,0.3)',
-    'border-radius:12px',
-    'padding:14px 16px',
-    'margin-bottom:14px',
-    'font-size:12px',
-    'color:var(--text2)',
-    'line-height:1.7',
-    'display:flex',
-    'align-items:flex-start',
-    'gap:12px'
-  ].join(';');
-  banner.innerHTML = '<span style="font-size:22px;flex-shrink:0">📍</span>'
-    + '<div><strong style="color:var(--cyan)">Step: Click a map location first</strong><br>'
-    + 'Go to the <strong>Map</strong> tab → tap anywhere on the map → come back here → tap <em>Set as Location '
-    + label + '</em> again.<br>'
-    + '<button onclick="goPage(\'map\')" style="margin-top:8px;padding:6px 16px;'
-    + 'background:linear-gradient(135deg,var(--primary),var(--secondary));'
-    + 'color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">'
-    + '🗺 Go to Map</button>'
-    + '<button onclick="document.getElementById(\'cmpNoBanner\').remove()" style="margin-top:8px;margin-left:8px;'
-    + 'padding:6px 12px;background:rgba(255,255,255,0.06);'
-    + 'color:var(--muted);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;cursor:pointer;">'
-    + '✕ Dismiss</button></div>';
+/* ── Place / move pin on a mini-map ── */
+function _renderCmpPin(slot, lat, lon, name) {
+  const isA   = slot === 'A';
+  const lmap  = isA ? _cmpMapA  : _cmpMapB;
+  let   lpin  = isA ? _cmpPinA  : _cmpPinB;
+  const color = isA ? '#00e5c8' : '#4a7cff';
+  const card  = document.getElementById(isA ? 'cmpCardA' : 'cmpCardB');
+  const nameEl= document.getElementById(isA ? 'cmpNameA' : 'cmpNameB');
+  const hintEl= document.getElementById(isA ? 'cmpHintA' : 'cmpHintB');
 
-  // Insert before compare-pins
-  const comparePins = document.querySelector('.compare-pins');
-  if (comparePins) {
-    comparePins.parentElement.insertBefore(banner, comparePins);
-  } else {
-    const scroll = document.querySelector('.compare-scroll');
-    if (scroll) scroll.prepend(banner);
+  if (!lmap) return;
+
+  // Remove old pin
+  if (lpin) { lmap.removeLayer(lpin); }
+
+  // Create coloured circle marker
+  const newPin = L.circleMarker([lat, lon], {
+    radius: 9,
+    fillColor: color,
+    color: '#fff',
+    weight: 2,
+    opacity: 1,
+    fillOpacity: 0.9
+  }).addTo(lmap);
+  newPin.bindTooltip(name, { permanent: false, direction: 'top' });
+
+  if (isA) _cmpPinA = newPin; else _cmpPinB = newPin;
+
+  lmap.setView([lat, lon], 7, { animate: true });
+
+  // Update UI
+  if (nameEl) nameEl.textContent = name;
+  if (hintEl) hintEl.textContent = 'Tap to change';
+  if (card)   card.classList.add('has-pin');
+  _setCmpStatus(slot, name, true);
+}
+
+/* ── Status bar text ── */
+function _setCmpStatus(slot, text, active) {
+  const isA = slot === 'A';
+  const txtEl = document.getElementById(isA ? 'cmpStatusTextA' : 'cmpStatusTextB');
+  const dot   = document.querySelector(isA ? '.cmp-dot-a' : '.cmp-dot-b');
+  if (txtEl) txtEl.textContent = text;
+  if (dot) {
+    if (active) dot.classList.add('active');
+    else        dot.classList.remove('active');
   }
+}
+
+/* ── Clear one pin ── */
+function clearComparePin(slot) {
+  const isA = slot === 'A';
+  const lmap = isA ? _cmpMapA : _cmpMapB;
+  const lpin = isA ? _cmpPinA : _cmpPinB;
+
+  if (lpin && lmap) { lmap.removeLayer(lpin); }
+  if (isA) { compareA = null; _cmpPinA = null; }
+  else     { compareB = null; _cmpPinB = null; }
+
+  const card   = document.getElementById(isA ? 'cmpCardA' : 'cmpCardB');
+  const nameEl = document.getElementById(isA ? 'cmpNameA' : 'cmpNameB');
+  const hintEl = document.getElementById(isA ? 'cmpHintA' : 'cmpHintB');
+  if (card)   card.classList.remove('has-pin');
+  if (nameEl) nameEl.textContent = '';
+  if (hintEl) hintEl.textContent = 'Tap map to select';
+  _setCmpStatus(slot, 'Not selected', false);
+  _refreshCompareRunBtn();
+  toast('Location ' + slot + ' cleared', 'warn');
+}
+
+/* ── Enable / animate run button ── */
+function _refreshCompareRunBtn() {
+  const btn = document.getElementById('compareRunBtn');
+  if (!btn) return;
+  btn.disabled = !(compareA && compareB);
+  if (compareA && compareB) {
+    btn.style.animation = 'pulse 0.6s ease';
+    setTimeout(function() { btn.style.animation = ''; }, 700);
+  }
+}
+
+/* Legacy stub — no longer needed but kept for safety */
+function setComparePin(which) {
+  toast('Tap directly on the map above to select Location ' + which, 'warn');
 }
 
 async function runComparison() {

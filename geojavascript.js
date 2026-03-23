@@ -4133,7 +4133,7 @@ function previewHistReport(enc) {
     html += section('★', 'Local Info', ai.localInfo);
 
     // Timeline
-    if (ai.timeline?.length) {
+    if (ai.timeline && ai.timeline.length) {
       html += `<div class="rp-section"><h4>⏳ Historical Timeline</h4>`;
       ai.timeline.forEach(t => {
         html += `<div class="rp-tl-item"><div class="rp-tl-year">${t.year}</div><div class="rp-val">${t.event}</div></div>`;
@@ -4142,11 +4142,14 @@ function previewHistReport(enc) {
     }
 
     // Exam Focus
-    if (ai.examFocus?.length) {
+    if (ai.examFocus && ai.examFocus.length) {
       html += `<div class="rp-section"><h4>⚡ Exam Focus Points</h4>`;
       ai.examFocus.forEach(f => { html += `<div class="rp-ep">${f}</div>`; });
       html += '</div>';
     }
+
+    // Charts container placeholder (injected after render)
+    html += `<div id="histChartContainer" style="margin-top:10px"></div>`;
 
     // Download bar inside modal
     html += `<div class="rp-dl-bar">
@@ -4157,11 +4160,21 @@ function previewHistReport(enc) {
     </div>`;
 
     document.getElementById('rmodalBody').innerHTML = html;
+
+    // ── Inject charts after DOM paint (same as live report) ──
+    requestAnimationFrame(() => {
+      const chartContainer = document.getElementById('histChartContainer');
+      if (chartContainer && typeof renderReportCharts === 'function') {
+        try { renderReportCharts(chartContainer, ai); } catch(e) { console.warn('Chart render:', e); }
+      }
+    });
+
     const rm = document.getElementById('reportModal');
-    rm.style.display = '';  // remove inline style, let CSS class control
+    rm.style.display = '';
     rm.classList.add('open');
   } catch(e) { toast('Preview failed: ' + e.message, 'err'); }
 }
+
 
 function closeReportModal() {
   const rm = document.getElementById('reportModal');

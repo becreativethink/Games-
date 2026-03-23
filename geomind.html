@@ -34,7 +34,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="auth-logo-img"/>
+      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -84,7 +84,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="auth-logo-img"/>
+      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -176,7 +176,7 @@
   <!-- TOP NAV -->
   <div id="topNav">
     <div class="nav-logo" onclick="goPage('map')">
-      <img src="https://spatial-black-8xwylhe4wn.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1.png" alt="GeoMind" class="nav-logo-img"/>
+      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="nav-logo-img"/>
       <div class="nav-logo-name">GeoMind</div>
     </div>
     <div class="page-tabs">
@@ -269,6 +269,10 @@
         </div>
       </div>
 
+      <!-- ══ MAP/REPORT RESIZE SLIDER ══ -->
+      <div id="mapSlider" class="map-slider" title="Drag to resize">
+        <div class="map-slider-handle"><div class="map-slider-dots"></div></div>
+      </div>
       <div id="rightPanel">
         <div class="tabs">
           <button class="tab on" id="t-a" onclick="goTab('a',this)">📊 Analysis</button>
@@ -354,9 +358,17 @@
   <div class="page" id="profilePage">
     <div class="profile-scroll">
       <div class="profile-avatar-section">
-        <div class="profile-av-big" id="profileAvBig">?</div>
+        <div class="profile-av-wrap" onclick="document.getElementById('pfPhotoInput').click()">
+          <div class="profile-av-big" id="profileAvBig">?</div>
+          <div class="profile-av-overlay">📷</div>
+        </div>
+        <input type="file" id="pfPhotoInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)"/>
         <div class="profile-user-name" id="profileName">Loading…</div>
         <div class="profile-user-email" id="profileEmail"></div>
+        <div class="profile-upload-hint">Tap avatar to upload photo</div>
+        <div class="profile-upload-progress" id="profileUploadProgress">
+          <div class="profile-upload-progress-fill" id="profileUploadFill"></div>
+        </div>
       </div>
       <!-- Progress Stats -->
       <div class="profile-section">
@@ -481,7 +493,7 @@
         <h2>⚙ Settings</h2>
         <p>Configure your AI model and API access</p>
       </div>
-      <div class="settings-section">
+      <div class="settings-section" id="aiConfigSection" style="display:none">
         <h3>🤖 AI Configuration</h3>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
         <div class="sf-field">
@@ -573,6 +585,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/docx.umd.min.js"></script>

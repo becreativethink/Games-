@@ -1264,8 +1264,6 @@ function initMap() {
   map.on('click', e=>{
     pendingLat = e.latlng.lat; pendingLon = e.latlng.lng;
     pendingCountryCode = null; // reset — will be fetched below
-    // Auto-complete pending compare slot
-    if (typeof _checkPendingCompare === 'function') _checkPendingCompare();
     console.log('[map click] lat='+pendingLat.toFixed(4)+' lon='+pendingLon.toFixed(4));
     placePin(pendingLat, pendingLon, '#00d4aa');
     showPill(pendingLat, pendingLon);
@@ -3523,123 +3521,125 @@ async function changePassword() {
 }
 
 /* ══════════════════════════════════════════════════════
-   SECTION 3 — LOCATION COMPARISON
+   LOCATION COMPARISON — setComparePin (clean rewrite)
    ══════════════════════════════════════════════════════ */
 let compareA = null, compareB = null;
 
 function initCompare() {
-  // Refresh the compare pin display when navigating to the compare page
-  if (compareA) {
-    document.getElementById('cpinAName').textContent = compareA.name;
-    document.getElementById('cpinASub').textContent  = `${parseFloat(compareA.lat).toFixed(4)}, ${parseFloat(compareA.lon).toFixed(4)}`;
-    document.getElementById('cpinA').classList.add('selected');
-  }
-  if (compareB) {
-    document.getElementById('cpinBName').textContent = compareB.name;
-    document.getElementById('cpinBSub').textContent  = `${parseFloat(compareB.lat).toFixed(4)}, ${parseFloat(compareB.lon).toFixed(4)}`;
-    document.getElementById('cpinB').classList.add('selected');
-  }
+  // Restore display of previously set pins
+  if (compareA) _restorePinUI('cpinA', compareA.name, `${parseFloat(compareA.lat).toFixed(4)}°, ${parseFloat(compareA.lon).toFixed(4)}°`, '✓ Location A Set');
+  if (compareB) _restorePinUI('cpinB', compareB.name, `${parseFloat(compareB.lat).toFixed(4)}°, ${parseFloat(compareB.lon).toFixed(4)}°`, '✓ Location B Set');
   const runBtn = document.getElementById('compareRunBtn');
   if (runBtn) runBtn.disabled = !(compareA && compareB);
+  // Remove any stale no-location banner
+  const banner = document.getElementById('cmpNoBanner');
+  if (banner) banner.remove();
 }
 
-// Track which compare slot is pending a map click
-let _comparePendingSlot = null;
-
-function setComparePin(which) {
-  // If user already clicked a map location → set immediately
-  if (pendingLat !== null && pendingLon !== null) {
-    _doSetComparePin(which);
-    return;
-  }
-
-  // No location clicked yet → guide user to map and remember slot
-  _comparePendingSlot = which;
-  const label = which === 'A' ? 'A' : 'B';
-
-  // Show guidance toast
-  toast(`Tap a location on the Map, then tap "Set as Location ${label}" again`, 'warn');
-
-  // Highlight the map tab to guide user
-  const mapTab = document.getElementById('pt-map') || document.querySelector('.mob-tab[onclick*="map"]');
-  if (mapTab) {
-    mapTab.style.boxShadow = '0 0 0 2px var(--cyan)';
-    setTimeout(() => { mapTab.style.boxShadow = ''; }, 3000);
-  }
-
-  // Go to map page so user can click
-  goPage('map');
-
-  // Show pulsing hint on the map
-  setTimeout(() => {
-    const idle = document.getElementById('i-title');
-    if (idle) {
-      idle.textContent = `📍 Tap map for Location ${label}`;
-      idle.style.color = 'var(--cyan)';
-      setTimeout(() => { idle.textContent = 'Click map, then Send Report'; idle.style.color = ''; }, 4000);
-    }
-  }, 200);
-}
-
-function _doSetComparePin(which) {
-  if (pendingLat === null || pendingLon === null) {
-    toast('No location selected — tap the map first', 'err');
-    return;
-  }
-  const geo  = curData?.geo || {address:{}};
-  const ai   = curData?.ai  || {};
-  const name = ai.locationId?.nearestCity || geo.address?.city || geo.address?.state || geo.address?.country
-             || `${parseFloat(pendingLat).toFixed(2)}°, ${parseFloat(pendingLon).toFixed(2)}°`;
-  const sub  = [geo.address?.state, geo.address?.country].filter(Boolean).join(', ')
-             || `${parseFloat(pendingLat).toFixed(4)}°, ${parseFloat(pendingLon).toFixed(4)}°`;
-
-  if (which === 'A') {
-    compareA = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
-    _updateCpinUI('cpinA', name, sub, '✓ Location A Set', 'a');
-    toast('📍 Location A: ' + name, 'ok');
-  } else {
-    compareB = { lat: pendingLat, lon: pendingLon, geo, ai, name, sub };
-    _updateCpinUI('cpinB', name, sub, '✓ Location B Set', 'b');
-    toast('📍 Location B: ' + name, 'ok');
-  }
-  _comparePendingSlot = null;
-  _refreshCompareRunBtn();
-}
-
-function _updateCpinUI(elId, name, sub, btnLabel, slot) {
+function _restorePinUI(elId, name, sub, btnLabel) {
   const el = document.getElementById(elId);
   if (!el) return;
-  const nameEl = el.querySelector('.cpin-name');
-  const subEl  = el.querySelector('.cpin-sub');
-  const btn    = el.querySelector('.cpin-btn');
-  if (nameEl) { nameEl.textContent = name; nameEl.classList.add('set'); }
-  if (subEl)  { subEl.textContent  = sub; }
-  if (btn)    { btn.textContent = btnLabel; btn.style.background = 'rgba(0,229,200,0.15)'; }
+  el.querySelector('.cpin-name').textContent = name;
+  el.querySelector('.cpin-sub').textContent  = sub;
+  const btn = el.querySelector('.cpin-btn');
+  if (btn) { btn.textContent = btnLabel; }
   el.classList.add('selected');
 }
 
-function _refreshCompareRunBtn() {
-  const runBtn = document.getElementById('compareRunBtn');
-  if (!runBtn) return;
-  runBtn.disabled = !(compareA && compareB);
-  if (compareA && compareB) {
-    runBtn.style.animation = 'pulse 0.6s ease';
-    setTimeout(() => { runBtn.style.animation = ''; }, 700);
-    runBtn.textContent = '⚖ Generate Comparison Report';
-  }
-}
+function setComparePin(which) {
+  // Remove any stale banner
+  const oldBanner = document.getElementById('cmpNoBanner');
+  if (oldBanner) oldBanner.remove();
 
-// Hook into map click to auto-complete pending compare slot
-const _origMapClick = typeof onMapClick === 'function' ? onMapClick : null;
-function _checkPendingCompare() {
-  if (_comparePendingSlot && pendingLat !== null && pendingLon !== null) {
-    const slot = _comparePendingSlot;
-    // Short delay to let geo/AI data populate
-    setTimeout(() => {
-      _doSetComparePin(slot);
-      // Navigate back to compare page
-      setTimeout(() => goPage('compare'), 600);
-    }, 300);
+  // ── Case 1: User has clicked a map location → set immediately ──
+  if (pendingLat !== null && pendingLon !== null) {
+    const geo  = (curData && curData.geo) ? curData.geo : {address:{}};
+    const ai   = (curData && curData.ai)  ? curData.ai  : {};
+    const addr = geo.address || {};
+
+    // Build display name (fallback to coordinates)
+    const name = (ai.locationId && ai.locationId.nearestCity)
+               || addr.city || addr.state || addr.county || addr.country
+               || (pendingLat.toFixed(2) + '°, ' + pendingLon.toFixed(2) + '°');
+    const sub  = [addr.state, addr.country].filter(Boolean).join(', ')
+               || (pendingLat.toFixed(4) + '°, ' + pendingLon.toFixed(4) + '°');
+
+    if (which === 'A') {
+      compareA = { lat: pendingLat, lon: pendingLon, geo: geo, ai: ai, name: name, sub: sub };
+      const el = document.getElementById('cpinA');
+      if (el) {
+        el.querySelector('.cpin-name').textContent = name;
+        el.querySelector('.cpin-sub').textContent  = sub;
+        const btn = el.querySelector('.cpin-btn');
+        if (btn) btn.textContent = '✓ Location A Set';
+        el.classList.add('selected');
+      }
+      toast('📍 Location A: ' + name, 'ok');
+    } else {
+      compareB = { lat: pendingLat, lon: pendingLon, geo: geo, ai: ai, name: name, sub: sub };
+      const el = document.getElementById('cpinB');
+      if (el) {
+        el.querySelector('.cpin-name').textContent = name;
+        el.querySelector('.cpin-sub').textContent  = sub;
+        const btn = el.querySelector('.cpin-btn');
+        if (btn) btn.textContent = '✓ Location B Set';
+        el.classList.add('selected');
+      }
+      toast('📍 Location B: ' + name, 'ok');
+    }
+
+    // Enable run button if both are set
+    const runBtn = document.getElementById('compareRunBtn');
+    if (runBtn) {
+      runBtn.disabled = !(compareA && compareB);
+      if (compareA && compareB) {
+        runBtn.style.animation = 'pulse 0.6s ease';
+        setTimeout(function() { runBtn.style.animation = ''; }, 700);
+      }
+    }
+    return;
+  }
+
+  // ── Case 2: No map location yet → show banner with clear instruction ──
+  const label  = which === 'A' ? 'A' : 'B';
+  const pinArea = document.getElementById('cpinA') && document.getElementById('cpinA').parentElement;
+
+  // Insert instruction banner above the pins
+  const banner = document.createElement('div');
+  banner.id = 'cmpNoBanner';
+  banner.style.cssText = [
+    'background:rgba(0,229,200,0.08)',
+    'border:1px solid rgba(0,229,200,0.3)',
+    'border-radius:12px',
+    'padding:14px 16px',
+    'margin-bottom:14px',
+    'font-size:12px',
+    'color:var(--text2)',
+    'line-height:1.7',
+    'display:flex',
+    'align-items:flex-start',
+    'gap:12px'
+  ].join(';');
+  banner.innerHTML = '<span style="font-size:22px;flex-shrink:0">📍</span>'
+    + '<div><strong style="color:var(--cyan)">Step: Click a map location first</strong><br>'
+    + 'Go to the <strong>Map</strong> tab → tap anywhere on the map → come back here → tap <em>Set as Location '
+    + label + '</em> again.<br>'
+    + '<button onclick="goPage(\'map\')" style="margin-top:8px;padding:6px 16px;'
+    + 'background:linear-gradient(135deg,var(--primary),var(--secondary));'
+    + 'color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">'
+    + '🗺 Go to Map</button>'
+    + '<button onclick="document.getElementById(\'cmpNoBanner\').remove()" style="margin-top:8px;margin-left:8px;'
+    + 'padding:6px 12px;background:rgba(255,255,255,0.06);'
+    + 'color:var(--muted);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:11px;cursor:pointer;">'
+    + '✕ Dismiss</button></div>';
+
+  // Insert before compare-pins
+  const comparePins = document.querySelector('.compare-pins');
+  if (comparePins) {
+    comparePins.parentElement.insertBefore(banner, comparePins);
+  } else {
+    const scroll = document.querySelector('.compare-scroll');
+    if (scroll) scroll.prepend(banner);
   }
 }
 

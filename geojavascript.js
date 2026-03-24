@@ -1542,9 +1542,19 @@ REPORT STRUCTURE RULES:
 - timeline: 5 specific historical events with exact years
 - quiz.mcqs: 5 MCQs specific to this location — not generic India geography
 - examFocus: 4 key points a student MUST remember for competitive exams
+- chartData: MUST provide estimated numeric data for charts. Use real/approximate regional data with units.
+  * chartData.rainfall_mm: approximate annual rainfall in mm (e.g. 800 for semi-arid, 1500 for humid)
+  * chartData.temperature_summer_c: average summer temperature in Celsius
+  * chartData.temperature_winter_c: average winter temperature in Celsius
+  * chartData.forest_cover_pct: estimated forest cover percentage (0-100)
+  * chartData.agri_land_pct: estimated agricultural land percentage (0-100)
+  * chartData.crops: array of {name, rank_pct} where rank_pct is relative importance (top crop=100, others proportionally less, based on regional data)
+  * chartData.industries: array of {name, rank_pct} relative economic importance (100=most important)
+  * chartData.population_approx: approximate population (number, e.g. 500000 for city, 5000000 for large district)
+  If exact data unknown, use best regional estimate and note "~" prefix. Never use 0 unless truly negligible.
 
 Return ONLY compact valid JSON (no markdown, no backticks, no explanation outside JSON):
-{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"2-3 detailed sentences","climate":"2-3 detailed sentences with data","soilType":"specific types and significance","rivers":"all major rivers named","naturalResources":"specific resources listed"},"agriculture":{"majorCrops":["Crop1 — reason","Crop2 — reason","Crop3 — reason"],"whyCropsGrow":"detailed agri-geo explanation","irrigationSources":"rivers/canals/groundwater with names","seasonalPattern":"Kharif/Rabi/Zaid with months"},"history":{"ancient":"specific dynasties and periods","medieval":"specific rulers and events","modern":"British era and key events","freedomMovement":"specific freedom fighters and events from this region"},"economy":{"majorIndustries":["Industry1 — scale","Industry2 — scale","Industry3 — scale"],"gdpContribution":"contribution data if known","employmentPattern":"dominant employment sectors"},"currentRelevance":{"environmentalIssues":"specific local environmental challenges","developmentProjects":"real schemes and projects — PMGSY, Smart City, Industrial Corridor etc.","strategicImportance":"border/defense/trade significance if any"},"localInfo":{"localLanguages":"languages and dialects","famousFor":["specific thing 1","specific thing 2","specific thing 3"],"famousPlaces":["Place1 — why famous","Place2 — why famous"],"famousPersonalities":["Person1 — contribution","Person2 — contribution"],"festivals":["Festival1 — season","Festival2 — season"],"localCuisine":["dish1","dish2"],"importantFacts":["unique exam fact 1","unique exam fact 2","unique exam fact 3","unique exam fact 4"]}${userQ?',"userAnswer":"Detailed answer to: '+userQ+' — minimum 4 sentences with specific data and facts"':''}},"timeline":[{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"}],"quiz":{"mcqs":[{"q":"Location-specific question","options":["A. option","B. option","C. option","D. option"],"answer":"A"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"B"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"C"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"D"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"A"}],"assertionReason":[{"assertion":"factual assertion about this location","reason":"scientific/historical reason","answer":"Both A and R are true and R is the correct explanation"},{"assertion":"assertion","reason":"reason","answer":"Both A and R are true but R is NOT the correct explanation"}],"mapQuestion":"Describe exact map position, surrounding states/countries, nearest major city"},"examFocus":["Exam point 1 — unique to this location","Exam point 2 — must-know fact","Exam point 3 — often asked in exams","Exam point 4 — recent development"]}
+{"locationId":{"country":"","state":"","district":"","nearestCity":"","coordinates":""},"geography":{"terrain":"2-3 detailed sentences","climate":"2-3 detailed sentences with data","soilType":"specific types and significance","rivers":"all major rivers named","naturalResources":"specific resources listed"},"agriculture":{"majorCrops":["Crop1 — reason","Crop2 — reason","Crop3 — reason"],"whyCropsGrow":"detailed agri-geo explanation","irrigationSources":"rivers/canals/groundwater with names","seasonalPattern":"Kharif/Rabi/Zaid with months"},"history":{"ancient":"specific dynasties and periods","medieval":"specific rulers and events","modern":"British era and key events","freedomMovement":"specific freedom fighters and events from this region"},"economy":{"majorIndustries":["Industry1 — scale","Industry2 — scale","Industry3 — scale"],"gdpContribution":"contribution data if known","employmentPattern":"dominant employment sectors"},"currentRelevance":{"environmentalIssues":"specific local environmental challenges","developmentProjects":"real schemes and projects — PMGSY, Smart City, Industrial Corridor etc.","strategicImportance":"border/defense/trade significance if any"},"localInfo":{"localLanguages":"languages and dialects","famousFor":["specific thing 1","specific thing 2","specific thing 3"],"famousPlaces":["Place1 — why famous","Place2 — why famous"],"famousPersonalities":["Person1 — contribution","Person2 — contribution"],"festivals":["Festival1 — season","Festival2 — season"],"localCuisine":["dish1","dish2"],"importantFacts":["unique exam fact 1","unique exam fact 2","unique exam fact 3","unique exam fact 4"]}${userQ?',"userAnswer":"Detailed answer to: '+userQ+' — minimum 4 sentences with specific data and facts"':''},"chartData":{"rainfall_mm":0,"temperature_summer_c":0,"temperature_winter_c":0,"forest_cover_pct":0,"agri_land_pct":0,"crops":[{"name":"Crop1","rank_pct":100},{"name":"Crop2","rank_pct":70}],"industries":[{"name":"Industry1","rank_pct":100},{"name":"Industry2","rank_pct":65}],"population_approx":0}},"timeline":[{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"},{"year":"YYYY","event":"detailed event description"}],"quiz":{"mcqs":[{"q":"Location-specific question","options":["A. option","B. option","C. option","D. option"],"answer":"A"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"B"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"C"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"D"},{"q":"question","options":["A. option","B. option","C. option","D. option"],"answer":"A"}],"assertionReason":[{"assertion":"factual assertion about this location","reason":"scientific/historical reason","answer":"Both A and R are true and R is the correct explanation"},{"assertion":"assertion","reason":"reason","answer":"Both A and R are true but R is NOT the correct explanation"}],"mapQuestion":"Describe exact map position, surrounding states/countries, nearest major city"},"examFocus":["Exam point 1 — unique to this location","Exam point 2 — must-know fact","Exam point 3 — often asked in exams","Exam point 4 — recent development"]}
 All values in ${langName}. Produce complete, highly detailed, exam-ready content with specific facts, numbers, and names throughout.`;
 
   const raw = await callAI(prompt, apiKey, model);
@@ -1963,18 +1973,49 @@ function makeChartBox(title, height = 220) {
 }
 
 // ── Render a single generic chart ─────────────────────────
-function renderSingleChart(container, type, title, labels, values, colors) {
+function renderSingleChart(container, type, title, labels, values, colors, opts) {
   if (!labels || labels.length < 2 || !values || values.every(v => !v || v === 0)) return false;
-  const clrs = colors || PALETTE.slice(0, labels.length);
-  const h = type === 'pie' || type === 'doughnut' ? 200 : 200;
-  const { wrap, canvas } = makeChartBox(title, h);
+  const clrs   = colors || PALETTE.slice(0, labels.length);
+  const yLabel = (opts && opts.yLabel) || '';
+  const { wrap, canvas } = makeChartBox(title, 210);
   const id = 'chart-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   canvas.id = id;
   container.appendChild(wrap);
+
   const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+
   if (type === 'pie' || type === 'doughnut') {
     delete cfg.scales;
+    // Add percentage labels in legend tooltip
+    cfg.plugins = cfg.plugins || {};
+    cfg.plugins.tooltip = cfg.plugins.tooltip || {};
+    cfg.plugins.tooltip.callbacks = {
+      label: function(ctx) {
+        const v = ctx.parsed;
+        return ' ' + ctx.label + ': ' + v + (yLabel ? ' ' + yLabel : '%');
+      }
+    };
+  } else {
+    // Y-axis unit label
+    if (yLabel) {
+      cfg.scales = cfg.scales || {};
+      cfg.scales.y = cfg.scales.y || {};
+      cfg.scales.y.title = { display: true, text: yLabel, color: '#8899bb', font: { size: 9 } };
+      cfg.scales.y.ticks = cfg.scales.y.ticks || {};
+      cfg.scales.y.ticks.color = '#8899bb';
+      cfg.scales.y.ticks.font = { size: 10 };
+      cfg.scales.y.ticks.callback = function(val) { return val + (yLabel === '%' ? '%' : ''); };
+    }
+    // Tooltip shows value + unit
+    cfg.plugins = cfg.plugins || {};
+    cfg.plugins.tooltip = cfg.plugins.tooltip || {};
+    cfg.plugins.tooltip.callbacks = {
+      label: function(ctx) {
+        return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y + (yLabel ? ' ' + yLabel : '');
+      }
+    };
   }
+
   new Chart(canvas, {
     type,
     data: {
@@ -1984,9 +2025,9 @@ function renderSingleChart(container, type, title, labels, values, colors) {
         data: values,
         backgroundColor: type === 'bar' ? clrs.map(c => c.replace('0.8','0.65')) : clrs,
         borderColor:     type === 'bar' ? clrs : 'transparent',
-        borderWidth: type === 'bar' ? 1.5 : 0,
-        borderRadius: type === 'bar' ? 6 : 0,
-        hoverOffset: type === 'doughnut' ? 8 : 0,
+        borderWidth:  type === 'bar' ? 1.5 : 0,
+        borderRadius: type === 'bar' ? 6   : 0,
+        hoverOffset:  type === 'doughnut' ? 10 : 0,
       }]
     },
     options: cfg
@@ -1995,23 +2036,108 @@ function renderSingleChart(container, type, title, labels, values, colors) {
 }
 
 // ── Extract crop data from AI agriculture object ───────────
+// ── Extract crop data — uses AI chartData if available ────
 function extractCropsChart(ai) {
-  const crops = ai?.agriculture?.majorCrops;
+  // Priority 1: use structured chartData with real percentages
+  if (ai && ai.chartData && ai.chartData.crops && ai.chartData.crops.length >= 2) {
+    const items  = ai.chartData.crops.slice(0, 6);
+    const labels = items.map(c => String(c.name || c).substring(0, 20));
+    const values = items.map(c => Math.round(Number(c.rank_pct) || 0));
+    if (values.some(v => v > 0)) {
+      return {
+        labels, values,
+        unit: 'Relative importance (%)',
+        note: '~ Estimated relative importance based on regional agricultural data'
+      };
+    }
+  }
+  // Priority 2: fallback — parse crop name strings, use proportional ranking
+  const crops = ai && ai.agriculture && ai.agriculture.majorCrops;
   if (!crops || crops.length < 2) return null;
-  // crops are strings like "Wheat — grows due to alluvial soil"
-  const labels = crops.map(c => c.split(/[—\-–]/)[0].trim().substring(0, 20));
-  // Assign symbolic values (1st=prominent) — no fake percentages, just rank indicators
-  const values = crops.map((_, i) => Math.max(10 - i * 2, 2));
-  return { labels, values, note: '* Relative prominence, not production volume' };
+  const labels = crops.map(c => (typeof c === 'string' ? c : String(c)).split(/[—\-–]/)[0].trim().substring(0, 20));
+  // Proportional ranking: 100%, 75%, 55%, 40%, 30%...
+  const baseRanks = [100, 75, 55, 40, 30, 22];
+  const values    = crops.map((_, i) => baseRanks[i] !== undefined ? baseRanks[i] : Math.max(20 - i * 3, 5));
+  return {
+    labels, values,
+    unit: 'Relative importance (%)',
+    note: '~ Relative importance ranking (estimated). Not official production data.'
+  };
 }
 
-// ── Extract industry/economy data ────────────────────────
+// ── Extract industry/economy data ─────────────────────────
 function extractEconomyChart(ai) {
-  const inds = ai?.economy?.majorIndustries;
+  // Priority 1: structured chartData
+  if (ai && ai.chartData && ai.chartData.industries && ai.chartData.industries.length >= 2) {
+    const items  = ai.chartData.industries.slice(0, 6);
+    const labels = items.map(i => String(i.name || i).substring(0, 18));
+    const values = items.map(i => Math.round(Number(i.rank_pct) || 0));
+    if (values.some(v => v > 0)) {
+      return {
+        labels, values,
+        unit: 'Relative importance (%)',
+        note: '~ Estimated relative economic importance'
+      };
+    }
+  }
+  // Priority 2: fallback from majorIndustries strings
+  const inds = ai && ai.economy && ai.economy.majorIndustries;
   if (!inds || inds.length < 2) return null;
-  const labels = inds.map(ind => (typeof ind === 'string' ? ind.split(/[—\-–]/)[0].trim().substring(0,18) : String(ind)));
-  const values = inds.map((_, i) => Math.max(10 - i * 2, 2));
-  return { labels, values };
+  const labels = inds.map(ind => (typeof ind === 'string' ? ind.split(/[—\-–]/)[0].trim().substring(0, 18) : String(ind)));
+  const baseRanks = [100, 70, 50, 35, 25, 18];
+  const values    = inds.map((_, i) => baseRanks[i] !== undefined ? baseRanks[i] : Math.max(15 - i * 3, 5));
+  return {
+    labels, values,
+    unit: 'Relative importance (%)',
+    note: '~ Relative importance ranking (estimated).'
+  };
+}
+
+// ── Extract climate chart data ─────────────────────────────
+function extractClimateChart(ai) {
+  if (!ai || !ai.chartData) return null;
+  const cd = ai.chartData;
+  const items = [];
+  if (cd.rainfall_mm && Number(cd.rainfall_mm) > 0)        items.push({ label: 'Annual Rainfall', value: Number(cd.rainfall_mm),        unit: 'mm' });
+  if (cd.temperature_summer_c && Number(cd.temperature_summer_c) > 0) items.push({ label: 'Summer Temp',    value: Number(cd.temperature_summer_c),  unit: '°C' });
+  if (cd.temperature_winter_c && Number(cd.temperature_winter_c) > 0) items.push({ label: 'Winter Temp',    value: Number(cd.temperature_winter_c),  unit: '°C' });
+  if (items.length < 2) {
+    // Try to parse from climate text
+    const climateText = (ai.geography && ai.geography.climate) || '';
+    const rainfallMatch = climateText.match(/(\d{3,4})\s*mm/);
+    const tempMatch     = climateText.match(/(\d{2,3})\s*[°º]C/);
+    if (rainfallMatch) items.push({ label: 'Annual Rainfall', value: parseInt(rainfallMatch[1]), unit: 'mm' });
+    if (tempMatch)     items.push({ label: 'Max Temperature',  value: parseInt(tempMatch[1]),    unit: '°C' });
+  }
+  if (items.length < 2) return null;
+  return {
+    labels: items.map(i => i.label + ' (' + i.unit + ')'),
+    values: items.map(i => i.value),
+    unit:   'mixed',
+    note:   '~ Climate estimates based on regional data'
+  };
+}
+
+// ── Extract land-use chart ─────────────────────────────────
+function extractLandUseChart(ai) {
+  if (!ai || !ai.chartData) return null;
+  const cd = ai.chartData;
+  const items = [];
+  if (cd.agri_land_pct     && Number(cd.agri_land_pct)     > 0) items.push({ label: 'Agricultural', value: Number(cd.agri_land_pct) });
+  if (cd.forest_cover_pct  && Number(cd.forest_cover_pct)  > 0) items.push({ label: 'Forest Cover',  value: Number(cd.forest_cover_pct) });
+  // add urban/other if enough data
+  const total = items.reduce((s, i) => s + i.value, 0);
+  if (items.length >= 2 && total <= 100) {
+    const other = Math.max(0, 100 - total);
+    if (other > 2) items.push({ label: 'Other / Urban', value: Math.round(other) });
+  }
+  if (items.length < 2) return null;
+  return {
+    labels: items.map(i => i.label),
+    values: items.map(i => i.value),
+    unit:   '% of area',
+    note:   '~ Approximate land-use breakdown'
+  };
 }
 
 // ── Build Info Cards (Key Facts) ──────────────────────────
@@ -2076,18 +2202,29 @@ function renderGeoCards(container, ai) {
   container.appendChild(wrap);
 }
 
+// ── Helper: add unit note below a chart ───────────────────
+function _chartNote(container, text) {
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:8px;font-style:italic;';
+  note.textContent = text;
+  container.appendChild(note);
+}
+
 // ── MAIN: Render all report charts into a container ───────
 function renderReportCharts(container, ai) {
   if (!ai || !container) return;
-  // Divider
+
+  // ── Header ──
   const divider = document.createElement('div');
   divider.style.cssText = 'margin:18px 0 10px;border-top:1px solid rgba(255,255,255,0.07);padding-top:12px;';
   const vizTitle = document.createElement('div');
-  vizTitle.style.cssText = 'font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;';
+  vizTitle.style.cssText = 'font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px;';
   vizTitle.innerHTML = '📊 Data Visualizations';
   const vizSub = document.createElement('div');
   vizSub.style.cssText = 'font-size:10px;color:var(--muted);margin-bottom:12px;';
-  vizSub.textContent = 'Charts show relative prominence based on AI-reported data. Values are indicative, not official statistics.';
+  vizSub.textContent = ai && ai.chartData
+    ? 'Charts generated from AI-estimated regional data. Values marked ~ are approximate.'
+    : 'Charts show relative importance rankings. ~ Estimated, not official statistics.';
   divider.appendChild(vizTitle);
   divider.appendChild(vizSub);
   container.appendChild(divider);
@@ -2095,30 +2232,45 @@ function renderReportCharts(container, ai) {
   // 1 — Geography Info Cards
   renderGeoCards(container, ai);
 
-  // 2 — Crops Bar Chart
+  // 2 — Crops Bar Chart (with unit label)
   const crops = extractCropsChart(ai);
   if (crops) {
-    renderSingleChart(container, 'bar', '🌾 Major Crops (Relative Prominence)', crops.labels, crops.values,
-      [CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.cyan, CHART_COLORS.blue, CHART_COLORS.purple]
+    const title = '🌾 Major Crops — ' + (crops.unit || 'Relative importance %');
+    renderSingleChart(container, 'bar', title, crops.labels, crops.values,
+      [CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.cyan, CHART_COLORS.blue, CHART_COLORS.purple],
+      { yLabel: crops.unit || '%' }
     );
-    // note
-    const note = document.createElement('div');
-    note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-6px;margin-bottom:6px;';
-    note.textContent = crops.note;
-    container.appendChild(note);
+    _chartNote(container, crops.note || '~ Estimated relative importance');
   }
 
-  // 3 — Industries Doughnut Chart
+  // 3 — Industries Doughnut (with unit label)
   const econ = extractEconomyChart(ai);
   if (econ) {
-    renderSingleChart(container, 'doughnut', '💼 Key Industries (Relative Importance)', econ.labels, econ.values, PALETTE);
-    const note = document.createElement('div');
-    note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-6px;margin-bottom:6px;';
-    note.textContent = '* Relative importance, not GDP share';
-    container.appendChild(note);
+    const title = '💼 Key Industries — ' + (econ.unit || 'Relative importance %');
+    renderSingleChart(container, 'doughnut', title, econ.labels, econ.values, PALETTE);
+    _chartNote(container, econ.note || '~ Estimated relative economic importance');
   }
 
-  // 4 — Key Facts Info Cards
+  // 4 — Climate Chart (rainfall + temperature)
+  const climate = extractClimateChart(ai);
+  if (climate) {
+    renderSingleChart(container, 'bar', '🌡 Climate Data', climate.labels, climate.values,
+      [CHART_COLORS.blue, CHART_COLORS.amber, CHART_COLORS.cyan],
+      { yLabel: '' }
+    );
+    _chartNote(container, climate.note || '~ Approximate climate values');
+  }
+
+  // 5 — Land Use Doughnut
+  const landUse = extractLandUseChart(ai);
+  if (landUse) {
+    renderSingleChart(container, 'doughnut', '🗺 Land Use (% of area)', landUse.labels, landUse.values,
+      [CHART_COLORS.green, CHART_COLORS.teal, CHART_COLORS.amber]
+    );
+    _chartNote(container, landUse.note || '~ Approximate land-use breakdown');
+  }
+
+  // 6 — Key Facts Info Cards
   renderInfoCards(container, ai);
 }
 
@@ -2140,11 +2292,21 @@ function parseChatCharts(rawAnswer) {
 // ── Chat: render chart data below a message ──────────────
 function renderChatCharts(container, charts) {
   if (!charts || !charts.length) return;
-  charts.forEach(chart => {
+  charts.forEach(function(chart) {
     if (!chart.labels || !chart.values || chart.labels.length < 2) return;
-    if (chart.values.every(v => !v || v === 0)) return;
-    const type = chart.type || 'bar';
-    renderSingleChart(container, type, chart.title || 'Data', chart.labels, chart.values, PALETTE);
+    if (chart.values.every(function(v){ return !v || v === 0; })) return;
+    const type  = chart.type  || 'bar';
+    const unit  = chart.unit  || '';
+    const displayTitle = chart.title
+      ? (unit && !chart.title.includes(unit) ? chart.title + '  (' + unit + ')' : chart.title)
+      : 'Data';
+    renderSingleChart(container, type, displayTitle, chart.labels, chart.values, PALETTE, { yLabel: unit });
+    if (unit) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:6px;font-style:italic;';
+      note.textContent = '~ Values in ' + unit + '. Approximate regional data.';
+      container.appendChild(note);
+    }
   });
 }
 
@@ -2152,50 +2314,90 @@ function renderChatCharts(container, charts) {
 function renderComparisonCharts(container, aiA, aiB, nameA, nameB) {
   if (!aiA || !aiB || !container) return;
 
-  // 1 — Crops comparison
-  const cropsA = (aiA.agriculture?.majorCrops || []).slice(0, 4).map(c => c.split(/[—\-–]/)[0].trim().substring(0,15));
-  const cropsB = (aiB.agriculture?.majorCrops || []).slice(0, 4).map(c => c.split(/[—\-–]/)[0].trim().substring(0,15));
-  const allCrops = [...new Set([...cropsA, ...cropsB])].slice(0, 6);
-
-  if (allCrops.length >= 2) {
-    const valsA = allCrops.map(c => cropsA.includes(c) ? (cropsA.length - cropsA.indexOf(c)) : 0);
-    const valsB = allCrops.map(c => cropsB.includes(c) ? (cropsB.length - cropsB.indexOf(c)) : 0);
-    const { wrap, canvas } = makeChartBox(`🌾 Crops Comparison: ${nameA} vs ${nameB}`, 210);
-    container.appendChild(wrap);
-    new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: allCrops,
-        datasets: [
-          { label: nameA, data: valsA, backgroundColor: CHART_COLORS.cyan, borderRadius: 5 },
-          { label: nameB, data: valsB, backgroundColor: CHART_COLORS.blue, borderRadius: 5 },
-        ]
-      },
-      options: { ...JSON.parse(JSON.stringify(CHART_DEFAULTS)), plugins: { ...JSON.parse(JSON.stringify(CHART_DEFAULTS)).plugins, title: { display: false } } }
+  // ── Helper: build labeled comparison dataset for a chart ──
+  function _cmpDataset(aiX, nameX, field, colorX, baseRanks) {
+    if (aiX && aiX.chartData && aiX.chartData[field] && aiX.chartData[field].length >= 1) {
+      return aiX.chartData[field].slice(0, 5).map(function(item) {
+        return { name: String(item.name || item).substring(0, 16), val: Math.round(Number(item.rank_pct) || 0) };
+      });
+    }
+    // fallback: majorCrops or majorIndustries strings
+    var src = field === 'crops' ? (aiX && aiX.agriculture && aiX.agriculture.majorCrops) : (aiX && aiX.economy && aiX.economy.majorIndustries);
+    if (!src) return [];
+    return src.slice(0, 5).map(function(s, i) {
+      return { name: (typeof s === 'string' ? s.split(/[—\-–]/)[0].trim().substring(0, 16) : String(s)), val: baseRanks[i] !== undefined ? baseRanks[i] : Math.max(20 - i * 4, 5) };
     });
+  }
+  var RANK5 = [100, 75, 55, 38, 25];
+
+  // 1 — Crops comparison
+  var cA = _cmpDataset(aiA, nameA, 'crops', CHART_COLORS.cyan, RANK5);
+  var cB = _cmpDataset(aiB, nameB, 'crops', CHART_COLORS.blue, RANK5);
+  var allCropNames = Array.from(new Set(cA.map(function(x){return x.name;}).concat(cB.map(function(x){return x.name;})))).slice(0,6);
+
+  if (allCropNames.length >= 2) {
+    var valsA = allCropNames.map(function(n){ var f=cA.find(function(x){return x.name===n;}); return f?f.val:0; });
+    var valsB = allCropNames.map(function(n){ var f=cB.find(function(x){return x.name===n;}); return f?f.val:0; });
+    var { wrap: wCrops, canvas: cvCrops } = makeChartBox('🌾 Crops: ' + nameA + ' vs ' + nameB + '  (relative importance %)', 230);
+    container.appendChild(wCrops);
+    var cfgCrops = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+    cfgCrops.scales.y.title = { display: true, text: '% importance', color: '#8899bb', font: { size: 9 } };
+    cfgCrops.scales.y.max = 110;
+    cfgCrops.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.dataset.label+': '+c.parsed.y+'%'; } } };
+    new Chart(cvCrops, { type: 'bar', data: { labels: allCropNames,
+      datasets: [
+        { label: nameA, data: valsA, backgroundColor: CHART_COLORS.cyan, borderRadius: 5 },
+        { label: nameB, data: valsB, backgroundColor: CHART_COLORS.blue, borderRadius: 5 }
+      ]}, options: cfgCrops });
+    var noteC = document.createElement('div');
+    noteC.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:8px;font-style:italic;';
+    noteC.textContent = '~ Estimated relative importance (100 = most prominent crop in that region)';
+    container.appendChild(noteC);
   }
 
   // 2 — Industries comparison
-  const indsA = (aiA.economy?.majorIndustries || []).slice(0, 4).map(i => (typeof i === 'string' ? i.split(/[—\-–]/)[0].trim().substring(0,15) : String(i)));
-  const indsB = (aiB.economy?.majorIndustries || []).slice(0, 4).map(i => (typeof i === 'string' ? i.split(/[—\-–]/)[0].trim().substring(0,15) : String(i)));
-  const allInds = [...new Set([...indsA, ...indsB])].slice(0, 6);
+  var iA = _cmpDataset(aiA, nameA, 'industries', CHART_COLORS.green, RANK5);
+  var iB = _cmpDataset(aiB, nameB, 'industries', CHART_COLORS.amber, RANK5);
+  var allIndNames = Array.from(new Set(iA.map(function(x){return x.name;}).concat(iB.map(function(x){return x.name;})))).slice(0,6);
 
-  if (allInds.length >= 2) {
-    const vA = allInds.map(c => indsA.includes(c) ? (indsA.length - indsA.indexOf(c)) : 0);
-    const vB = allInds.map(c => indsB.includes(c) ? (indsB.length - indsB.indexOf(c)) : 0);
-    const { wrap, canvas } = makeChartBox(`💼 Industries Comparison: ${nameA} vs ${nameB}`, 210);
-    container.appendChild(wrap);
-    new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: allInds,
-        datasets: [
-          { label: nameA, data: vA, backgroundColor: CHART_COLORS.green, borderRadius: 5 },
-          { label: nameB, data: vB, backgroundColor: CHART_COLORS.amber, borderRadius: 5 },
-        ]
-      },
-      options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
-    });
+  if (allIndNames.length >= 2) {
+    var vIA = allIndNames.map(function(n){ var f=iA.find(function(x){return x.name===n;}); return f?f.val:0; });
+    var vIB = allIndNames.map(function(n){ var f=iB.find(function(x){return x.name===n;}); return f?f.val:0; });
+    var { wrap: wInd, canvas: cvInd } = makeChartBox('💼 Industries: ' + nameA + ' vs ' + nameB + '  (relative importance %)', 230);
+    container.appendChild(wInd);
+    var cfgInd = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+    cfgInd.scales.y.title = { display: true, text: '% importance', color: '#8899bb', font: { size: 9 } };
+    cfgInd.scales.y.max = 110;
+    cfgInd.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.dataset.label+': '+c.parsed.y+'%'; } } };
+    new Chart(cvInd, { type: 'bar', data: { labels: allIndNames,
+      datasets: [
+        { label: nameA, data: vIA, backgroundColor: CHART_COLORS.green, borderRadius: 5 },
+        { label: nameB, data: vIB, backgroundColor: CHART_COLORS.amber, borderRadius: 5 }
+      ]}, options: cfgInd });
+    var noteI = document.createElement('div');
+    noteI.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:8px;font-style:italic;';
+    noteI.textContent = '~ Estimated relative importance (100 = dominant sector in that region)';
+    container.appendChild(noteI);
+  }
+
+  // 3 — Rainfall comparison (if chartData available)
+  if (aiA.chartData && aiB.chartData &&
+      Number(aiA.chartData.rainfall_mm) > 0 && Number(aiB.chartData.rainfall_mm) > 0) {
+    var { wrap: wRain, canvas: cvRain } = makeChartBox('🌧 Annual Rainfall Comparison (mm)', 200);
+    container.appendChild(wRain);
+    var cfgRain = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+    cfgRain.scales.y.title = { display: true, text: 'mm', color: '#8899bb', font: { size: 9 } };
+    cfgRain.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.label+': '+c.parsed.y+' mm'; } } };
+    new Chart(cvRain, { type: 'bar', data: {
+      labels: [nameA, nameB],
+      datasets: [{ label: 'Rainfall (mm)',
+        data: [Number(aiA.chartData.rainfall_mm), Number(aiB.chartData.rainfall_mm)],
+        backgroundColor: [CHART_COLORS.blue, CHART_COLORS.cyan], borderRadius: 8
+      }]}, options: cfgRain });
+    var noteR = document.createElement('div');
+    noteR.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:8px;font-style:italic;';
+    noteR.textContent = '~ Approximate annual rainfall in millimetres';
+    container.appendChild(noteR);
   }
 
   // 3 — Side-by-side Geography Info Cards for both locations
@@ -2262,22 +2464,28 @@ async function sendChat() {
   const langName=lPick?lPick.options[lPick.selectedIndex].text.replace(/^[\uD83C][\uDDE6-\uDDFF]{2}\s*/,''):'English';
 
   // Chart-aware prompt: ask AI for structured data when question implies data
-  const wantsChart = /crop|industry|economy|GDP|rainfall|climate|population|compare|production|statistics|data|numbers|percentage/i.test(q);
+  const wantsChart = /crop|industry|economy|GDP|rainfall|climate|population|compare|production|statistics|data|numbers|percentage|hectare|tonne|mm|kg|lakh|crore/i.test(q);
   const prompt = wantsChart
     ? `You are a geography & history tutor. Location: ${loc}.
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
 
-If you have REAL DATA to show as a chart, return ONLY valid JSON in this exact format:
-{"text":"Your 2-4 sentence answer with exam-relevant facts.","charts":[{"type":"bar","title":"Chart Title","labels":["Item1","Item2","Item3"],"values":[real_number,real_number,real_number]}]}
+DATA QUALITY RULES (VERY IMPORTANT):
+- Always include units: mm for rainfall, °C for temperature, lakh tonnes for crops, % for percentages
+- Use approximate real data from regional knowledge (e.g. Punjab wheat ~170 lakh tonnes, Kerala rainfall ~3000mm)
+- Mark estimates with ~ prefix (e.g. ~1200 mm, ~45 lakh tonnes)
+- NEVER use meaningless numbers like 1,2,3,4,5 as values
 
-If you do NOT have real data for a chart, return ONLY valid JSON: {"text":"Your answer here.","charts":[]}
+If you have DATA to show as a chart, return ONLY valid JSON:
+{"text":"Your 2-4 sentence answer with specific numbers and units.","charts":[{"type":"bar","title":"Chart Title (unit)","labels":["Item1 (~unit)","Item2 (~unit)"],"values":[real_number,real_number],"unit":"lakh tonnes"}]}
 
-IMPORTANT: Only include a chart if you have REAL, ACCURATE data. Do NOT fabricate numbers. Use only verified data.`
+If no real data available: {"text":"Your answer here. (Data not available for chart)","charts":[]}
+
+IMPORTANT: Include chart ONLY with meaningful values with units. Tooltip must show value + unit.`
     : `You are a geography & history tutor. Location: ${loc}.
 Context: ${curData.wiki?.extract?.substring(0,250)||''} | Famous: ${curData.ai?.localInfo?.famousFor?.join(', ')||''}
 Answer in ${langName}. Question: ${q}
-Give a clear, academic, 2-4 sentence answer with exam-relevant facts.`;
+Give a clear, academic, 2-4 sentence answer with specific facts, numbers, and units where applicable (e.g. 1200 mm rainfall, 45 lakh tonnes wheat, 32°C summer temperature).`;
 
   let answerText = 'No response received.';
   let chartData = [];

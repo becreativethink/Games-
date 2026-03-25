@@ -1973,65 +1973,156 @@ function makeChartBox(title, height = 220) {
 }
 
 // ── Render a single generic chart ─────────────────────────
+/* ════════════════════════════════════════════════════════════
+   CHART ENGINE v3 — Strict validation + correct units
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Normalise raw values to smart display values + scale ── */
+function _smartScale(values) {
+  const max = Math.max(...values.filter(v => isFinite(v) && v > 0));
+  if (!max || max === 0) return { scaled: values, scaleLabel: '', scaleFactor: 1 };
+  if (max >= 10000000)  return { scaled: values.map(v => +(v/10000000).toFixed(2)),  scaleLabel: '× 1 Crore',   scaleFactor: 10000000 };
+  if (max >= 100000)    return { scaled: values.map(v => +(v/100000).toFixed(2)),     scaleLabel: '× 1 Lakh',    scaleFactor: 100000   };
+  if (max >= 1000)      return { scaled: values.map(v => +(v/1000).toFixed(2)),       scaleLabel: '× 1000',      scaleFactor: 1000     };
+  return { scaled: values.map(v => +Number(v).toFixed(2)), scaleLabel: '', scaleFactor: 1 };
+}
+
+/* ── Validate & normalise pie/doughnut values to sum=100 ─── */
+function _validatePieValues(values) {
+  const nums   = values.map(v => Math.max(0, Number(v) || 0));
+  const total  = nums.reduce((s, v) => s + v, 0);
+  if (total === 0) return null;                     // no data
+  if (total > 110 || total < 90) {
+    // Convert raw numbers to percentages
+    return nums.map(v => +((v / total) * 100).toFixed(1));
+  }
+  // Already ≈ 100 — round to 1 decimal and fix rounding residual
+  const pct = nums.map(v => +((v / total) * 100).toFixed(1));
+  const diff = +(100 - pct.reduce((s, v) => s + v, 0)).toFixed(1);
+  if (diff !== 0) pct[pct.length - 1] = +(pct[pct.length - 1] + diff).toFixed(1);
+  return pct;
+}
+
+/* ── Main chart renderer ──────────────────────────────────── */
 function renderSingleChart(container, type, title, labels, values, colors, opts) {
-  if (!labels || labels.length < 2 || !values || values.every(v => !v || v === 0)) return false;
-  const clrs   = colors || PALETTE.slice(0, labels.length);
-  const yLabel = (opts && opts.yLabel) || '';
-  const { wrap, canvas } = makeChartBox(title, 210);
-  const id = 'chart-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  canvas.id = id;
-  container.appendChild(wrap);
+  // Basic guards
+  if (!labels || labels.length < 1 || !values || values.length < 1) return false;
+  const rawNums = values.map(v => Number(v) || 0);
+  if (rawNums.every(v => v === 0)) return false;
 
-  const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+  const clrs    = (colors || PALETTE).slice(0, labels.length);
+  const yUnit   = (opts && opts.yLabel) || '';
+  const isPie   = (type === 'pie' || type === 'doughnut');
 
-  if (type === 'pie' || type === 'doughnut') {
-    delete cfg.scales;
-    // Add percentage labels in legend tooltip
-    cfg.plugins = cfg.plugins || {};
-    cfg.plugins.tooltip = cfg.plugins.tooltip || {};
-    cfg.plugins.tooltip.callbacks = {
-      label: function(ctx) {
-        const v = ctx.parsed;
-        return ' ' + ctx.label + ': ' + v + (yLabel ? ' ' + yLabel : '%');
-      }
-    };
-  } else {
-    // Y-axis unit label
-    if (yLabel) {
-      cfg.scales = cfg.scales || {};
-      cfg.scales.y = cfg.scales.y || {};
-      cfg.scales.y.title = { display: true, text: yLabel, color: '#8899bb', font: { size: 9 } };
-      cfg.scales.y.ticks = cfg.scales.y.ticks || {};
-      cfg.scales.y.ticks.color = '#8899bb';
-      cfg.scales.y.ticks.font = { size: 10 };
-      cfg.scales.y.ticks.callback = function(val) { return val + (yLabel === '%' ? '%' : ''); };
+  /* ── PIE: enforce sum=100 ── */
+  let finalValues = rawNums;
+  let finalUnit   = yUnit;
+  let noteText    = '';
+  let finalType   = type;
+
+  if (isPie) {
+    const pct = _validatePieValues(rawNums);
+    if (!pct) return false;                    // all zeros → skip
+
+    const anyOver = pct.some(v => v > 99.5);  // one slice >99% → not a real distribution
+    if (anyOver) {
+      finalType  = 'bar';                      // degrade to bar — pie would be meaningless
+      finalValues = rawNums;
+      noteText   = '⚠ Values not suitable for pie — shown as bar chart';
+    } else {
+      finalValues = pct;
+      finalUnit   = '%';
+      noteText    = '~ Percentages normalised to 100%';
     }
-    // Tooltip shows value + unit
-    cfg.plugins = cfg.plugins || {};
-    cfg.plugins.tooltip = cfg.plugins.tooltip || {};
-    cfg.plugins.tooltip.callbacks = {
-      label: function(ctx) {
-        return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y + (yLabel ? ' ' + yLabel : '');
-      }
-    };
   }
 
+  /* ── BAR/LINE: smart scaling ── */
+  let scaleLabel = '';
+  let scaleFactor = 1;
+  if (finalType === 'bar' || finalType === 'line') {
+    const ss = _smartScale(finalValues);
+    finalValues  = ss.scaled;
+    scaleLabel   = ss.scaleLabel;
+    scaleFactor  = ss.scaleFactor;
+    if (scaleLabel) {
+      finalUnit = (yUnit ? yUnit + '  ' : '') + '(' + scaleLabel + ')';
+    }
+  }
+
+  /* ── Build Chart.js config ── */
+  const cfg = JSON.parse(JSON.stringify(CHART_DEFAULTS));
+
+  if (finalType === 'pie' || finalType === 'doughnut') {
+    delete cfg.scales;
+    cfg.plugins = cfg.plugins || {};
+    cfg.plugins.legend = { display: true, position: 'bottom', labels: { color: '#b8c4d8', font: { size: 10 }, padding: 12 } };
+    cfg.plugins.tooltip = { callbacks: {
+      label: function(ctx) {
+        return '  ' + ctx.label + ':  ' + ctx.parsed.toFixed(1) + '%';
+      }
+    }};
+    // Show % labels on slices via datalabels if available (graceful)
+    cfg.plugins.datalabels = false;
+  } else {
+    // Y axis
+    cfg.scales = cfg.scales || {};
+    cfg.scales.y = cfg.scales.y || {};
+    cfg.scales.y.beginAtZero = true;
+    cfg.scales.y.ticks = { color: '#8899bb', font: { size: 10 } };
+    cfg.scales.y.grid  = { color: 'rgba(255,255,255,0.05)' };
+    if (finalUnit) {
+      cfg.scales.y.title = { display: true, text: finalUnit, color: '#7a8faa', font: { size: 9 } };
+    }
+    // X axis — prevent label overlap
+    cfg.scales.x = cfg.scales.x || {};
+    cfg.scales.x.ticks = {
+      color: '#8899bb', font: { size: 10 },
+      maxRotation: 35, minRotation: 0,
+      callback: function(val, idx) {
+        const lbl = this.getLabelForValue ? this.getLabelForValue(idx) : labels[idx];
+        return lbl && lbl.length > 14 ? lbl.substring(0, 13) + '…' : lbl;
+      }
+    };
+    cfg.scales.x.grid = { color: 'rgba(255,255,255,0.04)' };
+    // Tooltip
+    cfg.plugins = cfg.plugins || {};
+    cfg.plugins.tooltip = { callbacks: {
+      label: function(ctx) {
+        const raw = (ctx.parsed.y * scaleFactor);
+        const disp = scaleFactor > 1 ? raw.toLocaleString('en-IN') : ctx.parsed.y;
+        return '  ' + (ctx.dataset.label || ctx.label) + ':  ' + disp + (yUnit ? ' ' + yUnit : '');
+      }
+    }};
+  }
+
+  const { wrap, canvas } = makeChartBox(title, isPie || finalType === 'doughnut' ? 220 : 210);
+  canvas.id = 'chart-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  container.appendChild(wrap);
+
   new Chart(canvas, {
-    type,
+    type: finalType,
     data: {
       labels,
       datasets: [{
         label: title,
-        data: values,
-        backgroundColor: type === 'bar' ? clrs.map(c => c.replace('0.8','0.65')) : clrs,
-        borderColor:     type === 'bar' ? clrs : 'transparent',
-        borderWidth:  type === 'bar' ? 1.5 : 0,
-        borderRadius: type === 'bar' ? 6   : 0,
-        hoverOffset:  type === 'doughnut' ? 10 : 0,
+        data: finalValues,
+        backgroundColor: finalType === 'bar' ? clrs.map(c => c.replace('0.8','0.55')) : clrs,
+        borderColor:     finalType === 'bar' ? clrs : 'transparent',
+        borderWidth:  finalType === 'bar' ? 1.5 : 0,
+        borderRadius: finalType === 'bar' ? 6   : 0,
+        hoverOffset:  finalType === 'doughnut' ? 10 : 0,
       }]
     },
     options: cfg
   });
+
+  // Add note if values were adjusted
+  if (noteText) {
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:9px;color:var(--muted);text-align:right;margin-top:-4px;margin-bottom:6px;font-style:italic;';
+    note.textContent = noteText;
+    wrap.appendChild(note);
+  }
   return true;
 }
 
@@ -2123,20 +2214,28 @@ function extractLandUseChart(ai) {
   if (!ai || !ai.chartData) return null;
   const cd = ai.chartData;
   const items = [];
-  if (cd.agri_land_pct     && Number(cd.agri_land_pct)     > 0) items.push({ label: 'Agricultural', value: Number(cd.agri_land_pct) });
-  if (cd.forest_cover_pct  && Number(cd.forest_cover_pct)  > 0) items.push({ label: 'Forest Cover',  value: Number(cd.forest_cover_pct) });
-  // add urban/other if enough data
-  const total = items.reduce((s, i) => s + i.value, 0);
-  if (items.length >= 2 && total <= 100) {
-    const other = Math.max(0, 100 - total);
-    if (other > 2) items.push({ label: 'Other / Urban', value: Math.round(other) });
-  }
+  if (cd.agri_land_pct    && Number(cd.agri_land_pct)    > 0) items.push({ label: 'Agricultural', value: Number(cd.agri_land_pct)    });
+  if (cd.forest_cover_pct && Number(cd.forest_cover_pct) > 0) items.push({ label: 'Forest Cover',  value: Number(cd.forest_cover_pct) });
   if (items.length < 2) return null;
+
+  // Ensure the three slices sum to exactly 100%
+  const partial = items.reduce((s, i) => s + i.value, 0);
+  const capped  = Math.min(partial, 100);
+  const other   = +(100 - capped).toFixed(1);
+  if (other > 1) items.push({ label: 'Urban / Other', value: other });
+
+  // Normalise to 100%
+  const total = items.reduce((s, i) => s + i.value, 0);
+  const pct   = items.map(i => +((i.value / total) * 100).toFixed(1));
+  // Fix rounding residual on last slice
+  const diff  = +(100 - pct.reduce((s, v) => s + v, 0)).toFixed(1);
+  if (diff !== 0) pct[pct.length - 1] = +(pct[pct.length - 1] + diff).toFixed(1);
+
   return {
     labels: items.map(i => i.label),
-    values: items.map(i => i.value),
-    unit:   '% of area',
-    note:   '~ Approximate land-use breakdown'
+    values: pct,
+    unit:   '%',
+    note:   '~ Land-use breakdown (sums to 100%). Approximate regional estimate.'
   };
 }
 
@@ -2341,9 +2440,13 @@ function renderComparisonCharts(container, aiA, aiB, nameA, nameB) {
     var { wrap: wCrops, canvas: cvCrops } = makeChartBox('🌾 Crops: ' + nameA + ' vs ' + nameB + '  (relative importance %)', 230);
     container.appendChild(wCrops);
     var cfgCrops = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-    cfgCrops.scales.y.title = { display: true, text: '% importance', color: '#8899bb', font: { size: 9 } };
-    cfgCrops.scales.y.max = 110;
-    cfgCrops.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.dataset.label+': '+c.parsed.y+'%'; } } };
+    cfgCrops.scales.y.title   = { display: true, text: 'Relative importance (%)', color: '#8899bb', font: { size: 9 } };
+    cfgCrops.scales.y.min     = 0;
+    cfgCrops.scales.y.max     = 110;
+    cfgCrops.scales.y.ticks   = { color: '#8899bb', font: { size: 10 }, callback: function(v){ return v+'%'; } };
+    cfgCrops.scales.x.ticks   = { color: '#8899bb', font: { size: 9 }, maxRotation: 30 };
+    cfgCrops.plugins.tooltip  = { callbacks: { label: function(c){ return '  '+c.dataset.label+':  '+c.parsed.y+'%'; } } };
+    cfgCrops.plugins.legend   = { display: true, position: 'bottom', labels: { color: '#b8c4d8', font: { size: 10 } } };
     new Chart(cvCrops, { type: 'bar', data: { labels: allCropNames,
       datasets: [
         { label: nameA, data: valsA, backgroundColor: CHART_COLORS.cyan, borderRadius: 5 },
@@ -2366,9 +2469,13 @@ function renderComparisonCharts(container, aiA, aiB, nameA, nameB) {
     var { wrap: wInd, canvas: cvInd } = makeChartBox('💼 Industries: ' + nameA + ' vs ' + nameB + '  (relative importance %)', 230);
     container.appendChild(wInd);
     var cfgInd = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-    cfgInd.scales.y.title = { display: true, text: '% importance', color: '#8899bb', font: { size: 9 } };
-    cfgInd.scales.y.max = 110;
-    cfgInd.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.dataset.label+': '+c.parsed.y+'%'; } } };
+    cfgInd.scales.y.title  = { display: true, text: 'Relative importance (%)', color: '#8899bb', font: { size: 9 } };
+    cfgInd.scales.y.min    = 0;
+    cfgInd.scales.y.max    = 110;
+    cfgInd.scales.y.ticks  = { color: '#8899bb', font: { size: 10 }, callback: function(v){ return v+'%'; } };
+    cfgInd.scales.x.ticks  = { color: '#8899bb', font: { size: 9 }, maxRotation: 30 };
+    cfgInd.plugins.tooltip = { callbacks: { label: function(c){ return '  '+c.dataset.label+':  '+c.parsed.y+'%'; } } };
+    cfgInd.plugins.legend  = { display: true, position: 'bottom', labels: { color: '#b8c4d8', font: { size: 10 } } };
     new Chart(cvInd, { type: 'bar', data: { labels: allIndNames,
       datasets: [
         { label: nameA, data: vIA, backgroundColor: CHART_COLORS.green, borderRadius: 5 },
@@ -2386,8 +2493,11 @@ function renderComparisonCharts(container, aiA, aiB, nameA, nameB) {
     var { wrap: wRain, canvas: cvRain } = makeChartBox('🌧 Annual Rainfall Comparison (mm)', 200);
     container.appendChild(wRain);
     var cfgRain = JSON.parse(JSON.stringify(CHART_DEFAULTS));
-    cfgRain.scales.y.title = { display: true, text: 'mm', color: '#8899bb', font: { size: 9 } };
-    cfgRain.plugins.tooltip = { callbacks: { label: function(c){ return ' '+c.label+': '+c.parsed.y+' mm'; } } };
+    cfgRain.scales.y.title     = { display: true, text: 'Annual Rainfall (mm)', color: '#8899bb', font: { size: 9 } };
+    cfgRain.scales.y.beginAtZero = true;
+    cfgRain.scales.y.ticks     = { color: '#8899bb', font: { size: 10 }, callback: function(v){ return v+' mm'; } };
+    cfgRain.plugins.tooltip    = { callbacks: { label: function(c){ return '  '+c.label+':  '+c.parsed.y.toLocaleString('en-IN')+' mm'; } } };
+    cfgRain.plugins.legend     = { display: false };
     new Chart(cvRain, { type: 'bar', data: {
       labels: [nameA, nameB],
       datasets: [{ label: 'Rainfall (mm)',

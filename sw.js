@@ -9,16 +9,16 @@ const CACHE_FONTS   = 'wordwar-fonts-v1';
 
 /* Files to pre-cache on install */
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/game.html',
-  '/leaderboard.html',
-  '/profile.html',
-  '/style.css',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/offline.html'
+  './',
+  'index.html',
+  'login.html',
+  'game.html',
+  'leaderboard.html',
+  'profile.html',
+  'style.css',
+  'icon-192.png',
+  'icon-512.png',
+  'offline.html'
 ];
 
 /* Firebase & CDN origins — always network-first */
@@ -117,8 +117,8 @@ self.addEventListener('fetch', function(e) {
       }).catch(function() {
         /* Offline fallback */
         if (e.request.destination === 'document') {
-          return caches.match('/offline.html').then(function(r) {
-            return r || caches.match('/index.html');
+          return caches.match('offline.html').then(function(r) {
+            return r || caches.match('index.html');
           });
         }
       });
@@ -133,8 +133,8 @@ self.addEventListener('push', function(e) {
   e.waitUntil(
     self.registration.showNotification(data.title || 'WordWar', {
       body:  data.body  || 'You have a new challenge!',
-      icon:  '/icons/icon-192.png',
-      badge: '/icons/icon-72.png',
+      icon:  'icon-192.png',
+      badge: 'icon-72.png',
       tag:   'wordwar-notification',
       data:  data
     })
@@ -144,6 +144,6 @@ self.addEventListener('push', function(e) {
 self.addEventListener('notificationclick', function(e) {
   e.notification.close();
   e.waitUntil(
-    clients.openWindow(e.notification.data && e.notification.data.url ? e.notification.data.url : '/')
+    clients.openWindow(e.notification.data && e.notification.data.url ? e.notification.data.url : './')
   );
 });

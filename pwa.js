@@ -9,7 +9,7 @@
   /* ── 1. Register Service Worker ── */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      navigator.serviceWorker.register('sw.js', { scope: './' })
         .then(function(reg) {
           /* Check for updates every 60 s while page is open */
           setInterval(function() { reg.update(); }, 60000);
@@ -60,7 +60,7 @@
     banner.id = '_pwa-install-banner';
     banner.innerHTML =
       '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">' +
-        '<img src="/icons/icon-72.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" alt=""/>' +
+        '<img src="icon-72.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" alt=""/>' +
         '<div style="min-width:0;">' +
           '<div style="font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Install WordWar</div>' +
           '<div style="font-size:.72rem;color:#7878a0;margin-top:2px;">Play offline · Add to home screen</div>' +

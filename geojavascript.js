@@ -129,7 +129,7 @@ const PLAN_FEATURES = {
 /* ── STATE ───────────────────────────────────────────── */
 let currentUser  = null;
 let userProfile  = {
-  plan: null,
+  plan: 'free',
   // ── NEW accurate tracking fields ──
   totalReports:     0,      // lifetime — never resets
   totalChats:       0,      // lifetime — never resets
@@ -237,7 +237,6 @@ async function loadUserProfile() {
     const snap = await db.ref('users/' + currentUser.uid).once('value');
     if (snap.exists()) {
       userProfile = { ...userProfile, ...snap.val() };
-      if (userProfile.plan === 'free') userProfile.plan = null;
       // ── Migration: existing users missing new fields ──
       let needsMigration = false;
       if (userProfile.totalReports === undefined) {
@@ -277,7 +276,7 @@ async function loadUserProfile() {
         name:            currentUser.displayName || currentUser.email.split('@')[0],
         email:           currentUser.email,
         phone:           '',
-        plan:            null,
+        plan:            'free_trial',
         totalReports:    0,
         totalChats:      0,
         totalComparisons:0,
@@ -388,12 +387,13 @@ async function activatePlan(newPlan) {
 
 /* Step 1: Show trial popup on first login (if not already used/active) */
 function checkAndShowTrialPopup() {
+  // New users are auto-enrolled in Free Trial on signup.
+  // This popup is now only a legacy fallback for old 'free' plan accounts.
   if (!currentUser) return;
-  const plan = userProfile.plan;
-  const hasTrial = userProfile.trialUsed || userProfile.trialStartDate;
-  if (!plan && !hasTrial) {
-    setTimeout(() => showTrialPopup(), 1000);
-  }
+  const plan = userProfile.plan || 'free_trial';
+  if (plan !== 'free') return; // most users are already on free_trial
+  if (userProfile.trialUsed || userProfile.trialStartDate) return;
+  setTimeout(() => showTrialPopup(), 1500);
 }
 
 function showTrialPopup() {
@@ -412,7 +412,7 @@ function showTrialPopup() {
         animation:authIn 0.4s cubic-bezier(0.22,1,0.36,1);">
         <div style="text-align:center;margin-bottom:22px;">
           <div style="font-size:52px;margin-bottom:8px;filter:drop-shadow(0 0 16px rgba(0,229,200,0.4))">🚀</div>
-          <div style="font-size:22px;font-weight:900;color:#e8edf8;margin-bottom:6px;letter-spacing:-0.02em;">Start your Free Trial now 🚀</div>
+          <div style="font-size:22px;font-weight:900;color:#e8edf8;margin-bottom:6px;letter-spacing:-0.02em;">Try Free Trial for 14 Days!</div>
           <div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.12));
             border:1px solid rgba(0,229,200,0.35);border-radius:20px;padding:4px 14px;
             font-size:11px;font-weight:800;color:#00e5c8;margin-bottom:10px;">🌟 BEST WAY TO START</div>
@@ -446,13 +446,13 @@ function showTrialPopup() {
           border:none;border-radius:13px;font-weight:900;font-size:15px;color:#04060e;
           cursor:pointer;transition:all 0.2s;margin-bottom:10px;letter-spacing:0.02em;
           box-shadow:0 4px 20px rgba(0,229,200,0.3);">
-          Activate Free Trial
+          🚀 Activate Free Trial — It's Free!
         </button>
         <button onclick="closeTrialPopup()"
           style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.08);
           border-radius:11px;font-size:12px;color:#3a4a62;cursor:pointer;transition:color 0.2s;"
           onmouseover="this.style.color='#5a6a88'" onmouseout="this.style.color='#3a4a62'">
-          Maybe later
+          No thanks, I'll use my own API key
         </button>
       </div>`;
     document.body.appendChild(modal);
@@ -1188,10 +1188,10 @@ async function doSignup() {
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pwd);
     await cred.user.updateProfile({displayName: name});
-      await db.ref('users/'+cred.user.uid).set({
+    await db.ref('users/'+cred.user.uid).set({
       name, email, phone:'',
       classLevel: cls||'Competitive', examType: exam||'UPSC',
-      plan:null, monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
+      plan:'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
       lastResetMonth: monthStr(), signupDate: new Date().toISOString()
     });
     clearTimeout(timeout);
@@ -1233,15 +1233,6 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeReportModal(
 
 /* ── PAGE NAVIGATION ─────────────────────────────────── */
 function goPage(name) {
-  const plan = userProfile.plan;
-  const hasTrial = userProfile.trialUsed || userProfile.trialStartDate;
-  const isRestricted = !plan && !hasTrial;
-
-  if (isRestricted && ['map', 'compare', 'chat'].includes(name)) {
-    toast('No active plan. Please upgrade or start a trial.', 'warn');
-    name = 'plans';
-  }
-
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(name+'Page').classList.add('active');
   document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
@@ -1324,13 +1315,10 @@ async function handleSend() {
     if(sendBar) sendBar.scrollIntoView({behavior:'smooth',block:'nearest'});
     return;
   }
-  const plan = userProfile.plan;
+  const plan = userProfile.plan||'free';
   if (!canGenerate()) {
-    if (!plan && !(userProfile.trialUsed || userProfile.trialStartDate)) {
-      showNoPlanError();
-    } else {
-      showLimitReached('generation');
-    }
+    if (plan==='free') showNoKeyError();
+    else showLimitReached('generation');
     return;
   }
   // Check network
@@ -1342,13 +1330,13 @@ async function handleSend() {
   }
   await generateReport(pendingLat, pendingLon);
 }
-function showNoPlanError() {
+function showNoKeyError() {
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
   const w=document.getElementById('resultWrap'); w.style.display='block';
   w.innerHTML=`<div class="ebox" style="color:var(--amber);background:rgba(255,202,69,0.06);border-color:rgba(255,202,69,0.3)">
-    ⚠ <strong>No Active Plan</strong><br><br>No active plan. Please upgrade or start a trial.<br><br>
-    <button onclick="goPage('plans')" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:7px 18px;border-radius:7px;font-weight:700;font-size:12px">⭐ View Plans</button>
+    ⚠ <strong>API Key Required</strong><br><br>You are on the Free plan. ${getNoKeyMessage()}<br><br>
+    <button onclick="goPage('settings')" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.3);color:var(--cyan);padding:7px 18px;border-radius:7px;font-weight:700;font-size:12px">⚙ Go to Settings</button>
   </div>`;
   goTab('a',document.getElementById('t-a'));
 }
@@ -1513,7 +1501,7 @@ async function fetchWiki(place) {
 async function generateAIReport(lat, lon, geo, country, wiki) {
   const apiKey = getReportAPIKey();
   if (!apiKey) {
-    if (!userProfile.plan) throw new Error('No active plan. Please upgrade or start a trial.');
+    if (userProfile.plan==='free') throw new Error('No API key configured. Please add your API key in Settings.');
     throw new Error('No API key available. Please contact support.');
   }
   const model  = getSelectedModel(false);
@@ -4931,14 +4919,21 @@ function showErr(msg) {
   document.getElementById('loadbox').style.display='none';
   document.getElementById('sendBtn').disabled=false;
   const w=document.getElementById('resultWrap');
+  const isKeyErr = msg.includes('API key') || msg.includes('Settings') || msg.includes('key');
+  const isNetErr = msg.includes('network') || msg.includes('Network') || msg.includes('internet') || msg.includes('connect');
+  const hint = isKeyErr
+    ? 'Check your API key is correct and has available quota.'
+    : isNetErr
+    ? 'Check your internet connection, then try again.'
+    : 'Try clicking a different location, or switch to another AI model in Settings.';
   w.innerHTML=`<div class="ebox">
     <div style="font-size:18px;margin-bottom:6px">⚠</div>
     <div style="font-weight:700;margin-bottom:8px;color:var(--red)">Something went wrong</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">I think some errors occurred. Please send your query to fix the problem at becreativethink3@gmail.com or try again.</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">${msg}</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">${msg}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">${hint}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-      <button onclick="handleSend()" style="background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:12px;box-shadow:0 4px 12px rgba(74,124,255,0.3)">Try Again</button>
-      <button onclick="goPage('settings')" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text2);padding:8px 16px;border-radius:8px;font-weight:700;font-size:12px">⚙ Settings</button>
+      <button onclick="goPage('settings')" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:7px 16px;border-radius:7px;font-weight:700;font-size:11px">⚙ Settings</button>
+      <button onclick="clearAll()" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text2);padding:7px 16px;border-radius:7px;font-weight:700;font-size:11px">↺ Try Again</button>
     </div>
   </div>`;
   w.style.display='block';

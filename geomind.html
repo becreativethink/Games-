@@ -190,7 +190,7 @@
     </div>
     <div class="nav-right">
       <span class="usage-mini" id="usageMini"></span>
-      <span class="plan-badge pb-free" id="planBadge">FREE</span>
+      <span class="plan-badge pb-free" id="planBadge" style="display:none">FREE</span>
       <div class="user-chip">
         <div class="user-av" id="userAv">?</div>
         <div class="user-nm" id="userNm">User</div>
@@ -492,14 +492,14 @@
 
       </div>
 
+      <!-- ── Generate button ── -->
+      <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
+
       <!-- ── Clear buttons row ── -->
       <div class="cmp-clear-row">
         <button class="cmp-clear-btn" onclick="clearComparePin('A')">✕ Clear A</button>
         <button class="cmp-clear-btn" onclick="clearComparePin('B')">✕ Clear B</button>
       </div>
-
-      <!-- ── Generate button ── -->
-      <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
 
       <div id="compareLoad" class="compare-load" style="display:none">
         <div class="spin-lg"></div>
@@ -519,7 +519,7 @@
       </div>
       <div class="settings-section" id="aiConfigSection" style="display:none">
         <h3>🤖 AI Configuration</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Your admin-assigned key will be used automatically on paid plans.</p>
         <div class="sf-field">
           <label>Your API Key</label>
           <input type="password" id="settingsApiKey" placeholder="Paste your API key here…" autocomplete="off"/>
@@ -534,7 +534,6 @@
           <span id="apiStatusText">No API key configured. Add your key above or purchase a plan.</span>
         </div>
         <div class="info-box">
-          <strong>Free Plan:</strong> Add your own API key. Supports Gemini, ChatGPT / OpenAI, Anthropic, Z.ai, Mistral, and OpenRouter models.<br><br>
           <strong>Paid Plans:</strong> Admin-managed API keys are assigned — no key needed from you. Model overrides apply.
         </div>
         <button class="save-btn" style="margin-top:16px" onclick="saveSettings()">💾 Save Settings</button>

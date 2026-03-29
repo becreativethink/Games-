@@ -405,7 +405,7 @@ function showTrialPopup() {
     modal.id = 'trialPopupModal';
     modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
       z-index:99990;display:flex;align-items:center;justify-content:center;padding:20px;`;
-    modal.innerHTML = 
+    modal.innerHTML = `
       <div style="background:linear-gradient(160deg,#0d1828 0%,#080d17 100%);
         border:1px solid rgba(0,229,200,0.3);border-radius:22px;padding:32px 26px;
         max-width:390px;width:100%;box-shadow:0 0 80px rgba(0,229,200,0.12),0 32px 80px rgba(0,0,0,0.8);
@@ -454,7 +454,7 @@ function showTrialPopup() {
           onmouseover="this.style.color='#5a6a88'" onmouseout="this.style.color='#3a4a62'">
           No thanks, I'll use my own API key
         </button>
-      </div>;
+      </div>`;
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';

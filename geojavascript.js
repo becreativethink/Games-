@@ -129,7 +129,7 @@ const PLAN_FEATURES = {
 /* ── STATE ───────────────────────────────────────────── */
 let currentUser  = null;
 let userProfile  = {
-  plan: 'free',
+  plan: null,
   // ── NEW accurate tracking fields ──
   totalReports:     0,      // lifetime — never resets
   totalChats:       0,      // lifetime — never resets
@@ -269,14 +269,14 @@ async function loadUserProfile() {
         console.log('[GeoMind] Migrated user profile to v5.1 tracking');
       }
     } else {
-      // Brand new user → auto-activate Free Trial immediately
-      const now     = new Date();
-      const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      // Brand new user → create profile WITHOUT activating trial yet
+      // Popup will prompt them to activate
+      const now = new Date();
       userProfile = {
         name:            currentUser.displayName || currentUser.email.split('@')[0],
         email:           currentUser.email,
         phone:           '',
-        plan:            'free_trial',
+        plan:            'free_trial',   // plan set, but trial NOT started yet
         totalReports:    0,
         totalChats:      0,
         totalComparisons:0,
@@ -284,21 +284,15 @@ async function loadUserProfile() {
         planChatUsed:    0,
         comparisonUsed:  0,
         planStartDate:   now.toISOString(),
-        trialStartDate:  now.toISOString(),
-        trialEndDate:    endDate.toISOString(),
-        trialUsed:       true,
+        trialStartDate:  null,           // null = trial NOT yet activated → popup will show
+        trialEndDate:    null,
+        trialUsed:       false,          // false = never used → popup will show
         monthlyGenerationsUsed: 0,
         monthlyMessagesUsed:    0,
         lastResetMonth:  monthStr(),
         signupDate:      now.toISOString()
       };
-      // Try to auto-assign a free trial API key
-      try {
-        const apiKey = await assignFreeTrialAPI();
-        if (apiKey) userProfile.assignedTrialAPI = apiKey;
-      } catch(e) { console.warn('[newUser] no trial API available:', e.message); }
       await db.ref('users/' + currentUser.uid).set(userProfile);
-      toast('🚀 Welcome! Your 14-day Free Trial has started!', 'ok');
     }
     updateNavUI();
     updateUsageWidget();
@@ -387,18 +381,39 @@ async function activatePlan(newPlan) {
 
 /* Step 1: Show trial popup on first login (if not already used/active) */
 function checkAndShowTrialPopup() {
-  // New users are auto-enrolled in Free Trial on signup.
-  // This popup is now only a legacy fallback for old 'free' plan accounts.
   if (!currentUser) return;
-  const plan = userProfile.plan || 'free_trial';
-  if (plan !== 'free') return; // most users are already on free_trial
-  if (userProfile.trialUsed || userProfile.trialStartDate) return;
-  setTimeout(() => showTrialPopup(), 1500);
+  const plan          = userProfile.plan;
+  const isPaid        = ['starter','standard','premium','payperuse','custom'].includes(plan);
+  const isActiveTrial = plan === 'free_trial' && userProfile.trialStartDate && !isTrialExpired();
+
+  // Already on a good active plan — no popup needed
+  if (isPaid || isActiveTrial) return;
+
+  // Trial never activated (new user or user who skipped it before)
+  const trialNeverStarted = !userProfile.trialStartDate && !userProfile.trialUsed;
+  if (trialNeverStarted) {
+    setTimeout(() => showTrialPopup(), 1200);
+    return;
+  }
+
+  // Trial expired — show expired popup
+  if (isTrialExpired() && plan === 'free_trial') {
+    setTimeout(() => showTrialExpiredPopup(), 1200);
+  }
+}
+
+function showTrialPopupManual() {
+  // Called when user explicitly clicks "Activate Trial"
+  showTrialPopup();
 }
 
 function showTrialPopup() {
-  // If already used trial, don't show
-  if (userProfile.trialUsed || userProfile.trialStartDate) return;
+  // Only block if trial is ALREADY active or on a paid plan
+  const plan   = userProfile.plan;
+  const isPaid = ['starter','standard','premium','payperuse','custom'].includes(plan);
+  if (isPaid) return;
+  // If trial already started and not expired, no need to show activation popup
+  if (userProfile.trialStartDate && !isTrialExpired()) return;
   let modal = document.getElementById('trialPopupModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -658,7 +673,19 @@ async function computePlanUsedFromHistory() {
 
 /* ── PLAN LIMIT VALIDATION ───────────────────────────── */
 
+function _hasActivePlan() {
+  const plan = userProfile.plan;
+  if (!plan || plan === null) return false;  // no active plan
+  // free_trial is active only if not expired
+  if (plan === 'free_trial') return !isTrialExpired();
+  return true; // starter/standard/premium/payperuse/custom
+}
+
 function canGenerate() {
+  if (!_hasActivePlan()) {
+    _showNoPlanMessage();
+    return false;
+  }
   const plan = userProfile.plan || 'free_trial';
   // Block expired trials
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
@@ -672,6 +699,10 @@ function canGenerate() {
 }
 
 function canChat() {
+  if (!_hasActivePlan()) {
+    _showNoPlanMessage();
+    return false;
+  }
   const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
   if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return true;
@@ -681,6 +712,10 @@ function canChat() {
 }
 
 function canCompare() {
+  if (!_hasActivePlan()) {
+    _showNoPlanMessage();
+    return false;
+  }
   const plan = userProfile.plan || 'free_trial';
   if (plan === 'free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return false; }
   if (plan === 'payperuse' && userProfile.usingOwnAPI && userSettings.apiKey?.trim()) return true;
@@ -768,7 +803,7 @@ async function checkPlanChangedRemotely() {
       userProfile.totalComparisons = remote.totalComparisons ?? userProfile.totalComparisons;
       userProfile.usingOwnAPI   = remote.usingOwnAPI   ?? false;
       userProfile.customApiKey  = remote.customApiKey  ?? '';
-      if (remotePlan !== localPlan && remotePlan !== 'free') {
+      if (remotePlan !== localPlan && remotePlan !== 'free' && remotePlan !== 'free_trial') {
         toast(`🎉 Your plan has been upgraded to ${PLANS[remotePlan]?.name || remotePlan}!`, 'ok');
       }
       updateNavUI();
@@ -1191,7 +1226,7 @@ async function doSignup() {
     await db.ref('users/'+cred.user.uid).set({
       name, email, phone:'',
       classLevel: cls||'Competitive', examType: exam||'UPSC',
-      plan:'free', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
+      plan:'free_trial', monthlyGenerationsUsed:0, monthlyMessagesUsed:0,
       lastResetMonth: monthStr(), signupDate: new Date().toISOString()
     });
     clearTimeout(timeout);
@@ -1232,7 +1267,22 @@ document.getElementById('reportModal').addEventListener('click', e=>{
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeReportModal(); });
 
 /* ── PAGE NAVIGATION ─────────────────────────────────── */
+function _hasActivePlan() {
+  const plan = userProfile.plan;
+  if (!plan || plan === null) return false;
+  if (plan === 'free_trial') return !isTrialExpired();
+  // All paid plans (starter/standard/premium/payperuse/custom) are active
+  return true;
+}
+
 function goPage(name) {
+  // Access control — block restricted pages if no active plan
+  const RESTRICTED = ['map', 'compare'];
+  if (RESTRICTED.includes(name) && !_hasActivePlan()) {
+    _showNoPlanBlock(name);
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(name+'Page').classList.add('active');
   document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active'));
@@ -1247,6 +1297,32 @@ function goPage(name) {
   if (name==='profile')  { updateProfilePage(); loadProgressStats(); }
   if (name==='settings') { updateSettingsUI(); buildModelSelector(); }
   if (name==='map' && map) setTimeout(()=>map.invalidateSize(),100);
+}
+
+function _showNoPlanBlock(targetPage) {
+  // Show a friendly block modal directing user to plans/trial
+  let modal = document.getElementById('noPlanModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'noPlanModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(14px);z-index:99980;display:flex;align-items:center;justify-content:center;padding:20px;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:linear-gradient(160deg,#0d1828,#080d17);border:1px solid rgba(74,124,255,0.3);border-radius:22px;padding:30px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 0 60px rgba(74,124,255,0.12),0 32px 80px rgba(0,0,0,0.8);animation:authIn 0.4s ease;">
+    <div style="font-size:44px;margin-bottom:12px">🔒</div>
+    <div style="font-size:20px;font-weight:900;color:#e8edf8;margin-bottom:8px">No Active Plan</div>
+    <div style="font-size:13px;color:#8899bb;line-height:1.7;margin-bottom:20px">
+      You need an active plan to access <strong style="color:#e8edf8">${targetPage.charAt(0).toUpperCase()+targetPage.slice(1)}</strong>.<br>
+      Start your <strong style="color:#00e5c8">free 14-day trial</strong> or upgrade to unlock everything.
+    </div>
+    <button onclick="document.getElementById('noPlanModal').style.display='none';goPage('plans');" style="width:100%;padding:13px;background:linear-gradient(135deg,#00e5c8,#4a9eff);border:none;border-radius:12px;font-weight:900;font-size:14px;color:#04060e;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 20px rgba(0,229,200,0.3);">
+      ⭐ View Plans & Start Trial
+    </button>
+    <button onclick="document.getElementById('noPlanModal').style.display='none';" style="width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:12px;color:#3a4a62;cursor:pointer;">
+      Back
+    </button>
+  </div>`;
+  modal.style.display = 'flex';
 }
 
 /* ── MAP ─────────────────────────────────────────────── */
@@ -1315,9 +1391,9 @@ async function handleSend() {
     if(sendBar) sendBar.scrollIntoView({behavior:'smooth',block:'nearest'});
     return;
   }
-  const plan = userProfile.plan||'free';
+  const plan = userProfile.plan||'free_trial';
   if (!canGenerate()) {
-    if (plan==='free') showNoKeyError();
+    if (!plan || plan === null) showNoKeyError();
     else showLimitReached('generation');
     return;
   }
@@ -1415,10 +1491,63 @@ async function generateReport(lat, lon) {
     } else if (msg.toLowerCase().includes('timeout') || msg.toLowerCase().includes('aborted')) {
       msg = '⏰ Request timed out. Check your connection and try again, or switch to a faster model.';
 
+    } else {
+      // Generic fallback — show clear message + contact
+      msg = '🤔 Something went wrong while generating your report.<br>'
+          + '<span style="color:var(--text2)">' + (msg || 'Unknown error') + '</span>';
     }
-    // else: show original error message as-is
-    showErr(msg);
+    // Always append contact hint
+    msg += '<br><span style="font-size:11px;color:var(--muted)">Problem persists? Email '
+         + '<a href="mailto:becreativethink3@gmail.com" style="color:var(--cyan);font-weight:600">becreativethink3@gmail.com</a>'
+         + '</span>';
+    showErrWithRetry(msg);
   }
+}
+
+/* ── Show error with retry button ──────────────────────── */
+function showErrWithRetry(msg) {
+  const wrap = document.getElementById('resultWrap');
+  document.getElementById('idleBox').style.display = 'none';
+  document.getElementById('loadbox').style.display = 'none';
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <div class="ebox" style="text-align:left">
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px">⚠ Report Generation Failed</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">${msg}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:16px">
+        If the problem persists, email us at
+        <a href="mailto:becreativethink3@gmail.com" style="color:var(--cyan);font-weight:700">becreativethink3@gmail.com</a>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="retryLastReport()" style="
+          padding:10px 22px;
+          background:linear-gradient(135deg,var(--primary),var(--secondary));
+          color:#fff;font-weight:700;font-size:12px;
+          border:none;border-radius:10px;cursor:pointer;
+          box-shadow:0 4px 14px rgba(74,124,255,0.35);
+        ">🔄 Try Again</button>
+        <button onclick="goPage('settings')" style="
+          padding:10px 18px;
+          background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+          color:var(--text2);font-size:12px;font-weight:600;
+          border-radius:10px;cursor:pointer;
+        ">⚙ Settings</button>
+      </div>
+    </div>`;
+}
+
+/* ── Retry last report — same lat/lon, no page reset ───── */
+function retryLastReport() {
+  if (pendingLat === null || pendingLon === null) {
+    toast('No location selected — please click the map first.', 'err');
+    return;
+  }
+  // Clear error UI
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('resultWrap').innerHTML = '';
+  // Re-run with same coordinates
+  toast('Retrying…', 'warn');
+  generateReport(pendingLat, pendingLon);
 }
 function updateMapTooltip(geo, ai) {
   const tip=document.getElementById('ptip');
@@ -1501,7 +1630,7 @@ async function fetchWiki(place) {
 async function generateAIReport(lat, lon, geo, country, wiki) {
   const apiKey = getReportAPIKey();
   if (!apiKey) {
-    if (userProfile.plan==='free') throw new Error('No API key configured. Please add your API key in Settings.');
+    if (!userProfile.plan || userProfile.plan==='free') throw new Error('No API key configured. Please add your API key in Settings.');
     throw new Error('No API key available. Please contact support.');
   }
   const model  = getSelectedModel(false);
@@ -2553,7 +2682,32 @@ async function sendChat() {
   const inp=document.getElementById('cinput');
   const q=inp.value.trim();
   if (!q) return;
-  if (!curData.lat) { toast('Click a map location and Send first','err'); return; }
+  // If no location selected, use last history entry as context fallback
+  if (!curData.lat) {
+    if (_histAllEntries && _histAllEntries.length > 0) {
+      const last = _histAllEntries[0];
+      if (last && last.aiResponse) {
+        try {
+          const ai = JSON.parse(last.aiResponse);
+          curData = {
+            geo: { address: { city: last.selectedPlace||'', state: last.state||'', country: last.country||'' } },
+            lat: last.latitude || 0, lon: last.longitude || 0, ai: ai
+          };
+          toast('💬 Answering from your last report: ' + (last.selectedPlace||'history'), 'warn');
+        } catch(e) {
+          toast('Select a map location first to start chatting', 'err'); return;
+        }
+      } else {
+        toast('Select a map location first to start chatting', 'err'); return;
+      }
+    } else {
+      toast('Select a map location first to start chatting', 'err'); return;
+    }
+  }
+  if (!_hasActivePlan()) {
+    _showNoPlanBlock('chat');
+    return;
+  }
   if (!canChat()) {
     if (userProfile.plan==='free_trial' && isTrialExpired()) { showTrialExpiredPopup(); return; }
     showLimitReached('chat'); goTab('p',document.getElementById('t-p')); return;
@@ -3672,7 +3826,7 @@ async function loadProgressStats() {
       : (userProfile.planUsed || 0);
 
     // Reconcile: if history-based count differs from stored planUsed, prefer history
-    if (planUsedFromHistory !== (userProfile.planUsed || 0) && userProfile.plan !== 'free') {
+    if (planUsedFromHistory !== (userProfile.planUsed || 0) && userProfile.plan !== null) {
       console.log(`[GeoMind] Reconciling planUsed: stored=${userProfile.planUsed} history=${planUsedFromHistory}`);
       userProfile.planUsed = planUsedFromHistory;
       await savePlanUsageFields();
@@ -3709,13 +3863,13 @@ async function loadProgressStats() {
     const planEl = document.getElementById('statPlanUsed');
     if (planEl) {
       const limit = getPlanGenLimit();
-      planEl.textContent = userProfile.plan === 'free' ? '∞' : `${planUsedFromHistory}/${limit}`;
+      planEl.textContent = `${planUsedFromHistory}/${limit}`;
     }
     const cmpEl = document.getElementById('statCompareUsed');
     if (cmpEl) {
       const cmpLimit = getPlanComparisonLimit();
       const cmpUsed  = userProfile.comparisonUsed || 0;
-      cmpEl.textContent = userProfile.plan === 'free' ? (userSettings.apiKey ? '∞' : '0') : `${cmpUsed}/${cmpLimit}`;
+      cmpEl.textContent = `${cmpUsed}/${cmpLimit}`;
     }
     const totalEl = document.getElementById('statReportsTotal');
     if (totalEl) totalEl.textContent = totalReports;
@@ -4035,10 +4189,10 @@ async function runComparison() {
 
   // ── Comparison limit check ──
   if (!canCompare()) {
-    const plan  = userProfile.plan || 'free';
+    const plan  = userProfile.plan || 'free_trial';
     const limit = getPlanComparisonLimit();
     const used  = userProfile.comparisonUsed || 0;
-    if (plan === 'free') {
+    if (plan === 'free_trial') {
       toast('Add your API key in Settings to use comparisons.','err');
     } else {
       showErr(`⚖ Comparison limit reached (${used}/${limit}). Upgrade your plan to compare more locations.`);
@@ -4553,9 +4707,9 @@ function previewDownload(fmt) {
 function renderPlansPage() { renderPlansInto(document.getElementById('plansPageContent')); }
 function renderPricingTab() { renderPlansInto(document.getElementById('pricingContent')); }
 function renderPlansInto(wrap) {
-  const currentPlan = userProfile.plan || 'free';
+  const currentPlan = userProfile.plan || 'free_trial';
   let html = `<div class="pricing-title">🌟 GeoMind Plans</div>
-    <div class="pricing-sub">From free forever to unlimited power — choose the plan that fits your exam prep goals.<br>Paid plans include admin-managed API keys · No setup needed · Activate instantly.</div>
+    <div class="pricing-sub">From free trial to unlimited power — choose the plan that fits your exam prep goals.<br>Paid plans include admin-managed API keys · No setup needed · Activate instantly.</div>
     <div class="plans-grid">`;
   const planOrder = ['free_trial', 'starter', 'standard', 'premium', 'payperuse'];
   planOrder.forEach(key => {
@@ -4567,7 +4721,7 @@ function renderPlansInto(wrap) {
     const alreadyUsedTrial = userProfile.trialUsed || userProfile.trialStartDate;
 
     let btnClick, btnLabel, btnDisabled = '';
-    if (key === 'free') {
+    if (key === 'free_trial') {
       btnClick = `goPage('settings')`;
       btnLabel = '⚙ Add API Key';
     } else if (key === 'free_trial') {
@@ -4596,7 +4750,7 @@ function renderPlansInto(wrap) {
         </div>
         <div class="plan-price" style="text-align:right;flex-shrink:0;margin-left:8px">
           <div class="amt">${key==='payperuse'?'₹15':key==='free_trial'?'₹0':P.price.replace('/mo','')}</div>
-          <div class="per">${key==='payperuse'?'per session':key==='free_trial'?'7 days free':key==='free'?'forever':'per month'}</div>
+          <div class="per">${key==='payperuse'?'per session':key==='free_trial'?'14 days free':'per month'}</div>
         </div>
       </div>
       <div class="plan-features" style="margin-top:10px">
@@ -4648,7 +4802,7 @@ function updateProfilePage() {
   }
   document.getElementById('profileName').textContent=name;
   document.getElementById('profileEmail').textContent=email;
-  document.getElementById('profilePlanVal').textContent=PLANS[userProfile.plan||'free']?.name||'Free';
+  document.getElementById('profilePlanVal').textContent=PLANS[userProfile.plan||'free_trial']?.name||'Free';
   document.getElementById('pfName').value=name;
   document.getElementById('pfEmail').value=email;
   document.getElementById('pfPhone').value=userProfile.phone||'';
@@ -4760,10 +4914,55 @@ async function _applyProfilePhoto(url) {
   } catch(e) { toast('Failed to save photo URL: ' + e.message, 'err'); }
 }
 
+
+/* ── DELETE ACCOUNT ─────────────────────────────────────── */
+async function deleteAccount() {
+  // Step 1: Confirmation popup
+  const confirmed = await new Promise(resolve => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);z-index:99995;display:flex;align-items:center;justify-content:center;padding:20px;';
+    d.innerHTML = `<div style="background:#0d1828;border:1px solid rgba(255,107,122,0.3);border-radius:18px;padding:28px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,0.8);">
+      <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+      <div style="font-size:18px;font-weight:900;color:#ff6b7a;margin-bottom:8px">Delete Account?</div>
+      <div style="font-size:12px;color:#8899bb;line-height:1.7;margin-bottom:20px">
+        This will <strong style="color:#ff6b7a">permanently delete</strong> your account, all reports, chat history, and saved data.<br>
+        <strong>This cannot be undone.</strong>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="_delConfirm" style="flex:1;padding:12px;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:13px;cursor:pointer;">Yes, Delete Everything</button>
+        <button id="_delCancel" style="flex:1;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#8899bb;font-size:13px;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+    document.body.appendChild(d);
+    d.querySelector('#_delConfirm').onclick = () => { document.body.removeChild(d); resolve(true); };
+    d.querySelector('#_delCancel').onclick  = () => { document.body.removeChild(d); resolve(false); };
+  });
+  if (!confirmed) return;
+
+  toast('Deleting account…', 'warn');
+  try {
+    const uid = currentUser.uid;
+    // Delete all user data from Realtime DB
+    await db.ref('users/' + uid).remove();
+    await db.ref('chatHistory/' + uid).remove();
+    await db.ref('comparisonHistory/' + uid).remove();
+    // Delete Firebase Auth account
+    await currentUser.delete();
+    toast('Account deleted. Goodbye!', 'ok');
+    setTimeout(() => window.location.reload(), 1500);
+  } catch(e) {
+    if (e.code === 'auth/requires-recent-login') {
+      toast('Please log out and log back in, then try deleting again.', 'err');
+    } else {
+      toast('Delete failed: ' + e.message, 'err');
+    }
+  }
+}
+
 /* ── NAV + USAGE ─────────────────────────────────────── */
 function updateNavUI() {
-  const plan     = userProfile.plan || 'free';
-  const P        = PLANS[plan] || PLANS.free;
+  const plan     = userProfile.plan || null;
+  const P        = PLANS[plan] || PLANS.free_trial;
   const planUsed = userProfile.planUsed || 0;
   const chatUsed = userProfile.planChatUsed || 0;
   const name     = currentUser?.displayName || currentUser?.email?.split('@')[0] || '?';
@@ -4786,7 +4985,7 @@ function updateNavUI() {
   }
 }
 function updateUsageWidget() {
-  const plan     = userProfile.plan || 'free';
+  const plan     = userProfile.plan || null;
   const P        = PLANS[plan];
   const planUsed = userProfile.planUsed     || 0;
   const chatUsed = userProfile.planChatUsed || 0;
@@ -4876,7 +5075,7 @@ function updateUsageWidget() {
   }
 }
 function showLimitReached(type) {
-  const plan=userProfile.plan||'free';
+  const plan=userProfile.plan||'free_trial';
   const P=PLANS[plan];
   document.getElementById('idleBox').style.display='none';
   document.getElementById('loadbox').style.display='none';
@@ -4918,26 +5117,54 @@ function showErr(msg) {
   console.error('[showErr]', msg);
   document.getElementById('loadbox').style.display='none';
   document.getElementById('sendBtn').disabled=false;
-  const w=document.getElementById('resultWrap');
+  const w = document.getElementById('resultWrap');
   const isKeyErr = msg.includes('API key') || msg.includes('Settings') || msg.includes('key');
-  const isNetErr = msg.includes('network') || msg.includes('Network') || msg.includes('internet') || msg.includes('connect');
+  const isNetErr = msg.includes('network') || msg.includes('Network') || msg.includes('internet') || msg.includes('connect') || msg.includes('fetch');
   const hint = isKeyErr
-    ? 'Check your API key is correct and has available quota.'
+    ? 'Check your API key in Settings ⚙, or upgrade your plan.'
     : isNetErr
-    ? 'Check your internet connection, then try again.'
-    : 'Try clicking a different location, or switch to another AI model in Settings.';
-  w.innerHTML=`<div class="ebox">
-    <div style="font-size:18px;margin-bottom:6px">⚠</div>
-    <div style="font-weight:700;margin-bottom:8px;color:var(--red)">Something went wrong</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">${msg}</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">${hint}</div>
+    ? 'Check your internet connection, then tap Try Again.'
+    : 'Please try again. If the issue persists, contact support.';
+
+  w.innerHTML = `<div class="ebox" style="text-align:center;padding:20px 16px;">
+    <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+    <div style="font-weight:800;font-size:14px;margin-bottom:8px;color:var(--red)">Something went wrong</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6">${hint}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.5">
+      I think some errors occurred. Please send your query to fix the problem at
+      <a href="mailto:becreativethink3@gmail.com" style="color:var(--cyan);text-decoration:none;font-weight:700">becreativethink3@gmail.com</a>
+      or tap <strong>Try Again</strong>.
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-      <button onclick="goPage('settings')" style="background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);color:var(--cyan);padding:7px 16px;border-radius:7px;font-weight:700;font-size:11px">⚙ Settings</button>
-      <button onclick="clearAll()" style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text2);padding:7px 16px;border-radius:7px;font-weight:700;font-size:11px">↺ Try Again</button>
+      <button onclick="retryLastReport()" style="
+        background:linear-gradient(135deg,var(--primary),var(--secondary));
+        color:#fff;border:none;padding:10px 22px;border-radius:10px;
+        font-weight:800;font-size:13px;cursor:pointer;
+        box-shadow:0 4px 14px rgba(74,124,255,0.35);">
+        ↺ Try Again
+      </button>
+      <button onclick="goPage('settings')" style="
+        background:rgba(0,229,200,0.1);border:1px solid rgba(0,229,200,0.25);
+        color:var(--cyan);padding:10px 18px;border-radius:10px;
+        font-weight:700;font-size:12px;cursor:pointer;">
+        ⚙ Settings
+      </button>
     </div>
   </div>`;
-  w.style.display='block';
-  toast('⚠ '+msg.substring(0,80),'err');
+  w.style.display = 'block';
+  toast('⚠ ' + msg.substring(0,80), 'err');
+}
+
+/* Retry last report without resetting any user input */
+function retryLastReport() {
+  if (pendingLat === null || pendingLon === null) {
+    toast('Please click a location on the map first', 'err');
+    return;
+  }
+  // Keep user question and country input intact — just retry
+  document.getElementById('resultWrap').style.display = 'none';
+  document.getElementById('resultWrap').innerHTML = '';
+  generateReport(pendingLat, pendingLon);
 }
 function clearAll() {
   pendingLat=null; pendingLon=null;

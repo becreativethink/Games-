@@ -34,7 +34,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="auth-logo-img"/>
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -84,7 +84,7 @@
 
     <!-- Logo + Branding -->
     <div class="auth-brand">
-      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="auth-logo-img"/>
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="auth-logo-img"/>
       <div class="auth-brand-name">GeoMind</div>
       <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
     </div>
@@ -176,7 +176,7 @@
   <!-- TOP NAV -->
   <div id="topNav">
     <div class="nav-logo" onclick="goPage('map')">
-      <img src="https://ready-fuchsia-qsbgoruvtl.edgeone.app/file_000000000b3871fab4864ea9b33a23f3_1-removebg-preview.png" alt="GeoMind" class="nav-logo-img"/>
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="nav-logo-img"/>
       <div class="nav-logo-name">GeoMind</div>
     </div>
     <div class="page-tabs">
@@ -363,9 +363,9 @@
           <div class="profile-av-overlay">📷</div>
         </div>
         <input type="file" id="pfPhotoInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)"/>
-        <div class="profile-user-name" id="profileName">Loading…</div>
-        <div class="profile-user-email" id="profileEmail"></div>
-        <div class="profile-upload-hint">Tap avatar to upload photo</div>
+        <div class="profile-user-name" id="profileName" style="margin-top:12px;font-size:18px;font-weight:800;color:var(--text)">Loading…</div>
+        <div class="profile-user-email" id="profileEmail" style="margin-top:4px;font-size:12px;color:var(--muted);word-break:break-all"></div>
+        <div class="profile-upload-hint" style="margin-top:8px;font-size:10px;color:var(--dim)">Tap avatar to change photo</div>
         <div class="profile-upload-progress" id="profileUploadProgress">
           <div class="profile-upload-progress-fill" id="profileUploadFill"></div>
         </div>
@@ -460,6 +460,15 @@
         <p>Tap directly on each map below to pick two locations, then compare</p>
       </div>
 
+      <!-- ── Sticky action bar ABOVE the maps ── -->
+      <div class="cmp-action-bar">
+        <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
+        <div class="cmp-clear-row">
+          <button class="cmp-clear-btn" onclick="clearComparePin('A')">✕ Clear A</button>
+          <button class="cmp-clear-btn" onclick="clearComparePin('B')">✕ Clear B</button>
+        </div>
+      </div>
+
       <!-- ── Two mini-maps side by side ── -->
       <div class="cmp-maps-row">
 
@@ -491,15 +500,6 @@
         </div>
 
       </div>
-
-      <!-- ── Clear buttons row ── -->
-      <div class="cmp-clear-row">
-        <button class="cmp-clear-btn" onclick="clearComparePin('A')">✕ Clear A</button>
-        <button class="cmp-clear-btn" onclick="clearComparePin('B')">✕ Clear B</button>
-      </div>
-
-      <!-- ── Generate button ── -->
-      <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
 
       <div id="compareLoad" class="compare-load" style="display:none">
         <div class="spin-lg"></div>
@@ -548,8 +548,13 @@
       </div>
       <div class="settings-section" style="border-color:rgba(255,107,122,0.2);">
         <h3 style="color:var(--red)">⚠️ Danger Zone</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Permanently delete all your search history from GeoMind.</p>
-        <button onclick="clearHistory(true)" class="danger-btn">🗑 Clear My History</button>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Permanently delete your data from GeoMind.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button onclick="clearHistory(true)" class="danger-btn">🗑 Clear My History</button>
+          <button onclick="deleteAccount()" class="danger-btn" style="background:rgba(255,60,60,0.12);border-color:rgba(255,60,60,0.35);color:#ff4444;">
+            💀 Delete My Account
+          </button>
+        </div>
       </div>
     </div>
   </div>

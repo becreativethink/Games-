@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Reading Tracker</title>
+    <link rel="stylesheet" href="ABX1XBA01.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Section -->
+        <section id="auth-section" class="container">
+            <h2>Welcome to Lumina Reading Tracker</h2>
+            <div id="auth-forms">
+                <div id="login-form">
+                    <h3>Login</h3>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button id="login-btn">Login</button>
+                    <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+                </div>
+                <div id="signup-form" style="display:none;">
+                    <h3>Sign Up</h3>
+                    <input type="email" id="signup-email" placeholder="Email">
+                    <input type="password" id="signup-password" placeholder="Password">
+                    <button id="signup-btn">Sign Up</button>
+                    <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="container" style="display:none;">
+            <header>
+                <h1>Lumina Dashboard</h1>
+                <button id="logout-btn">Logout</button>
+            </header>
+            <div class="main-content">
+                <aside class="sidebar">
+                    <nav>
+                        <ul>
+                            <li><a href="#" id="nav-library">My Library</a></li>
+                            <li><a href="#" id="nav-goals">Reading Goals</a></li>
+                            <li><a href="#" id="nav-progress">Progress</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="content-area">
+                    <!-- Library View -->
+                    <div id="library-view" class="view-section">
+                        <h2>My Library</h2>
+                        <form id="add-book-form">
+                            <input type="text" id="book-title" placeholder="Book Title" required>
+                            <input type="text" id="book-author" placeholder="Author" required>
+                            <input type="number" id="book-pages" placeholder="Total Pages" required>
+                            <button type="submit">Add Book</button>
+                        </form>
+                        <div id="book-list">
+                            <!-- Books will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Goals View -->
+                    <div id="goals-view" class="view-section" style="display:none;">
+                        <h2>Reading Goals</h2>
+                        <div id="goal-setting-area">
+                            <!-- Goal setting for books will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Progress View -->
+                    <div id="progress-view" class="view-section" style="display:none;">
+                        <h2>My Progress</h2>
+                        <div id="reading-logs">
+                            <!-- Reading logs will be displayed here -->
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="ABX1XBA01.js"></script>
+</body>
+</html>

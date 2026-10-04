@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#f0b429"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>WordWar — Lucky Spin</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.spin-page { max-width: 500px; margin: 0 auto; padding: 20px 16px calc(88px + env(safe-area-inset-bottom)); }
+
+/* Wheel container */
+.wheel-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0 8px;
+}
+.wheel-canvas-wrap {
+  position: relative;
+  width: 300px; height: 300px;
+}
+canvas#spin-canvas {
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(240,180,41,.3), 0 0 40px rgba(240,180,41,.15), 0 20px 60px rgba(0,0,0,.6);
+  display: block;
+}
+/* Pointer triangle */
+.wheel-pointer {
+  position: absolute;
+  top: -14px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 26px solid #f0b429;
+  filter: drop-shadow(0 0 8px rgba(240,180,41,.6));
+  z-index: 10;
+}
+/* Center button */
+.wheel-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f0b429, #e09000);
+  border: 3px solid rgba(0,0,0,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(240,180,41,.5), inset 0 1px 0 rgba(255,255,255,.3);
+  transition: transform .15s, box-shadow .15s;
+  z-index: 10;
+}
+.wheel-center:hover { transform: translate(-50%,-50%) scale(1.08); }
+.wheel-center:active { transform: translate(-50%,-50%) scale(.94); }
+.wheel-center.spinning { cursor: not-allowed; opacity: .7; }
+
+/* Prize display */
+.prize-display {
+  margin: 20px 0 16px;
+  text-align: center;
+  min-height: 72px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.prize-icon { font-size: 2.6rem; display: block; margin-bottom: 6px; }
+.prize-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; color: var(--gold); letter-spacing: .04em; }
+.prize-sub  { font-size: .76rem; color: var(--text2); margin-top: 3px; }
+
+/* Cooldown */
+.cooldown-wrap {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.cooldown-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text3); margin-bottom: 4px; }
+.cooldown-timer { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: var(--gold); }
+
+/* Stats strip */
+.spin-stats {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 8px; margin-bottom: 20px;
+}
+.spin-stat {
+  padding: 12px 8px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; text-align: center;
+}
+.spin-stat-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; display: block; margin-bottom: 2px; }
+.spin-stat-lbl { font-size: .58rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); }
+
+/* Prize list */
+.prize-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.prize-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 11px;
+}
+.prize-row-icon { font-size: 1.1rem; flex-shrink: 0; }
+.prize-row-name { font-size: .8rem; font-weight: 700; flex: 1; }
+.prize-row-chance { font-family: var(--mono); font-size: .7rem; color: var(--text3); }
+
+/* History */
+.spin-history { display: flex; flex-direction: column; gap: 6px; }
+.hist-spin-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  font-size: .76rem;
+}
+.hist-spin-prize { font-weight: 700; }
+.hist-spin-date  { font-size: .64rem; color: var(--text3); }
+
+/* Result overlay */
+.spin-result-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.88);
+  backdrop-filter: blur(24px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000; padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+}
+.spin-result-overlay.open { opacity: 1; pointer-events: all; }
+.spin-result-card {
+  background: linear-gradient(160deg, rgba(240,180,41,.12), rgba(109,81,245,.08));
+  border: 1px solid rgba(240,180,41,.35);
+  border-radius: 28px;
+  padding: 40px 28px;
+  max-width: 360px; width: 100%;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(240,180,41,.2), 0 24px 80px rgba(0,0,0,.7);
+  transform: scale(.85) translateY(20px);
+  transition: transform .4s cubic-bezier(.34,1.3,.64,1);
+}
+.spin-result-overlay.open .spin-result-card { transform: scale(1) translateY(0); }
+.spin-result-big-icon { font-size: 5rem; display: block; margin-bottom: 12px; animation: rewardBounce .6s cubic-bezier(.34,1.5,.64,1) both; }
+@keyframes rewardBounce { from { transform: scale(.3) rotate(-20deg); opacity:0; } to { transform: scale(1) rotate(0); opacity:1; } }
+.spin-result-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 900; color: var(--gold); margin-bottom: 6px; letter-spacing: .04em; }
+.spin-result-sub   { font-size: .84rem; color: var(--text2); margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← Home</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="spin-page">
+  <!-- Header badge -->
+  <div style="text-align:center;margin-bottom:4px;">
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 14px;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.25);border-radius:100px;font-size:.65rem;font-weight:800;color:var(--gold);letter-spacing:.08em;margin-bottom:8px;">🎡 LUCKY SPIN</div>
+    <h1 style="font-family:var(--font-display);font-size:1.2rem;font-weight:900;letter-spacing:.03em;margin-bottom:2px;">Daily Prize Wheel</h1>
+    <p style="font-size:.76rem;color:var(--text2);">One spin every 24 hours — win real rewards!</p>
+  </div>
+
+  <!-- Wheel -->
+  <div class="wheel-wrap">
+    <div class="wheel-canvas-wrap">
+      <div class="wheel-pointer"></div>
+      <canvas id="spin-canvas" width="300" height="300"></canvas>
+      <div class="wheel-center" id="spin-btn" onclick="doSpin()">🎡</div>
+    </div>
+  </div>
+
+  <!-- Prize display (pre-spin label) -->
+  <div class="prize-display" id="prize-display">
+    <span class="prize-icon">🎡</span>
+    <span class="prize-name">Tap to Spin!</span>
+    <span class="prize-sub">Free once per day</span>
+  </div>
+
+  <!-- Cooldown -->
+  <div class="cooldown-wrap hidden" id="cooldown-wrap">
+    <div class="cooldown-label">Next spin available in</div>
+    <div class="cooldown-timer" id="cooldown-timer">—</div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="spin-stats">
+    <div class="spin-stat">
+      <span class="spin-stat-val text-gold" id="stat-total-spins">0</span>
+      <span class="spin-stat-lbl">Total Spins</span>
+    </div>
+    <div class="spin-stat" style="background:rgba(240,180,41,.05);border-color:rgba(240,180,41,.15);">
+      <span class="spin-stat-val" style="color:var(--gold);" id="stat-money-won">0</span>
+      <span class="spin-stat-lbl">💰 Won</span>
+    </div>
+    <div class="spin-stat" style="background:rgba(109,81,245,.05);border-color:rgba(109,81,245,.15);">
+      <span class="spin-stat-val" style="color:#b0a0ff;" id="stat-streak">0</span>
+      <span class="spin-stat-lbl">Day Streak</span>
+    </div>
+  </div>
+
+  <!-- Prize table -->
+  <div class="sec-label">🏆 Prizes</div>
+  <div class="prize-list">
+    <div class="prize-row"><span class="prize-row-icon">💰</span><span class="prize-row-name">+50 Money</span><span class="prize-row-chance">20%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">🌟</span><span class="prize-row-name">+20 Score</span><span class="prize-row-chance">18%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">➕</span><span class="prize-row-name">Extra Try Power-Up</span><span class="prize-row-chance">15%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">❄️</span><span class="prize-row-name">Freeze Timer Power-Up</span><span class="prize-row-chance">13%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">💎</span><span class="prize-row-name">+100 Money</span><span class="prize-row-chance">12%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">🎲</span><span class="prize-row-name">Mystery Prize</span><span class="prize-row-chance">9%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">⭐</span><span class="prize-row-name">+50 Score</span><span class="prize-row-chance">8%</span></div>
+    <div class="prize-row"><span class="prize-row-icon">👑</span><span class="prize-row-name">+200 Money (Jackpot!)</span><span class="prize-row-chance">5%</span></div>
+  </div>
+
+  <!-- History -->
+  <div class="sec-label" style="margin-top:16px;">📋 Recent Spins</div>
+  <div class="spin-history" id="spin-history">
+    <div style="text-align:center;padding:20px;color:var(--text3);font-size:.78rem;">No spins yet — be the first!</div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div class="spin-result-overlay" id="result-overlay">
+  <div class="spin-result-card">
+    <span class="spin-result-big-icon" id="result-icon">🎉</span>
+    <div class="spin-result-title" id="result-title">You Won!</div>
+    <div class="spin-result-sub" id="result-sub">Amazing!</div>
+    <button class="btn btn-gold btn-full btn-lg" onclick="closeResult()">🎉 Claim & Continue</button>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+
+function avatarUrl(url,name){if(url&&url.startsWith('http'))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').slice(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;right:16px;z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'44;font-size:.82rem;font-weight:600;color:#eeeef8;transform:translateX(120%);transition:transform .28s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.textContent=msg; z.appendChild(t);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t.style.transform='translateX(0)';});});
+  setTimeout(function(){t.style.transform='translateX(120%)';setTimeout(function(){t.remove();},320);},3400);
+}
+
+if(user){
+  document.getElementById('nav-username').textContent = user.username||'…';
+  document.getElementById('nav-avatar').src = avatarUrl(user.photoURL, user.username);
+}
+
+/* ── Prize segments (weighted) ── */
+var PRIZES = [
+  { label: '+50 💰',        icon: '💰', weight: 20, type: 'money',  amount: 50,  color: '#f0b429' },
+  { label: '+20 ⭐',        icon: '🌟', weight: 18, type: 'score',  amount: 20,  color: '#6d51f5' },
+  { label: 'Extra Try',     icon: '➕', weight: 15, type: 'puExtra',amount: 1,   color: '#16c26a' },
+  { label: 'Freeze ❄️',    icon: '❄️', weight: 13, type: 'puFreeze',amount: 1,  color: '#3de8ff' },
+  { label: '+100 💰',       icon: '💎', weight: 12, type: 'money',  amount: 100, color: '#b44cff' },
+  { label: '🎲 Mystery',    icon: '🎲', weight: 9,  type: 'mystery',amount: 0,   color: '#f04060' },
+  { label: '+50 ⭐',        icon: '⭐', weight: 8,  type: 'score',  amount: 50,  color: '#ff8c42' },
+  { label: '💰 JACKPOT',    icon: '👑', weight: 5,  type: 'money',  amount: 200, color: '#f0b429' },
+];
+
+/* Build probability table */
+var TOTAL_W = PRIZES.reduce(function(s,p){return s+p.weight;},0);
+var SEG_ANGLE = (Math.PI*2) / PRIZES.length;
+
+/* Canvas wheel */
+var canvas = document.getElementById('spin-canvas');
+var ctx    = canvas.getContext('2d');
+var CX = 150, CY = 150, R = 144;
+
+function drawWheel(rotation){
+  ctx.clearRect(0,0,300,300);
+  PRIZES.forEach(function(prize, i){
+    var startAngle = rotation + i * SEG_ANGLE;
+    var endAngle   = startAngle + SEG_ANGLE;
+    // Segment
+    ctx.beginPath();
+    ctx.moveTo(CX,CY);
+    ctx.arc(CX,CY,R,startAngle,endAngle);
+    ctx.closePath();
+    ctx.fillStyle = prize.color;
+    ctx.globalAlpha = i%2===0 ? 1 : 0.82;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Label
+    ctx.save();
+    ctx.translate(CX,CY);
+    ctx.rotate(startAngle + SEG_ANGLE/2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Outfit, sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,.6)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(prize.label, R-8, 4);
+    ctx.restore();
+  });
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(CX,CY,28,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(240,180,41,.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+var _rotation = -Math.PI/2;
+drawWheel(_rotation);
+
+/* ── State ── */
+var _spinning      = false;
+var _canSpin       = true;
+var _cooldownIv    = null;
+var _lastSpinTs    = 0;
+
+/* ── Init ── */
+async function init(){
+  try{
+    var snap = await db.ref('spinRewards/'+user.uid).get();
+    if(snap.exists()){
+      var d = snap.val();
+      _lastSpinTs = d.lastSpin || 0;
+      document.getElementById('stat-total-spins').textContent = d.totalSpins||0;
+      document.getElementById('stat-money-won').textContent   = d.totalMoneyWon||0;
+      loadHistory(d.history);
+    }
+    checkCooldown();
+  }catch(e){}
+}
+
+function checkCooldown(){
+  var now  = Date.now();
+  var diff = now - _lastSpinTs;
+  var CD   = 24 * 60 * 60 * 1000; // 24h
+  if(_lastSpinTs > 0 && diff < CD){
+    _canSpin = false;
+    document.getElementById('spin-btn').classList.add('spinning');
+    document.getElementById('cooldown-wrap').classList.remove('hidden');
+    startCountdown(CD - diff);
+  } else {
+    _canSpin = true;
+    document.getElementById('spin-btn').classList.remove('spinning');
+    document.getElementById('cooldown-wrap').classList.add('hidden');
+  }
+}
+
+function startCountdown(ms){
+  if(_cooldownIv) clearInterval(_cooldownIv);
+  function update(){
+    var h = Math.floor(ms/3600000);
+    var m = Math.floor((ms%3600000)/60000);
+    var s = Math.floor((ms%60000)/1000);
+    document.getElementById('cooldown-timer').textContent =
+      ('0'+h).slice(-2)+':'+('0'+m).slice(-2)+':'+('0'+s).slice(-2);
+    ms -= 1000;
+    if(ms <= 0){
+      clearInterval(_cooldownIv);
+      _canSpin = true;
+      document.getElementById('spin-btn').classList.remove('spinning');
+      document.getElementById('cooldown-wrap').classList.add('hidden');
+    }
+  }
+  update();
+  _cooldownIv = setInterval(update, 1000);
+}
+
+function loadHistory(history){
+  if(!history) return;
+  var entries = Object.values(history).sort(function(a,b){return b.ts-a.ts;}).slice(0,8);
+  var container = document.getElementById('spin-history');
+  if(entries.length === 0) return;
+  container.innerHTML = entries.map(function(e){
+    return '<div class="hist-spin-row">'
+      + '<span class="hist-spin-prize">'+e.icon+' '+e.prize+'</span>'
+      + '<span class="hist-spin-date">'+new Date(e.ts).toLocaleDateString()+'</span>'
+      + '</div>';
+  }).join('');
+}
+
+/* ── Spin ── */
+window.doSpin = function(){
+  if(_spinning || !_canSpin) return;
+  _spinning = true;
+  document.getElementById('spin-btn').classList.add('spinning');
+
+  // Weighted random pick
+  var rand = Math.random() * TOTAL_W;
+  var acc = 0; var prizeIdx = 0;
+  for(var i=0;i<PRIZES.length;i++){
+    acc += PRIZES[i].weight;
+    if(rand < acc){ prizeIdx = i; break; }
+  }
+
+  // Target rotation: land on prizeIdx segment (center of segment at top = -PI/2)
+  var targetSegCenter = prizeIdx * SEG_ANGLE + SEG_ANGLE/2;
+  var targetAngle = -Math.PI/2 - targetSegCenter;
+  // Add multiple full rotations for drama
+  var extraSpins = (5 + Math.floor(Math.random()*4)) * Math.PI * 2;
+  var finalAngle = targetAngle + extraSpins;
+
+  // Normalize current rotation
+  var start  = _rotation;
+  var change = finalAngle - (start % (Math.PI*2));
+  var duration = 4000 + Math.random()*1500;
+  var startTime = null;
+
+  function easeOut(t){ return 1 - Math.pow(1-t, 4); }
+
+  function animate(ts){
+    if(!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var progress = Math.min(elapsed/duration, 1);
+    _rotation = start + change * easeOut(progress);
+    drawWheel(_rotation);
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    } else {
+      _rotation = finalAngle % (Math.PI*2);
+      _spinning = false;
+      claimPrize(PRIZES[prizeIdx]);
+    }
+  }
+  requestAnimationFrame(animate);
+};
+
+async function claimPrize(prize){
+  var actual = prize;
+  if(prize.type === 'mystery'){
+    var mysteries = [
+      {label:'+75 💰',icon:'💰',type:'money',amount:75},
+      {label:'+150 💰',icon:'💎',type:'money',amount:150},
+      {label:'+30 ⭐',icon:'⭐',type:'score',amount:30},
+      {label:'2x Extra Tries',icon:'➕',type:'puExtra',amount:2},
+    ];
+    actual = mysteries[Math.floor(Math.random()*mysteries.length)];
+    actual.color = prize.color;
+  }
+
+  try{
+    var snap = await db.ref('users/'+user.uid).get();
+    if(!snap.exists()) return;
+    var ud = snap.val();
+    var update = {};
+
+    if(actual.type==='money'){
+      update.money = (ud.money||0) + actual.amount;
+    } else if(actual.type==='score'){
+      update.score = (ud.score||0) + actual.amount;
+    } else if(actual.type==='puExtra'){
+      update['powerUps/extraTry'] = (ud.powerUps&&ud.powerUps.extraTry||0) + actual.amount;
+    } else if(actual.type==='puFreeze'){
+      update['powerUps/freezeTimer'] = (ud.powerUps&&ud.powerUps.freezeTimer||0) + actual.amount;
+    }
+    await db.ref('users/'+user.uid).update(update);
+
+    // Update spin rewards stats
+    var now = Date.now();
+    var 

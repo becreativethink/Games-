@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#6d51f5"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>WordWar — Bingo</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.bg-page{max-width:520px;margin:0 auto;padding:16px 16px calc(92px + env(safe-area-inset-bottom));}
+.bg-hide{display:none!important;}
+.bg-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;background:rgba(109,81,245,.12);border:1px solid rgba(109,81,245,.3);border-radius:100px;font-size:.65rem;font-weight:800;color:#b0a0ff;letter-spacing:.08em;margin-bottom:8px;}
+.bg-head{text-align:center;margin-bottom:16px;}
+.bg-head h1{font-family:var(--font-display);font-size:1.25rem;font-weight:900;letter-spacing:.03em;margin-bottom:2px;}
+.bg-head p{font-size:.76rem;color:var(--text2);}
+.bg-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.bg-stat{padding:12px 8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;text-align:center;}
+.bg-stat b{display:block;font-family:var(--mono);font-size:1.1rem;margin-bottom:2px;}
+.bg-stat span{font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+.bg-lbl{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:16px 0 8px;}
+
+/* variety picker */
+.bg-var-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.bg-var{position:relative;padding:14px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);cursor:pointer;transition:all .16s;text-align:left;color:inherit;font-family:inherit;}
+.bg-var:active{transform:scale(.97);}
+.bg-var .ic{font-size:1.7rem;display:block;margin-bottom:6px;}
+.bg-var .nm{font-weight:800;font-size:.84rem;margin-bottom:3px;}
+.bg-var .ds{font-size:.66rem;color:var(--text2);line-height:1.35;margin-bottom:8px;}
+.bg-var .rw{font-family:var(--mono);font-size:.64rem;color:var(--gold);}
+.bg-var.sel{background:rgba(109,81,245,.14);border-color:var(--vc,#6d51f5);box-shadow:0 0 0 1px var(--vc,#6d51f5),0 0 24px rgba(109,81,245,.18);}
+.bg-var.sel::after{content:'✓';position:absolute;top:8px;right:10px;font-size:.8rem;font-weight:900;color:var(--vc,#6d51f5);}
+
+.bg-chips{display:flex;gap:8px;flex-wrap:wrap;}
+.bg-chip{flex:1;min-width:80px;padding:10px 12px;border-radius:12px;font-size:.78rem;font-weight:700;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text2);cursor:pointer;text-align:center;font-family:inherit;}
+.bg-chip.sel{background:rgba(109,81,245,.16);border-color:rgba(109,81,245,.5);color:#fff;}
+.bg-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:.8rem;font-weight:700;cursor:pointer;}
+.bg-toggle small{display:block;font-weight:500;color:var(--text3);font-size:.66rem;margin-top:2px;}
+.bg-sw{width:42px;height:24px;border-radius:100px;background:rgba(255,255,255,.12);position:relative;transition:.2s;flex-shrink:0;}
+.bg-sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;}
+.bg-sw.on{background:#16c26a;}
+.bg-sw.on::after{left:21px;}
+
+/* game */
+.bg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;}
+.bg-top .t{font-weight:800;font-size:.86rem;}
+.bg-top .s{font-size:.66rem;color:var(--text3);}
+.bg-exit{padding:7px 12px;border-radius:10px;background:rgba(240,64,96,.1);border:1px solid rgba(240,64,96,.25);color:#f04060;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit;}
+
+.bg-caller{display:flex;align-items:center;gap:14px;padding:14px;border-radius:18px;background:linear-gradient(160deg,rgba(109,81,245,.14),rgba(180,76,255,.07));border:1px solid rgba(109,81,245,.28);margin-bottom:10px;}
+.bg-ball{min-width:84px;height:84px;padding:0 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;background:radial-gradient(circle at 30% 28%,#fff,#e8e2ff 18%,var(--vc,#6d51f5) 62%);color:#12102a;font-family:var(--font-display);font-weight:900;font-size:1.5rem;line-height:1.05;box-shadow:0 8px 28px rgba(109,81,245,.4);flex-shrink:0;}
+.bg-ball.long{font-size:.74rem;border-radius:22px;min-width:96px;height:auto;min-height:70px;padding:8px 10px;}
+.bg-ball.pop{animation:bgPop .45s cubic-bezier(.34,1.5,.64,1);}
+@keyframes bgPop{from{transform:scale(.3) rotate(-30deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.bg-callinfo .k{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:3px;}
+.bg-callinfo .v{font-size:.88rem;font-weight:700;line-height:1.3;}
+.bg-callinfo .n{font-family:var(--mono);font-size:.68rem;color:var(--text3);margin-top:5px;}
+.bg-recent{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;min-height:28px;}
+.bg-recent span{flex-shrink:0;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:.68rem;color:var(--text2);white-space:nowrap;}
+
+.bg-hdr{display:grid;gap:5px;max-width:380px;margin:0 auto 5px;}
+.bg-hdr div{text-align:center;font-family:var(--font-display);font-weight:900;font-size:1.1rem;color:var(--vc,#6d51f5);}
+.bg-card{display:grid;gap:5px;max-width:380px;margin:0 auto 14px;}
+.bg-cell{aspect-ratio:1;border-radius:11px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--mono);font-weight:700;font-size:1rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text);cursor:pointer;position:relative;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .12s;padding:2px;word-break:break-word;line-height:1.05;}
+.bg-card.w .bg-cell{font-size:.56rem;letter-spacing:.02em;}
+.bg-card.e .bg-cell{font-size:1.5rem;}
+.bg-card.s3 .bg-cell{font-size:1.5rem;border-radius:16px;}
+.bg-cell:active{transform:scale(.93);}
+.bg-cell.tgt{border:1px dashed rgba(240,180,41,.7);background:rgba(240,180,41,.07);}
+.bg-cell.hint{border-color:rgba(22,194,106,.8);box-shadow:0 0 0 2px rgba(22,194,106,.25);animation:bgHint 1s ease-in-out infinite;}
+@keyframes bgHint{50%{box-shadow:0 0 0 5px rgba(22,194,106,.05);}}
+.bg-cell.mk{background:linear-gradient(135deg,var(--vc,#6d51f5),#b44cff);border-color:transparent;color:#fff;box-shadow:0 4px 16px rgba(109,81,245,.35);}
+.bg-cell.mk::after{content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(255,255,255,.35);}
+.bg-card.e .bg-cell.mk::after,.bg-card.w .bg-cell.mk::after{display:none;}
+.bg-cell.fr{background:rgba(240,180,41,.18);border-color:rgba(240,180,41,.5);color:var(--gold);}
+.bg-cell.shake{animation:bgShake .35s;}
+@keyframes bgShake{25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+
+.bg-claim{width:100%;padding:16px;border-radius:16px;border:none;font-family:var(--font-display);font-weight:900;font-size:1.15rem;letter-spacing:.1em;color:#1a1200;background:linear-gradient(135deg,#f0b429,#ffd86b);box-shadow:0 8px 28px rgba(240,180,41,.35);cursor:pointer;margin-bottom:14px;transition:transform .1s;}
+.bg-claim:active{transform:scale(.97);}
+.bg-claim.ready{animation:bgReady .7s ease-in-out infinite;}
+.bg-claim:disabled{opacity:.45;}
+@keyframes bgReady{50%{transform:scale(1.04);box-shadow:0 8px 40px rgba(240,180,41,.7);}}
+
+.bg-opp{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:6px;font-size:.74rem;}
+.bg-opp .nm{width:70px;font-weight:700;flex-shrink:0;}
+.bg-opp .bar{flex:1;height:7px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden;}
+.bg-opp .bar i{display:block;height:100%;background:linear-gradient(90deg,#f04060,#f0b429);transition:width .3s;}
+.bg-opp .ct{font-family:var(--mono);font-size:.66rem;color:var(--text3);width:54px;text-align:right;flex-shrink:0;}
+
+/* result */
+.bg-res{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);display:flex;align-items:center;justify-content:center;z-index:3000;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s;}
+.bg-res.open{opacity:1;pointer-events:all;}
+.bg-res-card{background:linear-gradient(160deg,rgba(109,81,245,.14),rgba(240,180,41,.07));border:1px solid rgba(240,180,41,.3);border-radius:28px;padding:34px 26px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);transform:scale(.88);transition:transform .4s cubic-bezier(.34,1.3,.64,1);}
+.bg-res.open .bg-res-card{transform:scale(1);}
+.bg-res-card.lose{border-color:rgba(240,64,96,.3);background:linear-gradient(160deg,rgba(240,64,96,.1),rgba(109,81,245,.06));}
+.bg-res-ic{font-size:4.2rem;display:block;margin-bottom:8px;}
+.bg-res-t{font-family:var(--font-display);font-size:1.5rem;font-weight:900;margin-bottom:4px;letter-spacing:.04em;}
+.bg-res-s{font-size:.82rem;color:var(--text2);margin-bottom:16px;}
+.bg-res-r{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.bg-res-r span{padding:8px 14px;border-radius:100px;font-family:var(--mono);font-size:.8rem;font-weight:700;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);}
+.bg-res-b{display:flex;gap:8px;}
+.bg-res-b button{flex:1;padding:13px;border-radius:13px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;}
+.bg-res-b button.p{background:linear-gradient(135deg,#6d51f5,#b44cff);border-color:transparent;}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="nav-logo"><span class="w1">WORD</span><span class="w2">WAR</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link m-show">← Home</a>
+    <a href="profile.html" class="user-badge">
+      <img class="ub-avatar" id="nav-avatar" src="" alt=""/>
+      <span class="ub-name" id="nav-username">…</span>
+      <div class="online-dot"></div>
+    </a>
+  </div>
+</nav>
+
+<div class="bg-page">
+
+  <!-- ═════════ SETUP ═════════ -->
+  <div id="scr-setup">
+    <div class="bg-head">
+      <div class="bg-badge">🎱 BINGO</div>
+      <h1>Choose Your Bingo</h1>
+      <p>Six varieties. Race 3 bots to be first to call BINGO!</p>
+    </div>
+
+    <div class="bg-stats">
+      <div class="bg-stat"><b id="st-games">0</b><span>Played</span></div>
+      <div class="bg-stat"><b id="st-wins" style="color:#16c26a;">0</b><span>Wins</span></div>
+      <div class="bg-stat"><b id="st-rate" style="color:var(--gold);">0%</b><span>Win rate</span></div>
+    </div>
+
+    <div class="bg-lbl" style="margin-top:0;">Variety</div>
+    <div class="bg-var-grid" id="var-grid"></div>
+
+    <div class="bg-lbl">Difficulty</div>
+    <div class="bg-chips" id="diff-chips"></div>
+
+    <div class="bg-lbl">Options</div>
+    <div class="bg-toggle" onclick="toggleAuto()">
+      <div>Auto-mark called squares<small>Off = you tap squares yourself (more skill, same rewards)</small></div>
+      <div class="bg-sw on" id="sw-auto"></div>
+    </div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:18px;padding:15px;font-size:.95rem;" onclick="startGame()">🎱 Start Game</button>
+  </div>
+
+  <!-- ═════════ GAME ═════════ -->
+  <div id="scr-game" class="bg-hide">
+    <div class="bg-top">
+      <div><div class="t" id="g-title">Bingo</div><div class="s" id="g-sub"></div></div>
+      <button class="bg-exit" onclick="exitGame()">✕ Quit</button>
+    </div>
+
+    <div class="bg-caller">
+      <div class="bg-ball" id="ball">?</div>
+      <div class="bg-callinfo">
+        <div class="k" id="call-k">Next call</div>
+        <div class="v" id="call-v">Get ready…</div>
+        <div class="n" id="call-n"></div>
+      </div>
+    </div>
+    <div class="bg-recent" id="recent"></div>
+
+    <div class="bg-hdr" id="hdr"></div>
+    <div class="bg-card" id="card"></div>
+
+    <button class="bg-claim" id="claim" onclick="claimBingo()">BINGO!</button>
+
+    <div class="bg-lbl" style="margin-top:0;">Opponents</div>
+    <div id="opps"></div>
+  </div>
+</div>
+
+<!-- result -->
+<div class="bg-res" id="res">
+  <div class="bg-res-card" id="res-card">
+    <span class="bg-res-ic" id="res-ic">🏆</span>
+    <div class="bg-res-t" id="res-t">BINGO!</div>
+    <div class="bg-res-s" id="res-s"></div>
+    <div class="bg-res-r" id="res-r"></div>
+    <div class="bg-res-b">
+      <button onclick="backToSetup()">Change Mode</button>
+      <button class="p" onclick="playAgain()">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-btn" onclick="location.href='index.html'"><span class="bn-icon">🏠</span><span class="bn-lbl">Home</span></button>
+  <button class="bn-btn" onclick="location.href='leaderboard.html'"><span class="bn-icon">🏆</span><span class="bn-lbl">Ranks</span></button>
+  <button class="bn-btn" onclick="location.href='friends.html'"><span class="bn-icon">👥</span><span class="bn-lbl">Friends</span></button>
+  <button class="bn-btn" onclick="location.href='profile.html'"><span class="bn-icon">👤</span><span class="bn-lbl">Profile</span></button>
+</nav>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://eduweb-fcfee-default-rtdb.firebaseio.com/'});
+var db = firebase.database();
+function loadSession(){try{return JSON.parse(localStorage.getItem('ww_user'));}catch(e){return null;}}
+function saveSession(u){localStorage.setItem('ww_user',JSON.stringify(u));}
+var user = loadSession();
+if(!user){ location.href='login.html'; }
+function avatarUrl(url,name){if(url&&url.startsWith('http'))return url;return'https://ui-avatars.com/api/?name='+encodeURIComponent((name||'?').slice(0,2).toUpperCase())+'&background=6d51f5&color=fff&bold=true&size=80';}
+function toast(msg,type){
+  var c={success:'#16c26a',error:'#f04060',warn:'#f0b429',info:'#6d51f5'};
+  var z=document.getElementById('_tz');
+  if(!z){z=document.createElement('div');z.id='_tz';z.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;gap:8px;max-width:300px;width:90%;';document.body.appendChild(z);}
+  var t=document.createElement('div');
+  t.style.cssText='padding:11px 16px;border-radius:12px;background:#0e0e1c;border:1px solid '+(c[type]||c.info)+'66;font-size:.8rem;font-weight:600;color:#eeeef8;text-align:center;opacity:0;transition:opacity .2s;box-shadow:0 8px 28px rgba(0,0,0,.5);';
+  t.textContent=msg; z.appendChild(t);
+  requestAnimationFrame(function(){t.style.opacity='1';});
+  setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},250);},1800);
+}
+if(user){
+  document.getElementById('nav-username').textContent=user.username||'…';
+  document.getElementById('nav-avatar').src=avatarUrl(user.photoURL,user.username);
+}
+
+/* ══════════════ DATA ══════════════ */
+var WORDS=[['PLANET','Orbits a star'],['OCEAN','Covers most of Earth'],['GUITAR','Six-string instrument'],['CASTLE','Where a king lives'],['TIGER','Striped big cat'],['BRIDGE','Crosses a river'],['PIZZA','Cheesy Italian dish'],['ROCKET','Flies to space'],['MIRROR','Shows your reflection'],['CANDLE','Wax with a flame'],['JUNGLE','Dense tropical forest'],['DESERT','Dry, sandy land'],['WINTER','Coldest season'],['BANANA','Yellow curved fruit'],['PIRATE','Sails seeking treasure'],['WIZARD','Casts magic spells'],['DRAGON','Fire-breathing beast'],['ISLAND','Land surrounded by water'],['SILVER','Shiny grey metal'],['PENCIL','Writes, then erases'],['WINDOW','Glass in a wall'],['GARDEN','Where flowers grow'],['THUNDER','Sound after lightning'],['COMPASS','Points north'],['LIBRARY','Quiet place full of books'],['DIAMOND','Hardest gemstone'],['VOLCANO','Mountain that erupts'],['PARROT','Bird that mimics speech'],['BUTTER','Spread made from cream'],['CAMERA','Takes photographs'],['ANCHOR','Keeps a ship in place'],['BASKET','Woven carrier'],['HAMMER','Tool for nails'],['LANTERN','Portable light'],['MONKEY','Primate that climbs trees'],['NEEDLE','Sewing tool'],['ORANGE','Citrus fruit and a colour'],['PUZZLE','Pieces to assemble'],['RABBIT','Hops and loves carrots'],['SPIDER','Eight legs, spins webs'],['TURTLE','Reptile with a shell'],['UMBRELLA','Shields you from rain'],['VIOLIN','Played with a bow'],['WALLET','Holds your cash'],['ZEBRA','Striped African horse']];
+var EMOJIS=[['🚀','Rocket'],['🐶','Dog'],['🍕','Pizza'],['🌈','Rainbow'],['⚽','Football'],['🎸','Guitar'],['🌙','Moon'],['🔥','Fire'],['🍎','Apple'],['🐱','Cat'],['🚗','Car'],['🏠','House'],['🌸','Blossom'],['🎁','Gift'],['⭐','Star'],['🍔','Burger'],['🦋','Butterfly'],['🐘','Elephant'],['🎈','Balloon'],['📚','Books'],['⏰','Alarm clock'],['🔑','Key'],['🍦','Ice cream'],['🐢','Turtle'],['🌵','Cactus'],['☂️','Umbrella'],['🎨','Palette'],['🏆','Trophy'],['💎','Diamond'],['🎧','Headphones'],['🐙','Octopus'],['🍩','Doughnut'],['🌻','Sunflower'],['🚲','Bicycle'],['🎂','Cake'],['🦁','Lion'],['⛵','Sailboat'],['🍓','Strawberry'],['🐼','Panda'],['☃️','Snowman']];
+var LETTERS=['B','I','N','G','O'];
+var PATTERNS={
+  corners:{name:'Four Corners',set:[0,4,20,24]},
+  x:{name:'Letter X',set:[0,6,12,18,24,4,8,16,20]},
+  plus:{name:'Plus Sign',set:[2,7,12,17,22,10,11,13,14]},
+  frame:{name:'Picture Frame',set:[0,1,2,3,4,5,9,10,14,15,19,20,21,22,23,24]}
+};
+var VARIETIES={
+  classic: {name:'Classic 75',icon:'🎱',desc:'Numbers 1–75 on a B-I-N-G-O card. First line wins.',size:5,win:'line',kind:'columns',header:true,base:{money:30,score:40},speed:1,color:'#6d51f5'},
+  word:    {name:'Word Bingo',icon:'🔤',desc:'Clues are called — find the matching word.',size:5,win:'line',kind:'words',base:{money:40,score:50},speed:1.3,color:'#16c26a',cls:'w'},
+  emoji:   {name:'Emoji Bingo',icon:'😀',desc:'The name is called — find the emoji.',size:5,win:'line',kind:'emoji',base:{money:35,score:45},speed:1.1,color:'#ff8c42',cls:'e'},
+  speed:   {name:'Speed Bingo',icon:'⚡',desc:'Tiny 3×3 card, rapid calls. Blink and you lose!',size:3,win:'line',kind:'random',range:20,base:{money:20,score:25},speed:.45,color:'#f04060',cls:'s3'},
+  blackout:{name:'Blackout',icon:'⬛',desc:'Cover every square to win big.',size:5,win:'full',kind:'random',range:40,base:{money:80,score:100},speed:.6,color:'#b44cff'},
+  pattern: {name:'Pattern Bingo',icon:'✖️',desc:'Make the target shape: corners, X, plus or frame.',size:5,win:'pattern',kind:'columns',header:true,base:{money:50,score:60},speed:.9,color:'#f0b429'}
+};
+var DIFFS={
+  easy:  {label:'😊 Easy',  call:4000,miss:.30,react:1800,mult:1},
+  normal:{label:'🙂 Normal',call:3000,miss:.12,react:900, mult:1.5},
+  hard:  {label:'😈 Hard',  call:2200,miss:.03,react:350, mult:2}
+};
+var BOT_NAMES=['NovaBot','PixelPete','BlitzBot'];
+
+/* ══════════════ STATE ══════════════ */
+var sel={variety:'classic',diff:'normal',auto:true};
+var G=null;
+
+/* ══════════════ SETUP UI ══════════════ */
+function renderSetup(){
+  document.getElementById('var-grid').innerHTML=Object.keys(VARIETIES).map(function(k){
+    var v=VARIETIES[k];
+    var m=Math.round(v.base.money*DIFFS[sel.diff].mult);
+    return '<button class="bg-var'+(sel.variety===k?' sel':'')+'" style="--vc:'+v.color+'" onclick="pickVar(\''+k+'\')">'
+      +'<span class="ic">'+v.icon+'</span><div class="nm">'+v.name+'</div><div class="ds">'+v.desc+'</div>'
+      +'<div class="rw">Win: +'+m+'💰</div></button>';
+  }).join('');
+  document.getElementById('diff-chips').innerHTML=Object.keys(

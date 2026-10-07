@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<link rel="manifest" href="/manifest.json"/>
+<link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#6d51f5"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -138,12 +138,10 @@ async function loadProfile(){
   // Own profile?
   if(targetName.toLowerCase()===user.username.toLowerCase()){location.href='profile.html';return;}
   try{
-    var ns=await db.ref('usernames/'+targetName.toLowerCase()).get();
-    if(!ns.exists()){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">User not found</div>';return;}
-    _targetUid=ns.val();
-    var snap=await db.ref('users/'+_targetUid).get();
-    if(!snap.exists()){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">User data missing</div>';return;}
-    _targetData=snap.val();
+    var found=await window.wwFindUser(targetName);
+    if(!found){document.getElementById('pub-loading').innerHTML='<div class="empty-state-title">User not found</div>';return;}
+    _targetUid=found.uid;
+    _targetData=found;
     // Check friendship
     var frSnap=await db.ref('friends/'+user.uid+'/'+_targetUid).get();
     _isFriend=frSnap.exists();
@@ -243,6 +241,6 @@ window.addFriend=async function(){
 
 loadProfile();
 </script>
-<script src="/pwa.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>

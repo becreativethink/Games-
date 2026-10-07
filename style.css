@@ -2435,3 +2435,6 @@ body { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   border-color: rgba(109,81,245,.3);
   color: #b0a0ff;
 }
+
+.mode-card.bingo::after  { background:radial-gradient(circle at 50% -10%, rgba(109,81,245,.2), transparent 60%); }
+.mode-card.bingo::before { background:linear-gradient(90deg,#6d51f5,#f0b429); }

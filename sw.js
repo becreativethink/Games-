@@ -3,8 +3,8 @@
    Strategy: Cache-first for static assets, network-first for Firebase
    ============================================================ */
 
-const CACHE_NAME    = 'wordwar-v1';
-const CACHE_STATIC  = 'wordwar-static-v1';
+const CACHE_NAME    = 'wordwar-v3';
+const CACHE_STATIC  = 'wordwar-static-v3';
 const CACHE_FONTS   = 'wordwar-fonts-v1';
 
 /* Files to pre-cache on install */
@@ -15,9 +15,12 @@ const PRECACHE_URLS = [
   'game.html',
   'leaderboard.html',
   'profile.html',
+  'spinwheel.html',
+  'bingo.html',
+  'clans.html',
   'style.css',
-  'icon-192.png',
-  'icon-512.png',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
   'offline.html'
 ];
 
@@ -133,8 +136,8 @@ self.addEventListener('push', function(e) {
   e.waitUntil(
     self.registration.showNotification(data.title || 'WordWar', {
       body:  data.body  || 'You have a new challenge!',
-      icon:  'icon-192.png',
-      badge: 'icon-72.png',
+      icon:  'icons/icon-192.png',
+      badge: 'icons/icon-72.png',
       tag:   'wordwar-notification',
       data:  data
     })

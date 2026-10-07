@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="WordWar"/>
-<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png"/>
 <title>WordWar — Home</title>
 <link rel="stylesheet" href="style.css"/>
 
@@ -292,7 +292,7 @@ window.claimDailyReward = async function(){
       toast('+'+r.amount+' ⭐ and +5 XP claimed!','success');
     }
     // Level up from XP
-    upd = Object.assign(upd, { level: calcLevel(upd.xp !== undefined ? upd.xp : ud.xp||0).level });
+    upd = Object.assign(upd, calcLevel(upd.xp !== undefined ? upd.xp : ud.xp||0));
     await db.ref('users/'+user.uid).update(upd);
     await db.ref('dailyRewards/'+user.uid).set({
       lastClaimDate: todayDateStr(),
@@ -628,6 +628,12 @@ window.closeMysteryEvent = function(){
       <h3 class="mc-title">Lucky Spin</h3>
       <p class="mc-desc">Spin the wheel once per day. Win money, score, power-ups, and mystery prizes!</p>
       <button class="btn btn-gold btn-full mt-16">Spin Now</button>
+    </div>
+    <div class="mode-card bingo" onclick="location.href='bingo.html'">
+      <div class="mc-icon">🎱</div>
+      <h3 class="mc-title">Bingo</h3>
+      <p class="mc-desc">6 varieties: Classic, Word, Emoji, Speed, Blackout &amp; Pattern. Race the bots!</p>
+      <button class="btn btn-primary btn-full mt-16">Play Bingo</button>
     </div>
     <div class="mode-card clans" onclick="location.href='clans.html'">
       <div class="mc-icon">🛡️</div>

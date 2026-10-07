@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<link rel="manifest" href="/manifest.json"/>
+<link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#6d51f5"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -61,11 +61,9 @@ document.getElementById('chat-partner-name').textContent=partnerName;
 // Load partner info
 async function loadPartner(){
   try{
-    var ns=await db.ref('usernames/'+partnerName.toLowerCase()).get();
-    if(!ns.exists())return;
-    var snap=await db.ref('users/'+ns.val()).get();
-    if(!snap.exists())return;
-    _partnerData=snap.val();
+    var found=await window.wwFindUser(partnerName);
+    if(!found)return;
+    _partnerData=found;
     document.getElementById('chat-partner-avatar').src=avatarUrl(_partnerData.photoURL,partnerName);
     document.getElementById('chat-partner-status').textContent=_partnerData.isOnline?'🟢 Online':'⚫ Offline';
     document.getElementById('chat-partner-status').style.color=_partnerData.isOnline?'var(--green)':'var(--text3)';
@@ -153,6 +151,6 @@ loadPartner();
 listenMessages();
 listenTyping();
 </script>
-<script src="/pwa.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>

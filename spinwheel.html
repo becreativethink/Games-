@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<link rel="manifest" href="/manifest.json"/>
+<link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#f0b429"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -489,4 +489,60 @@ async function claimPrize(prize){
 
     // Update spin rewards stats
     var now = Date.now();
-    var 
+    var spinId = 'spin_'+now;
+    var moneyEarned = actual.type==='money' ? actual.amount : 0;
+    var prevData = (await db.ref('spinRewards/'+user.uid).get()).val() || {};
+    await db.ref('spinRewards/'+user.uid).update({
+      lastSpin:      now,
+      totalSpins:    (prevData.totalSpins||0)+1,
+      totalMoneyWon: (prevData.totalMoneyWon||0)+moneyEarned,
+    });
+    await db.ref('spinRewards/'+user.uid+'/history/'+spinId).set({
+      prize: actual.label, icon: actual.icon, ts: now
+    });
+
+    _lastSpinTs = now;
+    checkCooldown();
+
+    // Refresh user session
+    var fresh = (await db.ref('users/'+user.uid).get()).val();
+    saveSession(Object.assign({uid:user.uid}, fresh));
+
+    // Update stats display
+    document.getElementById('stat-total-spins').textContent = (prevData.totalSpins||0)+1;
+    document.getElementById('stat-money-won').textContent   = (prevData.totalMoneyWon||0)+moneyEarned;
+
+    showResult(actual);
+  }catch(e){
+    toast('Error claiming prize. Please try again.','error');
+    _canSpin = true;
+    document.getElementById('spin-btn').classList.remove('spinning');
+  }
+}
+
+function showResult(prize){
+  document.getElementById('result-icon').textContent  = prize.icon;
+  document.getElementById('result-title').textContent = 'You Won ' + prize.label + '!';
+  var subs = {
+    money:   'Added to your wallet instantly!',
+    score:   'Score boosted! Climb the leaderboard!',
+    puExtra: 'Extra try saved — use it wisely!',
+    puFreeze:'Freeze ready — stop time mid-game!',
+  };
+  document.getElementById('result-sub').textContent = subs[prize.type] || 'Mystery prize unlocked! 🎲';
+  document.getElementById('result-overlay').classList.add('open');
+}
+
+window.closeResult = function(){
+  document.getElementById('result-overlay').classList.remove('open');
+  // Refresh history
+  db.ref('spinRewards/'+user.uid+'/history').limitToLast(8).get().then(function(snap){
+    if(snap.exists()) loadHistory(snap.val());
+  });
+};
+
+init();
+</script>
+<script src="pwa.js"></script>
+</body>
+</html>

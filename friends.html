@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<link rel="manifest" href="/manifest.json"/>
+<link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#6d51f5"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -134,8 +134,8 @@ async function loadRequests(){
     var incoming=[],sent=[];
     snap.forEach(function(ch){
       var d=Object.assign({id:ch.key},ch.val());
-      if(d.receiver===user.username && d.status==='pending') incoming.push(d);
-      if(d.sender===user.username && d.status==='pending') sent.push(d);
+      if(String(d.receiver||'').toLowerCase()===user.username.toLowerCase() && d.status==='pending') incoming.push(d);
+      if(String(d.sender||'').toLowerCase()===user.username.toLowerCase() && d.status==='pending') sent.push(d);
     });
 
     if(incoming.length===0) reqList.innerHTML=emptyHtml('No incoming requests');
@@ -158,7 +158,7 @@ function buildRequestCard(r, showActions){
   div.innerHTML='<div class="req-info"><div class="req-name">'+r.sender+'</div>'
     +'<div class="req-sub">Wants to be your friend</div></div>'
     +(showActions?'<div class="req-actions">'
-    +'<button class="btn btn-success btn-sm" onclick="acceptRequest(\''+r.id+'\',\''+r.sender+'\')">✓ Accept</button>'
+    +'<button class="btn btn-success btn-sm" onclick="acceptRequest(\''+r.id+'\',\''+r.sender+'\',\''+(r.senderUid||'')+'\')">✓ Accept</button>'
     +'<button class="btn btn-danger btn-sm" onclick="rejectRequest(\''+r.id+'\')">✕</button>'
     +'</div>':'');
   return div;
@@ -166,43 +166,58 @@ function buildRequestCard(r, showActions){
 
 window.sendFriendRequest=async function(){
   var inp=document.getElementById('add-friend-input');
-  var target=inp.value.trim().toLowerCase();
+  var raw=inp.value.trim().replace(/^@/,'');
   var res=document.getElementById('add-result');
-  if(!target){return;}
-  if(target===user.username.toLowerCase()){res.textContent='❌ Cannot add yourself.';return;}
+  res.style.color='';
+  if(!raw){return;}
+  if(raw.toLowerCase()===user.username.toLowerCase()){res.textContent='❌ You cannot add yourself.';return;}
   res.textContent='Searching…';
   try{
-    // Check user exists
-    var ns=await db.ref('usernames/'+target).get();
-    if(!ns.exists()){res.textContent='❌ User not found.';return;}
-    // Check not already friends
-    var frSnap=await db.ref('friends/'+user.uid+'/'+ns.val()).get();
-    if(frSnap.exists()){res.textContent='✅ Already friends!';return;}
-    // Check no duplicate request
+    var target=await window.wwFindUser(raw);
+    if(!target){res.textContent='❌ No player named "'+raw+'". Check the spelling.';return;}
+    var targetUid=target.uid;
+    // already friends?
+    var frSnap=await db.ref('friends/'+user.uid+'/'+targetUid).get();
+    if(frSnap.exists()){res.textContent='✅ You are already friends!';res.style.color='var(--green)';return;}
+    // existing pending request in either direction?
     var existSnap=await db.ref('friendRequests').get();
-    var dup=false;
-    if(existSnap.exists()){existSnap.forEach(function(ch){var d=ch.val();if(d.sender===user.username&&d.receiver.toLowerCase()===target&&d.status==='pending')dup=true;});}
+    var dup=false,reverse=null;
+    if(existSnap.exists()){existSnap.forEach(function(ch){
+      var d=ch.val();if(!d||d.status!=='pending')return;
+      var s1=String(d.sender||'').toLowerCase(),r1=String(d.receiver||'').toLowerCase();
+      if(s1===user.username.toLowerCase()&&r1===target.username.toLowerCase())dup=true;
+      if(s1===target.username.toLowerCase()&&r1===user.username.toLowerCase())reverse={id:ch.key,sender:d.sender,senderUid:d.senderUid};
+    });}
     if(dup){res.textContent='⏳ Request already sent.';return;}
-    // Get target username (correct case)
-    var targetUid=ns.val();
-    var tSnap=await db.ref('users/'+targetUid).get();
-    var targetUser=tSnap.val();
-    // Send request
+    if(reverse){ // they already asked you → just accept
+      await window.acceptRequest(reverse.id,reverse.sender,reverse.senderUid||targetUid);
+      res.textContent='🎉 '+target.username+' had already sent you a request — you are now friends!';
+      res.style.color='var(--green)';inp.value='';return;
+    }
     var reqId='fr_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-    await db.ref('friendRequests/'+reqId).set({sender:user.username,receiver:targetUser.username,status:'pending',sentAt:Date.now()});
-    res.textContent='✅ Friend request sent to '+targetUser.username+'!';
+    await db.ref('friendRequests/'+reqId).set({
+      sender:user.username,senderUid:user.uid,
+      receiver:target.username,receiverUid:targetUid,
+      status:'pending',sentAt:Date.now()
+    });
+    res.textContent='✅ Friend request sent to '+target.username+'!';
     res.style.color='var(--green)';
     inp.value='';
     loadRequests();
   }catch(e){res.textContent='Error: '+e.message;}
 };
 
-window.acceptRequest=async function(reqId, senderName){
+window.acceptRequest=async function(reqId, senderName, senderUid){
   try{
-    var ns=await db.ref('usernames/'+senderName.toLowerCase()).get();
-    if(!ns.exists()){toast('User not found','error');return;}
-    var senderUid=ns.val();
-    // Add mutual friendship
+    if(!senderUid){
+      var rs=await db.ref('friendRequests/'+reqId+'/senderUid').get();
+      if(rs.exists())senderUid=rs.val();
+    }
+    if(!senderUid){
+      var found=await window.wwFindUser(senderName);
+      if(!found){toast('Could not find '+senderName+'. The account may have been deleted.','error');return;}
+      senderUid=found.uid;
+    }
     var updates={};
     updates['friends/'+user.uid+'/'+senderUid]=true;
     updates['friends/'+senderUid+'/'+user.uid]=true;
@@ -322,6 +337,6 @@ function emptyHtml(msg){
 
 loadAll();
 </script>
-<script src="/pwa.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>

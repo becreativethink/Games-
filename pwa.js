@@ -9,7 +9,7 @@
   /* ── 1. Register Service Worker ── */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('sw.js', { scope: './' })
+      navigator.serviceWorker.register('sw.js')
         .then(function(reg) {
           /* Check for updates every 60 s while page is open */
           setInterval(function() { reg.update(); }, 60000);
@@ -60,7 +60,7 @@
     banner.id = '_pwa-install-banner';
     banner.innerHTML =
       '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">' +
-        '<img src="icon-72.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" alt=""/>' +
+        '<img src="icons/icon-72.png" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" alt=""/>' +
         '<div style="min-width:0;">' +
           '<div style="font-weight:700;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Install WordWar</div>' +
           '<div style="font-size:.72rem;color:#7878a0;margin-top:2px;">Play offline · Add to home screen</div>' +
@@ -161,4 +161,79 @@
     });
   }
 
+})();
+
+/* ============================================================
+   WordWar user lookup (shared) + username-index self-repair
+   Fixes "User not found" for accounts missing usernames/{name}
+   ============================================================ */
+(function () {
+  function getDb() { return window.db || null; }
+
+  /* Find a user by username (case-insensitive). Returns {uid, ...userData} or null */
+  window.wwFindUser = async function (rawName) {
+    var db = getDb();
+    if (!db) return null;
+    var name = String(rawName || '').trim().replace(/^@/, '');
+    if (!name || /[.#$\[\]\/\s]/.test(name)) return null;
+    var lc = name.toLowerCase();
+
+    /* 1) fast path: usernames index */
+    try {
+      var ns = await db.ref('usernames/' + lc).get();
+      if (ns.exists()) {
+        var uid = ns.val();
+        var us = await db.ref('users/' + uid).get();
+        if (us.exists()) return Object.assign({ uid: uid }, us.val());
+      }
+    } catch (e) {}
+
+    /* 2) exact-match queries on users/username */
+    var variants = [name, lc, name.charAt(0).toUpperCase() + lc.slice(1)];
+    for (var i = 0; i < variants.length; i++) {
+      try {
+        var q = await db.ref('users').orderByChild('username').equalTo(variants[i]).limitToFirst(1).get();
+        if (q.exists()) {
+          var hit = null;
+          q.forEach(function (ch) { hit = Object.assign({ uid: ch.key }, ch.val()); });
+          if (hit) { repair(lc, hit.uid); return hit; }
+        }
+      } catch (e) {}
+    }
+
+    /* 3) last resort: case-insensitive scan */
+    try {
+      var all = await db.ref('users').get();
+      var found = null;
+      if (all.exists()) {
+        all.forEach(function (ch) {
+          var v = ch.val();
+          if (!found && v && v.username && String(v.username).toLowerCase() === lc) {
+            found = Object.assign({ uid: ch.key }, v);
+          }
+        });
+      }
+      if (found) { repair(lc, found.uid); return found; }
+    } catch (e) {}
+    return null;
+  };
+
+  function repair(lc, uid) {
+    var db = getDb();
+    if (!db) return;
+    db.ref('usernames/' + lc).get().then(function (s) {
+      if (!s.exists()) db.ref('usernames/' + lc).set(uid);
+    }).catch(function () {});
+  }
+
+  /* Make sure the logged-in user's own index entry exists */
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      try {
+        var db = getDb();
+        var u = JSON.parse(localStorage.getItem('ww_user') || 'null');
+        if (db && u && u.uid && u.username) repair(String(u.username).toLowerCase(), u.uid);
+      } catch (e) {}
+    }, 1500);
+  });
 })();
